@@ -1,0 +1,11 @@
+name: pred-knee-replacement-oai
+dependencies:
+  - python
+  - numpy
+  - pandas
+  - scipy
+  - matplotlib
+  - jupyter
+  - seaborn
+  - scikit-learn
+  - pytorch
