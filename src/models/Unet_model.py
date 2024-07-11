@@ -1,9 +1,3 @@
-
-"""
-Define my 3D U-Net model structure.
-It is formed of an encoder, bottleneck, and decoder.
-"""
-
 import torch
 import torch.nn as nn
 
@@ -45,7 +39,7 @@ class EncBlock(nn.Module):
         return x
     
 # Unet Upsampling block
-class UpConvBlock(nn.Module):
+class UpConvBlock(nn.Module):   
     def __init__(self, in_channels, out_channels):
         super(UpConvBlock, self).__init__()
 
