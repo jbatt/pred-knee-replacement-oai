@@ -1,0 +1,39 @@
+{
+    "os": "Windows-11-10.0.22631-SP0",
+    "python": "3.12.3",
+    "heartbeatAt": "2024-07-22T09:45:13.876063",
+    "startedAt": "2024-07-22T09:45:13.065807",
+    "docker": null,
+    "cuda": null,
+    "args": [],
+    "state": "running",
+    "program": "<python with no main file>",
+    "codePathLocal": null,
+    "git": {
+        "remote": "https://github.com/jbatt/pred-knee-replacement-oai.git",
+        "commit": "a7ab873d11c50c7eb466a408118ee70fd28da6cd"
+    },
+    "email": "114751330+jbatt@users.noreply.github.com",
+    "root": "C:/Users/james/Documents/projects/pred-knee-replacement-oai",
+    "host": "DESKTOP-K1Q45PC",
+    "username": "james",
+    "executable": "c:\\Users\\james\\miniconda3\\envs\\pred-knee-replacement-oai\\python.exe",
+    "cpu_count": 4,
+    "cpu_count_logical": 8,
+    "cpu_freq": {
+        "current": 2611.0,
+        "min": 0.0,
+        "max": 2611.0
+    },
+    "cpu_freq_per_core": [
+        {
+            "current": 2611.0,
+            "min": 0.0,
+            "max": 2611.0
+        }
+    ],
+    "disk": {},
+    "memory": {
+        "total": 15.710014343261719
+    }
+}
