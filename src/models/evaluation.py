@@ -28,13 +28,17 @@ def dice_coefficient(pred_mask: torch.Tensor, gt_mask: torch.Tensor):
 
 # Return average dice coefficient for a batch of input and target masks
 # 'smooth' constant included to avoid NaN errors when volume is zero
-def dice_coefficient_batch(pred_mask_batch: torch.Tensor, gt_mask_batch: torch.Tensor, smooth=1e-5):
-    """Returns the dice coefficient for a batch of predicted and ground truth masks.
+def dice_coefficient_batch(pred_mask_batch: torch.Tensor, 
+                           gt_mask_batch: torch.Tensor, 
+                           smooth=1e-5):
+    """Returns the dice coefficient for a batch of predicted and 
+    ground truth masks.
 
     Args:
         pred_mask_batch (torch.Tensor): Predicted mask batch
         gt_mask_batch (torch.Tensor): Ground truth mask batch
-        smooth (float, optional): Constant to avoid NaN errors when volume is zero. Defaults to 1e-5.
+        smooth (float, optional): Constant to avoid NaN errors 
+        when volume is zero. Defaults to 1e-5.
 
     Returns:
         float: Dice coefficient for input batch
@@ -56,18 +60,24 @@ def dice_coefficient_batch(pred_mask_batch: torch.Tensor, gt_mask_batch: torch.T
 
 
 # Caluclate Dice loss as 1 - dice coefficient
-def dice_loss_batch(pred_mask_batch: torch.Tensor, gt_mask_batch: torch.Tensor, smooth=1e-5):
+def dice_loss_batch(pred_mask_batch: torch.Tensor, 
+                    gt_mask_batch: torch.Tensor, 
+                    smooth=1e-5
+                    ):
     """Returns the Dice loss calculated as 1 - Dice coefficient
 
     Args:
         pred_mask_batch (torch.Tensor): Predicted mask batch
         gt_mask_batch (torch.Tensor): Ground truth mask batch
-        smooth (float, optional): Constant to avoid NaN errors when volume is zero. Defaults to 1e-5.
+        smooth (float, optional): Constant to avoid NaN errors 
+        when volume is zero. Defaults to 1e-5.
 
     Returns:
         float: Dice loss for the input batch
     """
-    mean_loss = 1 - dice_coefficient_batch(pred_mask_batch, gt_mask_batch, smooth=smooth)
+    mean_loss = 1 - dice_coefficient_batch(pred_mask_batch, 
+                                           gt_mask_batch, 
+                                           smooth=smooth)
 
     return mean_loss
 
@@ -75,7 +85,8 @@ def dice_loss_batch(pred_mask_batch: torch.Tensor, gt_mask_batch: torch.Tensor, 
 # Loss includes both binary cross-entropy and dice loss (summed)
 def bce_dice_loss_batch(pred_mask_batch, gt_mask_batch):
     
-    """Returns batch loss caluclated as the sum of the binary cross-entropy loss and dice loss.
+    """Returns batch loss caluclated as the sum of the binary 
+    cross-entropy loss and dice loss.
 
     Args:
         pred_mask_batch (torch.Tensor): Predicted mask batch
