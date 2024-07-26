@@ -1,7 +1,7 @@
 # Define functions to help with model training
 
 import torch
-from models.evaluation import batch_dice_coeff
+from models.evaluation import dice_coefficient_batch
 
 # Define a training loop function for reuse later 
 def train_loop(dataloader, device, model, loss_fn, optimizer, pred_threshold):
@@ -52,7 +52,7 @@ def train_loop(dataloader, device, model, loss_fn, optimizer, pred_threshold):
 
         # Append the batch loss to enable calculation of the average epoch loss
         epoch_loss.append(loss)
-        epoch_dice.append(batch_dice_coeff(pred>pred_threshold, y).item())
+        epoch_dice.append(dice_coefficient_batch(pred > pred_threshold, y).item())
 
     # Calculate the average loss and accuracy for the epoch
     avg_epoch_loss = sum(epoch_loss) / len(epoch_loss)
@@ -99,7 +99,7 @@ def validation_loop(dataloader, device, model, loss_fn, pred_threshold):
             validation_loss += loss_fn(pred, y).item()
 
             # Determine dice score associated with the current predictions and add to batch dice score
-            validation_dice += batch_dice_coeff(pred > pred_threshold, y).item()
+            validation_dice += dice_coefficient_batch(pred > pred_threshold, y).item()
 
     validation_loss /= num_batches
     validation_dice /= num_batches
