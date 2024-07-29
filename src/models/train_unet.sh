@@ -30,6 +30,6 @@ source activate pred-knee-replacement-oai
 
 # cd pred-knee-replacement-oai/scripts/
 
-export WANDB_DIR=/jmain02/home/J2AD014/mtc13/jjb87-mtc13/pred-knee-replacement-oai/src/wandb
+export WANDB_DIR=/jmain02/home/J2AD014/mtc13/jjb87-mtc13/pred-knee-replacement-oai/notebooks/wandb
 
 python train_UNet.py
