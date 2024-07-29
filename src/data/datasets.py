@@ -99,8 +99,6 @@ class KneeSegDataset3D(Dataset):
                 image = self.transform(image)
                 mask = self.transform(mask)
 
-                print("We flipping")
-
         return image, mask
 
 
