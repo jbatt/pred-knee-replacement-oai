@@ -27,9 +27,9 @@ from models.train import train_loop, validation_loop
 
 
 # Define data directory
-DATA_DIRECTORY = 'C:/Users/james/OneDrive - University of Leeds/1. Projects/1.1 PhD/1.1.1 Project/Data/OAI Subset'
-DATA_TRAIN_DIRECTORY = 'C:/Users/james/OneDrive - University of Leeds/1. Projects/1.1 PhD/1.1.1 Project/Data/OAI Subset/train'
-DATA_VALID_DIRECTORY = 'C:/Users/james/OneDrive - University of Leeds/1. Projects/1.1 PhD/1.1.1 Project/Data/OAI Subset/valid'
+DATA_DIRECTORY = '../../../data/oai_subset'
+DATA_TRAIN_DIRECTORY = '../../../data/oai_subset/train'
+DATA_VALID_DIRECTORY = '../../../data/oai_subset'
 
 DATA_RAW_DIRECTORY = '../data/raw'
 DATA_PROCESSED_DIRECTORY = '../data/processed'
@@ -44,7 +44,7 @@ MODELS_CHECKPOINTS_PATH = '../models/checkpoints'
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 # Read in hyperparams
-hyperparams = read_hyperparams('..\src\models\hyperparams_unet.txt')
+hyperparams = read_hyperparams('..\\src\\models\\hyperparams_unet.txt')
 print(hyperparams)
 
 
