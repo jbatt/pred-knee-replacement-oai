@@ -78,6 +78,9 @@ target/
 # exclude data from source control by default
 /data/
 
+# exclude weights and biases folder by default
+/src/wandb/
+
 # Mac OS-specific storage files
 .DS_Store
 
