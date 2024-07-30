@@ -102,6 +102,91 @@ class KneeSegDataset3D(Dataset):
         return image, mask
 
 
+# Multiclass knee cartiage segmentation masks
+class KneeSegDataset3D(Dataset):
+    def __init__(self, file_paths, data_dir, split='train', transform=None, transform_chance=0.5):
+        self.file_paths = file_paths
+        self.data_dir = data_dir
+        self.split = split
+        self.transform = transform
+        self.transform_chance = transform_chance
+
+    # Return length of dataset
+    def __len__(self):
+        return len(self.file_paths)
+
+    # Get an item from the dataset
+    def __getitem__(self, index):
+        
+        path = self.file_paths[index]
+
+        # Test data is arranged differently, and as mask is numpy as opposed to h5py
+        # Load image and segmentation mask from test data (numpy arrays)
+        if self.split == 'test':
+            im_path = os.path.join(self.data_dir, self.split, path + '.im')
+            seg_path = os.path.join(self.data_dir, 'test_gt', path + '.npy')
+            with h5py.File(im_path,'r') as hf:
+                image = np.array(hf['data'])
+            mask = np.load(seg_path)
+
+        # Train and Validation h5py files
+        # Extract image and mask from training and validation data
+        else: 
+            # get full paths and read in
+            im_path = os.path.join(self.data_dir, self.split, path + '.im')
+            seg_path = os.path.join(self.data_dir, self.split, path + '.seg')
+            with h5py.File(im_path,'r') as hf:
+                image = np.array(hf['data'])
+            with h5py.File(seg_path,'r') as hf:
+                mask = np.array(hf['data'])
+
+
+        # Extract the meniscus mask
+        
+        # TODO: extract all masks 
+        if self.split == 'test':
+            minisc_mask = mask[...,-1]
+        else:
+
+            # medial meniscus
+            med_mask = mask[...,-1]
+
+            # THERE IS ONE ERRANT CASE IN TRAIN SET. LATERAL MENISCUS IS AT WRONG INDEX
+            # lateral
+            if path == 'train_026_V01':
+                lat_mask = mask[...,2]
+            else:
+                lat_mask = mask[...,-2]
+
+            # both together
+            minisc_mask = np.add(med_mask,lat_mask)
+
+        mask = np.clip(minisc_mask, 0, 1) #just incase the two menisci ground truths overlap, clip at 1
+
+        # TODO: update cropping to include all masks
+        # crop image/mask
+        image = crop_im(image)
+        mask = crop_im(mask)
+
+        # normalise image
+        image = clip_and_norm(image, 0.005)
+
+        # turn to torch, add channel dimension, and return
+        image = torch.from_numpy(image).float().unsqueeze(0)
+        mask = torch.from_numpy(mask).float().unsqueeze(0)
+
+        # transforms?
+        if self.transform != None:
+
+            # Manually apply trasnforms with randomisation as image and mask must have the same transforms applied
+            # Generate a random number, if above a threshold apply the transform to the image and the mask 
+            if random.random() < self.transform_chance:
+                image = self.transform(image)
+                mask = self.transform(mask)
+
+        return image, mask
+
+
 
 
 # # Dataset that opens image slice file, prepares for SAM input, and returns image and mask
