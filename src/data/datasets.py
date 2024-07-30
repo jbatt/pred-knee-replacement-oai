@@ -103,7 +103,7 @@ class KneeSegDataset3D(Dataset):
 
 
 # Multiclass knee cartiage segmentation masks
-class KneeSegDataset3D(Dataset):
+class KneeSegDataset3DMulticlass(Dataset):
     def __init__(self, file_paths, data_dir, split='train', transform=None, transform_chance=0.5):
         self.file_paths = file_paths
         self.data_dir = data_dir
@@ -125,9 +125,14 @@ class KneeSegDataset3D(Dataset):
         if self.split == 'test':
             im_path = os.path.join(self.data_dir, self.split, path + '.im')
             seg_path = os.path.join(self.data_dir, 'test_gt', path + '.npy')
+
+            # Open the image file
             with h5py.File(im_path,'r') as hf:
                 image = np.array(hf['data'])
+            
+            # Load the mask
             mask = np.load(seg_path)
+
 
         # Train and Validation h5py files
         # Extract image and mask from training and validation data
@@ -135,38 +140,57 @@ class KneeSegDataset3D(Dataset):
             # get full paths and read in
             im_path = os.path.join(self.data_dir, self.split, path + '.im')
             seg_path = os.path.join(self.data_dir, self.split, path + '.seg')
+
+            # Open the image file and load it to a numpy array
             with h5py.File(im_path,'r') as hf:
                 image = np.array(hf['data'])
+            
+            # Open the mask file and load it to a numpy array
             with h5py.File(seg_path,'r') as hf:
                 mask = np.array(hf['data'])
-
 
         # Extract the meniscus mask
         
         # TODO: extract all masks 
+        
+        # If test data - continue with all four classes
         if self.split == 'test':
-            minisc_mask = mask[...,-1]
+            pass
+        
+        # If train or validation - combine the medial/lateral masks for the tibial cart. and meniscus 
         else:
 
-            # medial meniscus
-            med_mask = mask[...,-1]
+            # Define medial meniscus mask
+            menisc_med_mask = mask[...,-1]
 
-            # THERE IS ONE ERRANT CASE IN TRAIN SET. LATERAL MENISCUS IS AT WRONG INDEX
-            # lateral
+            # Define lateral meniscus mask
+            # Below captures single train example with lateral meniscus mask at wrong index
             if path == 'train_026_V01':
-                lat_mask = mask[...,2]
+                menisc_lat_mask = mask[...,2]
             else:
-                lat_mask = mask[...,-2]
+                menisc_lat_mask = mask[...,-2]
 
             # both together
-            minisc_mask = np.add(med_mask,lat_mask)
+            minisc_mask = np.add(menisc_med_mask, menisc_lat_mask)
 
-        mask = np.clip(minisc_mask, 0, 1) #just incase the two menisci ground truths overlap, clip at 1
+            # Define tibial medial and lateral cart. masks
+            tib_med_mask = mask[...,1]
+            tib_lat_mask = mask[...,2]
+            
+            # Combine tibial masks
+            tib_mask = np.add(tib_med_mask, tib_lat_mask)
 
-        # TODO: update cropping to include all masks
-        # crop image/mask
-        image = crop_im(image)
-        mask = crop_im(mask)
+            # Define femoral cart. mask
+            fem_mask =  mask[...,0]
+
+            # Define femoral cart. mask
+            pat_mask =  mask[...,3]
+
+            # Create mask using combined tissue masks
+            combined_mask = np.stack([fem_mask, tib_mask, pat_mask, minisc_mask], axis=-1)
+
+
+        mask = np.clip(combined_mask, 0, 1) #just incase the two menisci ground truths overlap, clip at 1
 
         # normalise image
         image = clip_and_norm(image, 0.005)
@@ -185,38 +209,3 @@ class KneeSegDataset3D(Dataset):
                 mask = self.transform(mask)
 
         return image, mask
-
-
-
-
-# # Dataset that opens image slice file, prepares for SAM input, and returns image and mask
-# class KneeSegDataset2DSlicesSAM(Dataset):
-#     def __init__(self, paths, data_dir, split='train'):
-#         self.paths = paths
-#         self.split = split
-#         self.data_dir = data_dir
-
-#         # set image and mask dir based on the split
-#         self.im_dir = f"{self.split}_slice_ims"
-#         self.mask_dir = f"{self.split}_slice_gts"
-
-#     def __len__(self):
-#         return len(self.paths)
-
-#     def __getitem__(self, index):
-#         path = self.paths[index]
-
-#         # load slice and mask
-#         im_path = os.path.join(self.data_dir, self.im_dir, path)
-#         mask_path = os.path.join(self.data_dir, self.mask_dir, path)
-#         image = np.load(im_path)
-#         mask = np.load(mask_path)
-
-#         # turn to torch, add channel dimension
-#         image = torch.from_numpy(image).float().unsqueeze(0)
-#         mask = torch.from_numpy(mask).float().unsqueeze(0)
-
-#         # ------ SAM STUFF ------
-#         input = sam_slice_transform(image)
-
-#         return input, mask
