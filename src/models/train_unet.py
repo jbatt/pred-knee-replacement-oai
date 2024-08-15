@@ -29,9 +29,9 @@ from models.train import train_loop, validation_loop
 
 
 # Define data directory - ARC4
-DATA_DIRECTORY = '/nobackup/scjb'
-DATA_TRAIN_DIRECTORY = '/nobackup/scjb/train'
-DATA_VALID_DIRECTORY = '/nobackup/scjb/valid'
+DATA_DIRECTORY = '/nobackup/scjb/data/oai_subset'
+DATA_TRAIN_DIRECTORY = '/nobackup/scjb/data/oai_subset/train'
+DATA_VALID_DIRECTORY = '/nobackup/scjb/data/oai_subset/valid'
 
 # Define data directory - JADE2
 # DATA_DIRECTORY = '../data/oai_subset'
