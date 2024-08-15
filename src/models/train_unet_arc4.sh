@@ -17,4 +17,4 @@
 # module load cuda
 # module load pytorch
 
-python models/train_UNet.py
+python models/train_unet.py
