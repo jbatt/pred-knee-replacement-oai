@@ -13,8 +13,8 @@
 #$ -m be
 
 #Now run the job
-module load python/anaconda3
-module load cuda
-module load pytorch
+# module load python/anaconda3
+# module load cuda
+# module load pytorch
 
 python train_UNet.py
