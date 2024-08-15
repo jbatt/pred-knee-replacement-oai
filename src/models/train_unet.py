@@ -27,9 +27,13 @@ from models.train import train_loop, validation_loop
 
 
 # Define data directory
-DATA_DIRECTORY = '../data/oai_subset'
-DATA_TRAIN_DIRECTORY = '../data/oai_subset/train'
-DATA_VALID_DIRECTORY = '../data/oai_subset'
+DATA_DIRECTORY = '/nobackup/scjb'
+DATA_TRAIN_DIRECTORY = '/nobackup/scjb/train'
+DATA_VALID_DIRECTORY = '/nobackup/scjb/valid'
+
+# DATA_DIRECTORY = '../data/oai_subset'
+# DATA_TRAIN_DIRECTORY = '../data/oai_subset/train'
+# DATA_VALID_DIRECTORY = '../data/oai_subset'
 
 DATA_RAW_DIRECTORY = '../data/raw'
 DATA_PROCESSED_DIRECTORY = '../data/processed'
