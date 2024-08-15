@@ -19,6 +19,8 @@ import wandb  # Import Weights and Biases for tracking model training
 if '..\\src' not in sys.path:
     sys.path.append('..\\src')
 
+print(sys.path)
+
 from models.model_unet import UNet3D
 from utils.utils import read_hyperparams
 from data.datasets import KneeSegDataset3D
