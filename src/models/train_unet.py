@@ -22,18 +22,24 @@ if '..\\src' not in sys.path:
 from models.model_unet import UNet3D
 from utils.utils import read_hyperparams
 from data.datasets import KneeSegDataset3D
-from models.evaluation import bce_dice_loss #, dice_coefficient, batch_dice_coeff
+from models.evaluation import bce_dice_loss_batch #, dice_coefficient, batch_dice_coeff
 from models.train import train_loop, validation_loop 
 
 
-# Define data directory
+# Define data directory - ARC4
 DATA_DIRECTORY = '/nobackup/scjb'
 DATA_TRAIN_DIRECTORY = '/nobackup/scjb/train'
 DATA_VALID_DIRECTORY = '/nobackup/scjb/valid'
 
+# Define data directory - JADE2
 # DATA_DIRECTORY = '../data/oai_subset'
 # DATA_TRAIN_DIRECTORY = '../data/oai_subset/train'
-# DATA_VALID_DIRECTORY = '../data/oai_subset'
+# DATA_VALID_DIRECTORY = '../data/oai_subset/valid'
+
+# Define data directory - Local
+# DATA_DIRECTORY = 'C:\\Users\\james\\OneDrive - University of Leeds\\1. Projects\\1.1 PhD\\1.1.1 Project\\Data\\OAI Subset\\'
+# DATA_TRAIN_DIRECTORY = 'C:\\Users\\james\\OneDrive - University of Leeds\\1. Projects\\1.1 PhD\\1.1.1 Project\\Data\\OAI Subset\\train'
+# DATA_VALID_DIRECTORY = 'C:\\Users\\james\\OneDrive - University of Leeds\\1. Projects\\1.1 PhD\\1.1.1 Project\\Data\\OAI Subset\\valid'
 
 DATA_RAW_DIRECTORY = '../data/raw'
 DATA_PROCESSED_DIRECTORY = '../data/processed'
@@ -83,7 +89,7 @@ model = UNet3D(1, 1, 16)
 model.to(device)
 
 # Specifiy criterion and optimiser
-loss_fn = bce_dice_loss
+loss_fn = bce_dice_loss_batch
 l_rate = hyperparams['l_rate']
 optimizer = optim.Adam(model.parameters(), lr=l_rate)
 
