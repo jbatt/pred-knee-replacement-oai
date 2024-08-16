@@ -54,6 +54,7 @@ MODELS_CHECKPOINTS_PATH = '../models/checkpoints'
 
 # Set Device
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+print(f"Current device: {device}")
 
 # Read in hyperparams
 hyperparams = read_hyperparams('../src/models/hyperparams_unet.txt')
@@ -67,7 +68,7 @@ val_paths = np.array([os.path.basename(i).split('.')[0] for i in glob.glob(f'{DA
 
 # Set transforms
 if hyperparams['transforms'] == "True":
-    # Let's try a horizontal flip transform
+    # Horizontal flip transform
     transform = transforms.functional.hflip
 else:
     transform = None
@@ -140,8 +141,15 @@ for epoch in range(num_epochs):
     print(f"Epoch {epoch+1}\n-------------------------------")
 
     train_loss, avg_train_dice = train_loop(train_dataloader, device, model, loss_fn, optimizer, pred_threshold)
+
+    print(f"Train loss: {train_loss}")
+    print(f"Train avg dice score: {avg_train_dice}")
+
     validation_loss, avg_validation_dice = validation_loop(validation_dataloader, device, model, loss_fn, pred_threshold)
 
+    print(f"Validation loss: {train_loss}")
+    print(f"Validation avg dice score: {avg_train_dice}")
+    
     # log to wandb
     wandb.log({"Train Loss": train_loss, "Train Dice Score": avg_train_dice,
                   "Val Loss": validation_loss, "Val Dice Score": avg_validation_dice})

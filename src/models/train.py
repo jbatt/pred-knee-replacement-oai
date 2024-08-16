@@ -7,6 +7,7 @@ from models.evaluation import dice_coefficient_batch
 def train_loop(dataloader, device, model, loss_fn, optimizer, pred_threshold):
 
     # Load model to device
+    print("Loading model to device")
     model.to(device)
 
     # Initialise variables
@@ -16,10 +17,14 @@ def train_loop(dataloader, device, model, loss_fn, optimizer, pred_threshold):
     epoch_dice = []
 
     size = len(dataloader.dataset)
+    print(f"Dataset size = {size}")
 
     # Set the model to training mode
+    print(f"Setting model to train mode...")
     model.train()
 
+    print("Starting training loop...")
+    
     # For each batch from the data loader
     for batch, (X, y) in enumerate(dataloader):
 
@@ -40,8 +45,8 @@ def train_loop(dataloader, device, model, loss_fn, optimizer, pred_threshold):
         # Store batch size
         batch_size = len(y)
 
-        # # For every 10th batch, print the loss and current progress
-        if batch % 10 == 0:
+        # # For every 5th batch, print the loss and current progress
+        if batch % 5 == 0:
             loss, current = loss.item(), batch * batch_size + len(X)
 
             print(f"loss: {loss:>7f}  [{current:>5d}/{size:>5d}]")
