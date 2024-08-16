@@ -7,7 +7,7 @@
 #$ -l h_rt=00:15:00
 
 #Request some memory per core
-#$ -l h_vmem=4G
+#$ -l h_vmem=16G
 
 #Get email at start and end of the job
 #$ -m be
