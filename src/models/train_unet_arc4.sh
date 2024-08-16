@@ -4,17 +4,17 @@
 #$ -V -cwd
 
 #Request some time- min 15 mins - max 48 hours
-#$ -l h_rt=00:15:00
+#$ -l h_rt=00:30:00
 
-#Request some memory per core
-#$ -l h_vmem=32G
+#Request GPU
+#$ -l coproc_v100=1
 
 #Get email at start and end of the job
 #$ -m be
 
 #Now run the job
 # module load python/anaconda3
-# module load cuda
+module load cuda
 # module load pytorch
 
 python models/train_unet.py
