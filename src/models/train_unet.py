@@ -135,7 +135,7 @@ train_start_file = train_start.replace(" ", "-").replace(".","").replace(":","_"
 min_validation_loss = float('inf')
 
 # Model training
-print(f"TRAINING MODEL \n-------------------------------")
+print(f"TRAINING MODEL FOR {num_epochs} EPOCHS\n-------------------------------")
 
 for epoch in range(num_epochs):
     print(f"Epoch {epoch+1}\n-------------------------------")
