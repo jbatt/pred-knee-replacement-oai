@@ -1,13 +1,11 @@
-#R single core submission script
-
 #Run with current environment (-V) and in the current directory (-cwd)
 #$ -V -cwd
 
 #Request some time- min 15 mins - max 48 hours
-#$ -l h_rt=01:00:00
+#$ -l h_rt=03:00:00
 
 #Request GPU
-#$ -l coproc_v100=1
+#$ -l coproc_v100=2
 
 #Get email at start and end of the job
 #$ -m be
