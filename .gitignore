@@ -78,6 +78,10 @@ target/
 # exclude data from source control by default
 /data/
 
+# exclude hpc output and error file
+.sh.e*
+.sh.o*
+
 # exclude weights and biases folder by default
 /src/wandb/
 
