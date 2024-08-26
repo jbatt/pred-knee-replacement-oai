@@ -21,6 +21,7 @@ class ConvBlock(nn.Module):
         x = self.conv(x)
         x = self.bn(x)
         x = self.relu(x)
+        
         return x
 
 
@@ -36,13 +37,13 @@ class EncBlock(nn.Module):
     def forward(self, x):
         x = self.conv1(x)
         x = self.conv2(x)
+
         return x
     
 # Unet Upsampling block
 class UpConvBlock(nn.Module):   
     def __init__(self, in_channels, out_channels):
         super(UpConvBlock, self).__init__()
-
 
         # Transpose convolutions
         # ConvTransose3D is an alternative to upsampling
@@ -55,11 +56,10 @@ class UpConvBlock(nn.Module):
 
     def forward(self, x, skip_connection):
         x = self.upconv(x)
-        #print('x: ',x.shape)
-        #print('skip: ',skip_connection.shape)
         x = torch.cat([x, skip_connection], dim=1)  # Concatenate upsampled with skip connection
         x = self.conv1(x)
         x = self.conv2(x)
+
         return x
     
 # Define 3D U-Net architecture
