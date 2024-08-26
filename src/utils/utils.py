@@ -2,10 +2,14 @@ import numpy as np
 from torch.nn import functional as F
 from torchvision.transforms.functional import resize
 
+# Define debug function for printing debug statements 
+def debug_print(debug=False, debug_statement="") -> None:
+     if debug:
+          print(debug_statement)
 
 # Function that reads in txt file with each line in format x=y
 # and converts to hyperparam dictionary
-def read_hyperparams(path):
+def read_hyperparams(path) -> dict:
     hyperparams = {}
     with open(path, 'r') as file:
         for line in file:
