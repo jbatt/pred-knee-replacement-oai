@@ -22,22 +22,32 @@ if '..\\src' not in sys.path:
 from models.model_unet import UNet3DMulticlass
 from utils.utils import read_hyperparams
 from data.datasets import KneeSegDataset3DMulticlass
-from models.evaluation import bce_dice_loss #, dice_coefficient, batch_dice_coeff
+from models.evaluation import bce_dice_loss_batch #, dice_coefficient, batch_dice_coeff
 from models.train import train_loop, validation_loop 
 
 
-# Define data directory
-DATA_DIRECTORY = '../data/oai_subset'
-DATA_TRAIN_DIRECTORY = '../data/oai_subset/train'
-DATA_VALID_DIRECTORY = '../data/oai_subset'
+# Set running environment (True for HPC, False for local)
+HPC_FLAG = sys.argv[1]
+HPC_FLAG
 
-DATA_RAW_DIRECTORY = '../data/raw'
-DATA_PROCESSED_DIRECTORY = '../data/processed'
-DATA_INTERIM_DIRECTORY = '../data/processed'
+if HPC_FLAG:
+    # Define data directory - ARC4
+    # Using absolute paths because ray-tune changing working directory
+    DATA_DIRECTORY = '/nobackup/scjb/data/oai_subset'
+    DATA_TRAIN_DIRECTORY = '/nobackup/scjb/data/oai_subset/train'
+    DATA_VALID_DIRECTORY = '/nobackup/scjb/data/oai_subset/valid'
+    RESULTS_PATH = '/home/home02/scjb/pred-knee-replacement-oai/results'
+    MODELS_PATH = '/home/home02/scjb/pred-knee-replacement-oai/models'
+    MODELS_CHECKPOINTS_PATH = '/home/home02/scjb/pred-knee-replacement-oai/models/checkpoints'
 
-RESULTS_PATH = '../results'
-MODELS_PATH = '../models'
-MODELS_CHECKPOINTS_PATH = '../models/checkpoints'
+else:
+    # Define data directory for local runs
+    DATA_DIRECTORY = '../data/oai_subset'
+    DATA_TRAIN_DIRECTORY = '../data/oai_subset/train'
+    DATA_VALID_DIRECTORY = '../data/oai_subset'
+    RESULTS_PATH = '../results'
+    MODELS_PATH = '../models'
+    MODELS_CHECKPOINTS_PATH = '../models/checkpoints'
 
 
 # Set Device
@@ -73,13 +83,13 @@ validation_dataloader = DataLoader(validation_dataset, batch_size=2, num_workers
 
 
 # Create model - 4 output channels for 4 classes
-model = UNet3DMultiClass(1, 4, 16)
+model = UNet3DMulticlass(1, 4, 16)
 
 # Load model to device
 model.to(device)
 
 # Specifiy criterion and optimiser
-loss_fn = bce_dice_loss
+loss_fn = bce_dice_loss_batch
 l_rate = hyperparams['l_rate']
 optimizer = optim.Adam(model.parameters(), lr=l_rate)
 
