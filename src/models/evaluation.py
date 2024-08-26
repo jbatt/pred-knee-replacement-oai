@@ -1,8 +1,16 @@
 import torch
 import torch.nn as nn
+import sys
+
+# Include src directory in path to import custom modules
+if '..\\..\\src' not in sys.path:
+    sys.path.append('..\\..\\src')
+
+from utils.utils import debug_print
+
 
 # Define Dice coefficient for predicted and ground truth masks
-def dice_coefficient(pred_mask: torch.Tensor, gt_mask: torch.Tensor):
+def dice_coefficient(pred_mask: torch.Tensor, gt_mask: torch.Tensor, debug=False) -> float:
     """Returns the Dice coefficient for between two masks
 
     Args:
@@ -15,10 +23,12 @@ def dice_coefficient(pred_mask: torch.Tensor, gt_mask: torch.Tensor):
 
     # Sum the product of the two masks (e.g. the number of voxels they overlap)
     intersection = torch.sum(pred_mask * gt_mask)
-    
+    debug_print(debug, f"intersection = {intersection}")
+
     # Sum the total area of both masks 
     size = pred_mask.sum().item() + gt_mask.sum().item()
-    
+    debug_print(debug, f"size = {size}")
+
     # Calculate dice score as twice the intersection divided 
     dice = (2.0 * intersection) / size
 
@@ -30,7 +40,7 @@ def dice_coefficient(pred_mask: torch.Tensor, gt_mask: torch.Tensor):
 # 'smooth' constant included to avoid NaN errors when volume is zero
 def dice_coefficient_batch(pred_mask_batch: torch.Tensor, 
                            gt_mask_batch: torch.Tensor, 
-                           smooth=1e-5):
+                           smooth=1e-5) -> torch.Tensor:
     """Returns the dice coefficient for a batch of predicted and 
     ground truth masks.
 
@@ -43,15 +53,21 @@ def dice_coefficient_batch(pred_mask_batch: torch.Tensor,
     Returns:
         float: Dice coefficient for input batch
     """
+
+
     # Start from third element (i.e. start of spatial dimensions)
     spatial_dims = tuple(range(2, len(pred_mask_batch.shape)))
-    
+    print(f"spatial_dims = {spatial_dims}")
+
     # Calculate the intersection as the sum over spatial dimensions the product of the two masks
     intersection = torch.sum(pred_mask_batch * gt_mask_batch, dim=spatial_dims)
-    
+    print(f"intersection = {intersection}")
+
+
     # Separately sum each mask over their respective spatial dimenions
     size = torch.sum(pred_mask_batch, dim=spatial_dims) + torch.sum(gt_mask_batch, dim=spatial_dims)
-    
+    print(f"size = {size}")
+
     # Calculate Dice score
     dice = (2.0 * intersection + smooth) / (size + smooth)
 
