@@ -56,7 +56,7 @@ else:
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 # Read in hyperparams
-hyperparams = read_hyperparams('..\\src\\models\\hyperparams_unet.txt')
+hyperparams = read_hyperparams('../src/models/hyperparams_unet.txt')
 print(hyperparams)
 
 
