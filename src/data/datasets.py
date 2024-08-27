@@ -193,8 +193,8 @@ class KneeSegDataset3DMulticlass(Dataset):
         mask = np.clip(combined_mask, 0, 1) #just incase the two menisci ground truths overlap, clip at 1
         
         # crop image/mask
-        image = crop_im(image, dim1_lower=10, dim1_upper=320, dim2_lower=20, dim2_upper=330)
-        mask = crop_im(mask, dim1_lower=10, dim1_upper=320, dim2_lower=20, dim2_upper=330)
+        image = crop_im(image, dim1_lower=8, dim1_upper=320, dim2_lower=18, dim2_upper=330)
+        mask = crop_im(mask, dim1_lower=8, dim1_upper=320, dim2_lower=18, dim2_upper=330)
 
         # normalise image
         image = clip_and_norm(image, 0.005)
