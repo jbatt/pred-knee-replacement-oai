@@ -118,7 +118,7 @@ class UNet3D(nn.Module):
 # Define Multiclass 3D U-Net architecture
 class UNet3DMulticlass(nn.Module):
     def __init__(self, in_channels, out_channels, num_kernels_1):
-        super(UNet3D, self).__init__()
+        super(UNet3DMulticlass, self).__init__()
 
         # Encoder
         # Encoder consists of three encoding blocks which double the number of kernels with each block
