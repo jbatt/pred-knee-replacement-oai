@@ -54,6 +54,7 @@ else:
 
 # Set Device
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+print(f"Current device: {device}")
 
 # Read in hyperparams
 hyperparams = read_hyperparams('../src/models/hyperparams_unet.txt')
@@ -88,6 +89,7 @@ validation_dataloader = DataLoader(validation_dataset, batch_size=2, num_workers
 model = UNet3DMulticlass(1, 4, 16)
 
 # Load model to device
+print(f"Loading model to device: {device}")
 model.to(device)
 
 # Specifiy criterion and optimiser
