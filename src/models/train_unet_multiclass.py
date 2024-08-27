@@ -16,8 +16,10 @@ from datetime import datetime
 import wandb  # Import Weights and Biases for tracking model training
 
 # Include src directory in path to import custom modules
-if '..\\src' not in sys.path:
-    sys.path.append('..\\src')
+if '../src' not in sys.path:
+    sys.path.append('../src')
+
+print(sys.path)
 
 from models.model_unet import UNet3DMulticlass
 from utils.utils import read_hyperparams
