@@ -173,28 +173,44 @@ class KneeSegDataset3DMulticlass(Dataset):
             # both together
             minisc_mask = np.add(menisc_med_mask, menisc_lat_mask)
 
-            # Define tibial medial and lateral cart. masks
-            tib_med_mask = mask[...,1]
-            tib_lat_mask = mask[...,2]
+            # # Define tibial medial and lateral cart. masks
+            # tib_med_mask = mask[...,1]
+            # tib_lat_mask = mask[...,2]
             
-            # Combine tibial masks
-            tib_mask = np.add(tib_med_mask, tib_lat_mask)
+            # # Combine tibial masks
+            # tib_mask = np.add(tib_med_mask, tib_lat_mask)
 
-            # Define femoral cart. mask
-            fem_mask =  mask[...,0]
+            # # Define femoral cart. mask
+            # fem_mask =  mask[...,0]
 
-            # Define femoral cart. mask
-            pat_mask =  mask[...,3]
+            # # Define femoral cart. mask
+            # pat_mask =  mask[...,3]
 
-            # Create mask using combined tissue masks
-            combined_mask = np.stack([fem_mask, tib_mask, pat_mask, minisc_mask], axis=-1)
+            # # Create mask using combined tissue masks
+            # combined_mask = np.stack([fem_mask, tib_mask, pat_mask, minisc_mask], axis=-1)
 
+            tibial_mask = np.add(mask[:,:,:,1], mask[:,:,:,2])
 
-        mask = np.clip(combined_mask, 0, 1) #just incase the two menisci ground truths overlap, clip at 1
+            # Clip minsc and tibial masks at 1 in case the two ground truths overlap
+            minisc_mask = np.clip(minisc_mask, 0, 1)
+            tibial_mask = np.clip(tibial_mask, 0, 1)
+
+            # Create base mask of all zero using shape of mensicus mask
+            menisc_mask_shape = minisc_mask.shape
+            mask_all = np.zeros(menisc_mask_shape)
+
+            # Fill in class index values based on binary masks: 0=background, 1=femoral, 2=tibial, 3=patellar, 4=meniscus
+            mask_all[mask[:,:,:,0]==1] = 1
+            mask_all[tibial_mask[:,:,:]==1] = 2
+            mask_all[mask[:,:,:,3]==1] = 3
+            mask_all[minisc_mask[:,:,:]==1] = 4
+
+        # # Clip in case ground truths overlap
+        # mask = np.clip(mask_all, 0, 1) 
         
         # crop image/mask
         image = crop_im(image, dim1_lower=24, dim1_upper=312, dim2_lower=34, dim2_upper=322)
-        mask = crop_im(mask, dim1_lower=24, dim1_upper=312, dim2_lower=34, dim2_upper=322)
+        mask = crop_im(mask_all, dim1_lower=24, dim1_upper=312, dim2_lower=34, dim2_upper=322)
 
         # normalise image
         image = clip_and_norm(image, 0.005)
