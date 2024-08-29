@@ -85,8 +85,8 @@ train_dataloader = DataLoader(train_dataset, batch_size=int(hyperparams['batch_s
 validation_dataloader = DataLoader(validation_dataset, batch_size=2, num_workers = 1, shuffle=False)
 
 
-# Create model - 4 output channels for 4 classes
-model = UNet3DMulticlass(1, 4, 16)
+# Create model - 5 output channels for 5 classes
+model = UNet3DMulticlass(1, 5, 16)
 
 # Load model to device
 print(f"Loading model to device: {device}")
