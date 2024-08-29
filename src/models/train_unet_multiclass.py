@@ -32,7 +32,7 @@ from models.train import train_loop, validation_loop
 HPC_FLAG = sys.argv[1]
 HPC_FLAG
 
-if HPC_FLAG:
+if HPC_FLAG == "1":
     # Define data directory - ARC4
     # Using absolute paths because ray-tune changing working directory
     DATA_DIRECTORY = '/nobackup/scjb/data/oai_subset'
