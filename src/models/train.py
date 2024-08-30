@@ -1,11 +1,16 @@
 # Define functions to help with model training
-
+import gc
 import torch
+
 from models.evaluation import dice_coefficient_batch
 
 # Define a training loop function for reuse later 
 def train_loop(dataloader, device, model, loss_fn, optimizer, pred_threshold):
 
+    # Release all unoccupied cached memory
+    gc.collect()
+    torch.cuda.empty_cache()
+    
     # Load model to device
     print("Loading model to device")
     model.to(device)
