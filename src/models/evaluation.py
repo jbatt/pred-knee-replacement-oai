@@ -54,7 +54,6 @@ def dice_coefficient_batch(pred_mask_batch: torch.Tensor,
         float: Dice coefficient for input batch
     """
 
-
     # Start from third element (i.e. start of spatial dimensions)
     spatial_dims = tuple(range(2, len(pred_mask_batch.shape)))
     print(f"spatial_dims = {spatial_dims}")
@@ -120,3 +119,28 @@ def bce_dice_loss_batch(pred_mask_batch, gt_mask_batch):
     bce = bce_loss(pred_mask_batch, gt_mask_batch)
     
     return bce + dice
+
+
+
+# Loss includes both cross-entropy and dice loss (summed)
+def ce_dice_loss_batch(pred_mask_batch, gt_mask_batch):
+    
+    """Returns batch loss caluclated as the sum of the  
+    cross-entropy loss and dice loss.
+
+    Args:
+        pred_mask_batch (torch.Tensor): Predicted mask batch
+        gt_mask_batch (torch.Tensor): Ground truth mask batch
+        
+    Returns:
+        float: Binary cross-entropy and Dice loss summed
+    """
+
+    # Caluclate dice loss for batch
+    dice = dice_loss_batch(pred_mask_batch, gt_mask_batch)
+    
+    # Caluclate binary-cross entropy loss
+    ce_loss = nn.CrossEntropyLoss()
+    ce = ce_loss(pred_mask_batch, gt_mask_batch)
+    
+    return ce + dice
