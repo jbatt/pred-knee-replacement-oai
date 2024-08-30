@@ -51,6 +51,7 @@ else:
     MODELS_PATH = '../models'
     MODELS_CHECKPOINTS_PATH = '../models/checkpoints'
 
+NUM_CLASSES = 5
 
 # Set Device
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -77,8 +78,8 @@ else:
 # Define PyTorch datasets and dataloader
 
 # Define datasets
-train_dataset = KneeSegDataset3DMulticlass(train_paths, DATA_DIRECTORY, transform=transform)
-validation_dataset = KneeSegDataset3DMulticlass(val_paths, DATA_DIRECTORY, split='valid')
+train_dataset = KneeSegDataset3DMulticlass(train_paths, DATA_DIRECTORY, num_classes=NUM_CLASSES, transform=transform)
+validation_dataset = KneeSegDataset3DMulticlass(val_paths, DATA_DIRECTORY, num_classes=NUM_CLASSES, split='valid')
 
 # Define dataloaders
 train_dataloader = DataLoader(train_dataset, batch_size=int(hyperparams['batch_size']), num_workers = 1, shuffle=True)
