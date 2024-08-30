@@ -24,7 +24,7 @@ print(sys.path)
 from models.model_unet import UNet3DMulticlass
 from utils.utils import read_hyperparams
 from data.datasets import KneeSegDataset3DMulticlass
-from models.evaluation import bce_dice_loss_batch #, dice_coefficient, batch_dice_coeff
+from models.evaluation import ce_dice_loss_batch #, dice_coefficient, batch_dice_coeff
 from models.train import train_loop, validation_loop 
 
 
@@ -93,7 +93,7 @@ print(f"Loading model to device: {device}")
 model.to(device)
 
 # Specifiy criterion and optimiser
-loss_fn = bce_dice_loss_batch
+loss_fn = ce_dice_loss_batch
 l_rate = hyperparams['l_rate']
 optimizer = optim.Adam(model.parameters(), lr=l_rate)
 
