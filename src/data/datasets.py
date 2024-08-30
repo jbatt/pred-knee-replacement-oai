@@ -104,12 +104,13 @@ class KneeSegDataset3D(Dataset):
 
 # Multiclass knee cartiage segmentation masks
 class KneeSegDataset3DMulticlass(Dataset):
-    def __init__(self, file_paths, data_dir, split='train', transform=None, transform_chance=0.5):
+    def __init__(self, file_paths, data_dir, num_classes, split='train', transform=None, transform_chance=0.5):
         self.file_paths = file_paths
         self.data_dir = data_dir
         self.split = split
         self.transform = transform
         self.transform_chance = transform_chance
+        self.num_classes = num_classes
 
     # Return length of dataset
     def __len__(self):
@@ -195,15 +196,29 @@ class KneeSegDataset3DMulticlass(Dataset):
             minisc_mask = np.clip(minisc_mask, 0, 1)
             tibial_mask = np.clip(tibial_mask, 0, 1)
 
-            # Create base mask of all zero using shape of mensicus mask
-            menisc_mask_shape = minisc_mask.shape
-            mask_all = np.zeros(menisc_mask_shape)
+            # # Create base mask of all zero using shape of mensicus mask
+            # menisc_mask_shape = minisc_mask.shape
+            # mask_all = np.zeros(menisc_mask_shape)
 
-            # Fill in class index values based on binary masks: 0=background, 1=femoral, 2=tibial, 3=patellar, 4=meniscus
-            mask_all[mask[:,:,:,0]==1] = 1
-            mask_all[tibial_mask[:,:,:]==1] = 2
-            mask_all[mask[:,:,:,3]==1] = 3
-            mask_all[minisc_mask[:,:,:]==1] = 4
+            # # Fill in class index values based on binary masks: 0=background, 1=femoral, 2=tibial, 3=patellar, 4=meniscus
+            # mask_all[mask[:,:,:,0]==1] = 1
+            # mask_all[tibial_mask[:,:,:]==1] = 2
+            # mask_all[mask[:,:,:,3]==1] = 3
+            # mask_all[minisc_mask[:,:,:]==1] = 4
+
+            # Adjust mask dimension from 6 classes to 4 classes
+            mask_dims = mask.shape[:-1]
+            mask_dims += (self.num_classes,)
+            mask_dims
+
+            # Initalise mask
+            mask_all = np.zeros(mask_dims)
+
+            # Fill in each layer of multiclass mask with each classes seg mask
+            mask_all[:,:,:,1] = mask[:,:,:,0]
+            mask_all[:,:,:,2] = tibial_mask 
+            mask_all[:,:,:,3] = mask[:,:,:,3]
+            mask_all[:,:,:,4] = minisc_mask
 
         # # Clip in case ground truths overlap
         # mask = np.clip(mask_all, 0, 1) 
