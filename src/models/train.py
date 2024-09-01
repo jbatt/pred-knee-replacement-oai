@@ -2,7 +2,7 @@
 import gc
 import torch
 
-from models.evaluation import dice_coefficient_batch
+from models.evaluation import dice_coefficient_multi_batch
 
 # Define a training loop function for reuse later 
 def train_loop(dataloader, device, model, loss_fn, optimizer, pred_threshold, num_classes):
@@ -12,7 +12,7 @@ def train_loop(dataloader, device, model, loss_fn, optimizer, pred_threshold, nu
     torch.cuda.empty_cache()
     
     # Load model to device
-    print("Loading model to device")
+    print(f"Loading model to device: {device}")
     model.to(device)
 
     # Initialise variables
@@ -68,7 +68,7 @@ def train_loop(dataloader, device, model, loss_fn, optimizer, pred_threshold, nu
 
         # Append the batch loss to enable calculation of the average epoch loss
         epoch_loss.append(loss)
-        epoch_dice.append(dice_coefficient_batch(pred > pred_threshold, y).item())
+        epoch_dice.append(dice_coefficient_multi_batch(pred, y, num_classes=num_classes).item())
 
     # Calculate the average loss and accuracy for the epoch
     avg_epoch_loss = sum(epoch_loss) / len(epoch_loss)
@@ -115,7 +115,7 @@ def validation_loop(dataloader, device, model, loss_fn, pred_threshold, num_clas
             validation_loss += loss_fn(pred, y, num_classes).item()
 
             # Determine dice score associated with the current predictions and add to batch dice score
-            validation_dice += dice_coefficient_batch(pred > pred_threshold, y, num_classes).item()
+            validation_dice += dice_coefficient_multi_batch(pred > pred_threshold, y, num_classes).item()
 
     validation_loss /= num_batches
     validation_dice /= num_batches
