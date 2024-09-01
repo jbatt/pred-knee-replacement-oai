@@ -155,16 +155,16 @@ for epoch in range(num_epochs):
     # save as best if val loss is lowest so far
     if validation_loss < min_validation_loss:
         print(f'Validation Loss Decreased({min_validation_loss:.6f}--->{validation_loss:.6f}) \t Saving The Model')
-        model_path = os.path.join(MODELS_CHECKPOINTS_PATH, f"multiclass_{hyperparams['run_name']}_best_E.pth")
+        model_path = os.path.join(MODELS_CHECKPOINTS_PATH, f"{train_start_file}_multiclass_{hyperparams['run_name']}_best_E.pth")
         torch.save(model.state_dict(), model_path)
-        print(f"Best epoch yet: {epoch}")
+        print(f"Best epoch yet: {epoch + 1}")
         
         # reset min as current
         min_validation_loss = validation_loss
 
 
 # Once training is done, save final model
-model_path = os.path.join(MODELS_CHECKPOINTS_PATH, f"{hyperparams['run_name']}_final.pth")
+model_path = os.path.join(MODELS_CHECKPOINTS_PATH, f"{train_start_file}_{hyperparams['run_name']}_final.pth")
 torch.save(model.state_dict(), model_path)
 
 wandb.finish()
