@@ -87,6 +87,10 @@ def dice_coefficient_batch(pred_mask_batch: torch.Tensor,
 
 
 def dice_coefficient_multi_batch(pred_mask_batch, gt_mask_batch, num_labels, smooth=1e-5):
+    
+    print(f"original pred_mask_batch shape = {pred_mask_batch.shape}")
+    print(f"original gt_mask_batch shape = {gt_mask_batch.shape}")
+    
     dice = 0
     for index in range(num_labels):
         dice += dice_coefficient_batch(pred_mask_batch[:,index,:,:,:], gt_mask_batch[:,index,:,:,:], smooth=smooth)

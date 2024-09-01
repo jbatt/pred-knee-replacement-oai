@@ -37,11 +37,16 @@ def train_loop(dataloader, device, model, loss_fn, optimizer, pred_threshold, nu
         y = y.to(device)
 
         # Compute prediction and loss
+        print("Computing model predictions...")
         pred = model(X)
+        
+        print("Calculating loss...")
         loss = loss_fn(pred, y, num_classes)
 
         # Backpropagation
+        print("Computing backpropagation...")
         loss.backward()
+        
         # Perform model step
         optimizer.step()
         # Reset gradients to zero
