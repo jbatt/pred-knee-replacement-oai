@@ -56,7 +56,8 @@ def dice_coefficient_batch(pred_mask_batch: torch.Tensor,
     print(f"original pred_mask_batch shape = {pred_mask_batch.shape}")
     print(f"original gt_mask_batch shape = {gt_mask_batch.shape}")
 
-    # Remove dim of 1 from ground truth
+    # Remove dim of 1 from predicted mask and ground truth 
+    pred_mask_batch = torch.squeeze(pred_mask_batch, dim=None)
     gt_mask_batch = torch.squeeze(gt_mask_batch, dim=None)
 
     # Start from third element (i.e. start of spatial dimensions)
@@ -80,11 +81,13 @@ def dice_coefficient_batch(pred_mask_batch: torch.Tensor,
 
 
 
-def dice_coefficient_multi_batch(y_true, y_pred, numLabels):
-    dice=0
-    for index in range(numLabels):
-        dice += dice_coefficient_batch(y_true[:,index,:,:,:], y_pred[:,index,:,:,:])
-    return dice/numLabels # Reutn average dice from all class labels
+
+def dice_coefficient_multi_batch(pred_mask_batch, gt_mask_batch, num_labels):
+    dice = 0
+    for index in range(num_labels):
+        dice += dice_coefficient_batch(pred_mask_batch[:,index,:,:,:], gt_mask_batch[:,index,:,:,:])
+    
+    return dice / num_labels # Returnn average dice from all class labels
 
 
 
