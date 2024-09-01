@@ -155,7 +155,7 @@ for epoch in range(num_epochs):
     # save as best if val loss is lowest so far
     if validation_loss < min_validation_loss:
         print(f'Validation Loss Decreased({min_validation_loss:.6f}--->{validation_loss:.6f}) \t Saving The Model')
-        model_path = f"{MODELS_CHECKPOINTS_PATH}/{hyperparams['run_name']}_best_E.pth"
+        model_path = os.path.join(MODELS_CHECKPOINTS_PATH, f"multiclass_{hyperparams['run_name']}_best_E.pth")
         torch.save(model.state_dict(), model_path)
         print(f"Best epoch yet: {epoch}")
         
