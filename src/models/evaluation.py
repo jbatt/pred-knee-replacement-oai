@@ -83,12 +83,6 @@ def dice_coefficient_multi_batch(pred_mask_batch, gt_mask_batch, num_labels, smo
     
     print(f"Multiclass Dice loss pred_mask_batch shape = {pred_mask_batch.shape}")
     print(f"Multiclass Dice loss gt_mask_batch shape = {gt_mask_batch.shape}")
-
-
-    # Remove dim of 1 from predicted mask and ground truth 
-    gt_mask_batch = torch.squeeze(gt_mask_batch, dim=1)
-
-    print(f"squeezed gt_mask_batch shape = {gt_mask_batch.shape}")
     
     dice = 0
     for index in range(num_labels):
@@ -160,6 +154,9 @@ def ce_dice_loss_batch(pred_mask_batch, gt_mask_batch, num_labels):
     Returns:
         float: Binary cross-entropy and Dice loss summed
     """
+    # Remove dim of 1 from predicted mask and ground truth 
+    gt_mask_batch = torch.squeeze(gt_mask_batch, dim=1)
+    print(f"squeezed gt_mask_batch shape = {gt_mask_batch.shape}")
 
     # Caluclate dice loss for batch
     dice = dice_coefficient_multi_batch(pred_mask_batch, gt_mask_batch, num_labels)
