@@ -139,7 +139,7 @@ class UNet3DMulticlass(nn.Module):
 
         # Output
         self.out_conv = nn.Conv3d(num_kernels_1, out_channels, kernel_size=1)
-        self.softmax = nn.Softmax()
+        # self.softmax = nn.Softmax()
 
     def forward(self, x):
         # Encoder
@@ -160,6 +160,6 @@ class UNet3DMulticlass(nn.Module):
 
         # Output
         x = self.out_conv(x)
-        x = self.softmax(x)
+        # x = self.softmax(x)
 
         return x
