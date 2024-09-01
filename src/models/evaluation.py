@@ -110,8 +110,8 @@ def dice_coefficient_multi_batch(pred_mask_batch, gt_mask_batch, num_labels, smo
         # Release all unoccupied cached memory
         gc.collect()
         torch.cuda.empty_cache()
-        
-        dice += dice_coefficient_batch(pred_mask_batch[:,index,:,:,:], gt_mask_batch[:,index,:,:,:], smooth=smooth)
+         
+        dice += float(dice_coefficient_batch(pred_mask_batch[:,index,:,:,:], gt_mask_batch[:,index,:,:,:], smooth=smooth))
     
     print(f"\nDice score = {dice}\n")
     return dice / num_labels # Returnn average dice from all class labels
