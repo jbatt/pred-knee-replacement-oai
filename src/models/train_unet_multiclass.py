@@ -44,12 +44,15 @@ if HPC_FLAG == "1":
 
 else:
     # Define data directory for local runs
-    DATA_DIRECTORY = '../data/oai_subset'
-    DATA_TRAIN_DIRECTORY = '../data/oai_subset/train'
-    DATA_VALID_DIRECTORY = '../data/oai_subset'
+    DATA_DIRECTORY = 'C:\\Users\\james\\OneDrive - University of Leeds\\1. Projects\\1.1 PhD\\1.1.1 Project\\Data\\OAI Subset\\'
+    DATA_TRAIN_DIRECTORY = 'C:\\Users\\james\\OneDrive - University of Leeds\\1. Projects\\1.1 PhD\\1.1.1 Project\\Data\\OAI Subset\\train'
+    DATA_VALID_DIRECTORY = 'C:\\Users\\james\\OneDrive - University of Leeds\\1. Projects\\1.1 PhD\\1.1.1 Project\\Data\\OAI Subset\\valid'
+
     RESULTS_PATH = '../results'
     MODELS_PATH = '../models'
     MODELS_CHECKPOINTS_PATH = '../models/checkpoints'
+
+ 
 
 NUM_CLASSES = 5
 
@@ -142,8 +145,8 @@ print(f"TRAINING MODEL \n-------------------------------")
 for epoch in range(num_epochs):
     print(f"Epoch {epoch+1}\n-------------------------------")
 
-    train_loss, avg_train_dice = train_loop(train_dataloader, device, model, loss_fn, optimizer, pred_threshold)
-    validation_loss, avg_validation_dice = validation_loop(validation_dataloader, device, model, loss_fn, pred_threshold)
+    train_loss, avg_train_dice = train_loop(train_dataloader, device, model, loss_fn, optimizer, pred_threshold, num_classes=NUM_CLASSES)
+    validation_loss, avg_validation_dice = validation_loop(validation_dataloader, device, model, loss_fn, pred_threshold, num_classes=NUM_CLASSES)
 
     # log to wandb
     wandb.log({"Train Loss": train_loss, "Train Dice Score": avg_train_dice,
