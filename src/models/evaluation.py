@@ -2,6 +2,8 @@ import torch
 import torch.nn as nn
 import sys
 import torch.nn as nn
+import gc
+
 
 # Include src directory in path to import custom modules
 if '..\\..\\src' not in sys.path:
@@ -187,6 +189,11 @@ def ce_dice_loss_multi_batch(pred_mask_batch_logits, gt_mask_batch, num_labels):
     Returns:
         float: Binary cross-entropy and Dice loss summed
     """
+
+    # Release all unoccupied cached memory
+    gc.collect()
+    torch.cuda.empty_cache()
+    
     # Remove dim of 1 from predicted mask and ground truth 
     gt_mask_batch = torch.squeeze(gt_mask_batch, dim=1)
     print(f"squeezed gt_mask_batch shape = {gt_mask_batch.shape}")

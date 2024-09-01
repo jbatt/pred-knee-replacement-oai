@@ -81,6 +81,10 @@ def train_loop(dataloader, device, model, loss_fn, optimizer, pred_threshold, nu
 # Define a validation loop function for reuse later 
 def validation_loop(dataloader, device, model, loss_fn, pred_threshold, num_classes):
 
+    # Release all unoccupied cached memory
+    gc.collect()
+    torch.cuda.empty_cache()
+    
     valid_epoch_loss = []
     valid_epoch_dice = []
 
