@@ -35,6 +35,10 @@ def train_loop(dataloader, device, model, loss_fn, optimizer, pred_threshold, nu
     # For each batch from the data loader
     for batch, (X, y) in enumerate(dataloader):
 
+        # Release all unoccupied cached memory
+        gc.collect()
+        torch.cuda.empty_cache()
+
         X = X.to(device)
         y = y.to(device)
 
