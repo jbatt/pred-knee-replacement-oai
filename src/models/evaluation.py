@@ -55,6 +55,9 @@ def dice_coefficient_batch(pred_mask_batch: torch.Tensor,
     """
 
     # Start from third element (i.e. start of spatial dimensions)
+    print(f"Dice single pred shape: {pred_mask_batch.shape}")
+    print(f"Dice single mask shape: {gt_mask_batch.shape}")
+    
     spatial_dims = tuple(range(2, len(pred_mask_batch.shape)))
     print(f"spatial_dims = {spatial_dims}")
 
