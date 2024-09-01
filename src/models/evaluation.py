@@ -88,6 +88,13 @@ def dice_coefficient_batch(pred_mask_batch: torch.Tensor,
 
 def dice_coefficient_multi_batch(pred_mask_batch, gt_mask_batch, num_labels, smooth=1e-5):
     
+    # Release all unoccupied cached memory
+    gc.collect()
+    torch.cuda.empty_cache()
+    
+    # Ensure pred_mask_batch is probailities using softmax and not logits 
+    pred_mask_batch = nn.functional.softmax(pred_mask_batch, dim=1)
+    
     print(f"Multiclass Dice loss pred_mask_batch shape = {pred_mask_batch.shape}")
     print(f"Multiclass Dice loss gt_mask_batch shape = {gt_mask_batch.shape}")
     
@@ -197,13 +204,13 @@ def ce_dice_loss_multi_batch(pred_mask_batch_logits, gt_mask_batch, num_labels):
     # Remove dim of 1 from predicted mask and ground truth 
     gt_mask_batch = torch.squeeze(gt_mask_batch, dim=1)
     print(f"squeezed gt_mask_batch shape = {gt_mask_batch.shape}")
-
+    print(f"pred_mask_batch_logits shape = {pred_mask_batch_logits.shape}")
     
     # Calculate softmax to generate probabiltiies for dice score
     pred_mask_batch_probs = nn.functional.softmax(pred_mask_batch_logits, dim=1)
 
     # Caluclate dice loss for batch using probabilities
-    dice = dice_coefficient_multi_batch(pred_mask_batch_probs, gt_mask_batch, num_labels)
+    dice = dice_loss_multi_batch(pred_mask_batch_probs, gt_mask_batch, num_labels)
     
     # Caluclate cross entropy loss using logits
     ce_loss = nn.CrossEntropyLoss()
