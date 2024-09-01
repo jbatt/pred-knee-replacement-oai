@@ -59,7 +59,7 @@ def dice_coefficient_batch(pred_mask_batch: torch.Tensor,
     # Release all unoccupied cached memory
     gc.collect()
     torch.cuda.empty_cache()
-    
+
     # Start from third element (i.e. start of spatial dimensions)
     print(f"Dice single pred shape: {pred_mask_batch.shape}")
     print(f"Dice single mask shape: {gt_mask_batch.shape}")
@@ -106,6 +106,11 @@ def dice_coefficient_multi_batch(pred_mask_batch, gt_mask_batch, num_labels, smo
     
     dice = 0
     for index in range(num_labels):
+        
+        # Release all unoccupied cached memory
+        gc.collect()
+        torch.cuda.empty_cache()
+        
         dice += dice_coefficient_batch(pred_mask_batch[:,index,:,:,:], gt_mask_batch[:,index,:,:,:], smooth=smooth)
     
     print(f"\nDice score = {dice}\n")
