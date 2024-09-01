@@ -89,6 +89,9 @@ def dice_coefficient_multi_batch(pred_mask_batch, gt_mask_batch, num_labels, smo
     print(f"Multiclass Dice loss pred_mask_batch shape = {pred_mask_batch.shape}")
     print(f"Multiclass Dice loss gt_mask_batch shape = {gt_mask_batch.shape}")
     
+    # Remove dim of 1 from predicted mask and ground truth 
+    gt_mask_batch = torch.squeeze(gt_mask_batch)
+    
     dice = 0
     for index in range(num_labels):
         dice += dice_coefficient_batch(pred_mask_batch[:,index,:,:,:], gt_mask_batch[:,index,:,:,:], smooth=smooth)
