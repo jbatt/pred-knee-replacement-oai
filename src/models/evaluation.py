@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import sys
+import torch.nn as nn
 
 # Include src directory in path to import custom modules
 if '..\\..\\src' not in sys.path:
@@ -147,7 +148,7 @@ def bce_dice_loss_batch(pred_mask_batch, gt_mask_batch):
 
 
 # Loss includes both cross-entropy and dice loss (summed)
-def ce_dice_loss_batch(pred_mask_batch, gt_mask_batch, num_labels):
+def ce_dice_loss_batch(pred_mask_batch_logits, gt_mask_batch, num_labels):
     
     """Returns batch loss caluclated as the sum of the  
     cross-entropy loss and dice loss.
@@ -163,11 +164,15 @@ def ce_dice_loss_batch(pred_mask_batch, gt_mask_batch, num_labels):
     gt_mask_batch = torch.squeeze(gt_mask_batch, dim=1)
     print(f"squeezed gt_mask_batch shape = {gt_mask_batch.shape}")
 
-    # Caluclate dice loss for batch
-    dice = dice_coefficient_multi_batch(pred_mask_batch, gt_mask_batch, num_labels)
     
-    # Caluclate binary-cross entropy loss
+    # Calculate softmax to generate probabiltiies for dice score
+    pred_mask_batch_probs = nn.Softmax(pred_mask_batch_logits, dim=1)
+
+    # Caluclate dice loss for batch
+    dice = dice_coefficient_multi_batch(pred_mask_batch_probs, gt_mask_batch, num_labels)
+    
+    # Caluclate cross entropy loss using logits
     ce_loss = nn.CrossEntropyLoss()
-    ce = ce_loss(pred_mask_batch, gt_mask_batch)
+    ce = ce_loss(pred_mask_batch_logits, gt_mask_batch)
     
     return ce + dice
