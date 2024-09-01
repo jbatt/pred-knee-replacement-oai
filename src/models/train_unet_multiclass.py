@@ -164,7 +164,7 @@ for epoch in range(num_epochs):
 
 
 # Once training is done, save final model
-model_path = f"{MODELS_CHECKPOINTS_PATH}/{hyperparams['run_name']}.pth"
+model_path = os.path.join(MODELS_CHECKPOINTS_PATH, f"{hyperparams['run_name']}_final.pth")
 torch.save(model.state_dict(), model_path)
 
 wandb.finish()
