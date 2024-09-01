@@ -168,7 +168,7 @@ def ce_dice_loss_batch(pred_mask_batch_logits, gt_mask_batch, num_labels):
     # Calculate softmax to generate probabiltiies for dice score
     pred_mask_batch_probs = nn.Softmax(pred_mask_batch_logits, dim=1)
 
-    # Caluclate dice loss for batch
+    # Caluclate dice loss for batch using probabilities
     dice = dice_coefficient_multi_batch(pred_mask_batch_probs, gt_mask_batch, num_labels)
     
     # Caluclate cross entropy loss using logits
