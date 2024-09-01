@@ -53,9 +53,11 @@ def dice_coefficient_batch(pred_mask_batch: torch.Tensor,
     Returns:
         float: Dice coefficient for input batch
     """
-    print(f"pred_mask_batch shape = {pred_mask_batch.shape}")
-    print(f"gt_mask_batch shape = {gt_mask_batch.shape}")
+    print(f"original pred_mask_batch shape = {pred_mask_batch.shape}")
+    print(f"original gt_mask_batch shape = {gt_mask_batch.shape}")
 
+    # Remove dim of 1 from ground truth
+    gt_mask_batch = torch.squeeze(gt_mask_batch, dim=None)
 
     # Start from third element (i.e. start of spatial dimensions)
     spatial_dims = tuple(range(2, len(pred_mask_batch.shape)))
@@ -77,6 +79,15 @@ def dice_coefficient_batch(pred_mask_batch: torch.Tensor,
     return torch.mean(dice)
 
 
+
+def dice_coefficient_multi_batch(y_true, y_pred, numLabels):
+    dice=0
+    for index in range(numLabels):
+        dice += dice_coefficient_batch(y_true[:,index,:,:,:], y_pred[:,index,:,:,:])
+    return dice/numLabels # Reutn average dice from all class labels
+
+
+
 # Caluclate Dice loss as 1 - dice coefficient
 def dice_loss_batch(pred_mask_batch: torch.Tensor, 
                     gt_mask_batch: torch.Tensor, 
@@ -93,7 +104,7 @@ def dice_loss_batch(pred_mask_batch: torch.Tensor,
     Returns:
         float: Dice loss for the input batch
     """
-    mean_loss = 1 - dice_coefficient_batch(pred_mask_batch, 
+    mean_loss = 1 - dice_coefficient_multi_batch(pred_mask_batch, 
                                            gt_mask_batch, 
                                            smooth=smooth)
 
