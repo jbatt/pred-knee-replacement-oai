@@ -163,7 +163,7 @@ def ce_dice_loss_batch(pred_mask_batch, gt_mask_batch, num_labels):
     """
 
     # Caluclate dice loss for batch
-    dice = dice_loss_batch(pred_mask_batch, gt_mask_batch, num_labels)
+    dice = dice_coefficient_multi_batch(pred_mask_batch, gt_mask_batch, num_labels)
     
     # Caluclate binary-cross entropy loss
     ce_loss = nn.CrossEntropyLoss()
