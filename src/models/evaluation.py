@@ -92,6 +92,7 @@ def dice_coefficient_multi_batch(pred_mask_batch, gt_mask_batch, num_labels, smo
     for index in range(num_labels):
         dice += dice_coefficient_batch(pred_mask_batch[:,index,:,:,:], gt_mask_batch[:,index,:,:,:], smooth=smooth)
     
+    print(f"\nDice score = {dice}\n")
     return dice / num_labels # Returnn average dice from all class labels
 
 
