@@ -220,6 +220,9 @@ class KneeSegDataset3DMulticlass(Dataset):
             mask_all[:,:,:,3] = mask[:,:,:,3]
             mask_all[:,:,:,4] = minisc_mask
 
+            # Chnage dimension order to match prediction output dimensions for loss function
+            mask_all = mask_all.transpose(3,0,1,2)
+
         # # Clip in case ground truths overlap
         # mask = np.clip(mask_all, 0, 1) 
         
