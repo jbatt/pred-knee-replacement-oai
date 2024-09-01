@@ -58,7 +58,7 @@ def dice_coefficient_batch(pred_mask_batch: torch.Tensor,
     print(f"Dice single pred shape: {pred_mask_batch.shape}")
     print(f"Dice single mask shape: {gt_mask_batch.shape}")
     
-    spatial_dims = tuple(range(2, len(pred_mask_batch.shape)))
+    spatial_dims = tuple(range(1, len(pred_mask_batch.shape)))
     print(f"spatial_dims = {spatial_dims}")
 
     # Calculate the intersection as the sum over spatial dimensions the product of the two masks
