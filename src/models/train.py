@@ -39,7 +39,8 @@ def train_loop(dataloader, device, model, loss_fn, optimizer, pred_threshold, nu
         # Compute prediction and loss
         print("Computing model predictions...")
         pred = model(X)
-        
+        print(f"Prediction shape: {pred.shape}")
+
         print("Calculating loss...")
         loss = loss_fn(pred, y, num_classes)
 

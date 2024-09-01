@@ -47,6 +47,16 @@ def crop_im(image, dim1_lower, dim1_upper, dim2_lower, dim2_upper):
     return cropped
 
 
+# This function will crop the mask to a pre-chosen size.
+def crop_mask(image, dim1_lower, dim1_upper, dim2_lower, dim2_upper):
+    # dim1_lower, dim1_upper = 120, 320
+    # dim2_lower, dim2_upper = 70, 326
+
+    cropped = image[:, dim1_lower:dim1_upper, dim2_lower:dim2_upper, :]
+
+    return cropped
+
+
 
 # This function will pad an image upto a square of a give size
 def pad_to_square(x, size):

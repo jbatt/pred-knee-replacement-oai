@@ -11,7 +11,7 @@ import torchvision.transforms as transforms
 import h5py
 import os
 import numpy as np
-from utils.utils import crop_im, clip_and_norm, pad_to_square
+from utils.utils import crop_im, crop_mask, clip_and_norm, pad_to_square
 
 
 # Define the 3D Dataset class
@@ -232,7 +232,7 @@ class KneeSegDataset3DMulticlass(Dataset):
         
         # crop image/mask
         image = crop_im(image, dim1_lower=72, dim1_upper=312, dim2_lower=74, dim2_upper=322)
-        mask = crop_im(mask_all, dim1_lower=72, dim1_upper=312, dim2_lower=74, dim2_upper=322)
+        mask = crop_mask(mask_all, dim1_lower=72, dim1_upper=312, dim2_lower=74, dim2_upper=322)
 
         # normalise image
         image = clip_and_norm(image, 0.005)
