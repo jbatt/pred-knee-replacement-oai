@@ -53,8 +53,8 @@ def dice_coefficient_batch(pred_mask_batch: torch.Tensor,
     Returns:
         float: Dice coefficient for input batch
     """
-    print(f"original pred_mask_batch shape = {pred_mask_batch.shape}")
-    print(f"original gt_mask_batch shape = {gt_mask_batch.shape}")
+    print(f"Dice loss original pred_mask_batch shape = {pred_mask_batch.shape}")
+    print(f"Dice loss original gt_mask_batch shape = {gt_mask_batch.shape}")
 
     # Remove dim of 1 from predicted mask and ground truth 
     pred_mask_batch = torch.squeeze(pred_mask_batch, dim=None)
@@ -88,8 +88,8 @@ def dice_coefficient_batch(pred_mask_batch: torch.Tensor,
 
 def dice_coefficient_multi_batch(pred_mask_batch, gt_mask_batch, num_labels, smooth=1e-5):
     
-    print(f"original pred_mask_batch shape = {pred_mask_batch.shape}")
-    print(f"original gt_mask_batch shape = {gt_mask_batch.shape}")
+    print(f"Multiclass Dice loss pred_mask_batch shape = {pred_mask_batch.shape}")
+    print(f"Multiclass Dice loss gt_mask_batch shape = {gt_mask_batch.shape}")
     
     dice = 0
     for index in range(num_labels):
