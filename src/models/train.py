@@ -7,6 +7,8 @@ from models.evaluation import dice_coefficient_multi_batch
 # Define a training loop function for reuse later 
 def train_loop(dataloader, device, model, loss_fn, optimizer, pred_threshold, num_classes):
 
+    print("Running training loop...")
+
     # Release all unoccupied cached memory
     gc.collect()
     torch.cuda.empty_cache()
@@ -80,6 +82,8 @@ def train_loop(dataloader, device, model, loss_fn, optimizer, pred_threshold, nu
 
 # Define a validation loop function for reuse later 
 def validation_loop(dataloader, device, model, loss_fn, pred_threshold, num_classes):
+
+    print("Running validation loop...")
 
     # Release all unoccupied cached memory
     gc.collect()
