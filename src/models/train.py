@@ -5,7 +5,7 @@ import torch
 from models.evaluation import dice_coefficient_batch
 
 # Define a training loop function for reuse later 
-def train_loop(dataloader, device, model, loss_fn, optimizer, pred_threshold):
+def train_loop(dataloader, device, model, loss_fn, optimizer, pred_threshold, num_classes):
 
     # Release all unoccupied cached memory
     gc.collect()
@@ -38,7 +38,7 @@ def train_loop(dataloader, device, model, loss_fn, optimizer, pred_threshold):
 
         # Compute prediction and loss
         pred = model(X)
-        loss = loss_fn(pred, y)
+        loss = loss_fn(pred, y, num_classes)
 
         # Backpropagation
         loss.backward()
@@ -73,7 +73,7 @@ def train_loop(dataloader, device, model, loss_fn, optimizer, pred_threshold):
 
 
 # Define a validation loop function for reuse later 
-def validation_loop(dataloader, device, model, loss_fn, pred_threshold):
+def validation_loop(dataloader, device, model, loss_fn, pred_threshold, num_classes):
 
     valid_epoch_loss = []
     valid_epoch_dice = []
@@ -106,10 +106,10 @@ def validation_loop(dataloader, device, model, loss_fn, pred_threshold):
             pred = model(X)
 
             # Determine the loss associated with the current predictions and add to batch loss
-            validation_loss += loss_fn(pred, y).item()
+            validation_loss += loss_fn(pred, y, num_classes).item()
 
             # Determine dice score associated with the current predictions and add to batch dice score
-            validation_dice += dice_coefficient_batch(pred > pred_threshold, y).item()
+            validation_dice += dice_coefficient_batch(pred > pred_threshold, y, num_classes).item()
 
     validation_loss /= num_batches
     validation_dice /= num_batches

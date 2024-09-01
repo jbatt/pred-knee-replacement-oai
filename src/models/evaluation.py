@@ -60,6 +60,10 @@ def dice_coefficient_batch(pred_mask_batch: torch.Tensor,
     pred_mask_batch = torch.squeeze(pred_mask_batch, dim=None)
     gt_mask_batch = torch.squeeze(gt_mask_batch, dim=None)
 
+    print(f"squeezed pred_mask_batch shape = {pred_mask_batch.shape}")
+    print(f"squeezed gt_mask_batch shape = {gt_mask_batch.shape}")
+
+
     # Start from third element (i.e. start of spatial dimensions)
     spatial_dims = tuple(range(2, len(pred_mask_batch.shape)))
     print(f"spatial_dims = {spatial_dims}")
@@ -82,10 +86,10 @@ def dice_coefficient_batch(pred_mask_batch: torch.Tensor,
 
 
 
-def dice_coefficient_multi_batch(pred_mask_batch, gt_mask_batch, num_labels):
+def dice_coefficient_multi_batch(pred_mask_batch, gt_mask_batch, num_labels, smooth=1e-5):
     dice = 0
     for index in range(num_labels):
-        dice += dice_coefficient_batch(pred_mask_batch[:,index,:,:,:], gt_mask_batch[:,index,:,:,:])
+        dice += dice_coefficient_batch(pred_mask_batch[:,index,:,:,:], gt_mask_batch[:,index,:,:,:], smooth=smooth)
     
     return dice / num_labels # Returnn average dice from all class labels
 
@@ -93,7 +97,8 @@ def dice_coefficient_multi_batch(pred_mask_batch, gt_mask_batch, num_labels):
 
 # Caluclate Dice loss as 1 - dice coefficient
 def dice_loss_batch(pred_mask_batch: torch.Tensor, 
-                    gt_mask_batch: torch.Tensor, 
+                    gt_mask_batch: torch.Tensor,
+                    num_labels, 
                     smooth=1e-5
                     ):
     """Returns the Dice loss calculated as 1 - Dice coefficient
@@ -109,7 +114,7 @@ def dice_loss_batch(pred_mask_batch: torch.Tensor,
     """
     mean_loss = 1 - dice_coefficient_multi_batch(pred_mask_batch, 
                                            gt_mask_batch, 
-                                           smooth=smooth)
+                                           num_labels)
 
     return mean_loss
 
@@ -140,7 +145,7 @@ def bce_dice_loss_batch(pred_mask_batch, gt_mask_batch):
 
 
 # Loss includes both cross-entropy and dice loss (summed)
-def ce_dice_loss_batch(pred_mask_batch, gt_mask_batch):
+def ce_dice_loss_batch(pred_mask_batch, gt_mask_batch, num_labels):
     
     """Returns batch loss caluclated as the sum of the  
     cross-entropy loss and dice loss.
@@ -154,7 +159,7 @@ def ce_dice_loss_batch(pred_mask_batch, gt_mask_batch):
     """
 
     # Caluclate dice loss for batch
-    dice = dice_loss_batch(pred_mask_batch, gt_mask_batch)
+    dice = dice_loss_batch(pred_mask_batch, gt_mask_batch, num_labels)
     
     # Caluclate binary-cross entropy loss
     ce_loss = nn.CrossEntropyLoss()
