@@ -145,12 +145,26 @@ print(f"TRAINING MODEL \n-------------------------------")
 for epoch in range(num_epochs):
     print(f"Epoch {epoch+1}\n-------------------------------")
 
-    train_loss, avg_train_dice = train_loop(train_dataloader, device, model, loss_fn, optimizer, pred_threshold, num_classes=NUM_CLASSES)
-    validation_loss, avg_validation_dice = validation_loop(validation_dataloader, device, model, loss_fn, pred_threshold, num_classes=NUM_CLASSES)
+    train_loss, avg_train_dice, avg_train_dice_all = train_loop(train_dataloader, device, model, loss_fn, optimizer, pred_threshold, num_classes=NUM_CLASSES)
+    validation_loss, avg_validation_dice, avg_validation_dice_all = validation_loop(validation_dataloader, device, model, loss_fn, pred_threshold, num_classes=NUM_CLASSES)
 
     # log to wandb
-    wandb.log({"Train Loss": train_loss, "Train Dice Score": avg_train_dice,
-                  "Val Loss": validation_loss, "Val Dice Score": avg_validation_dice})
+    wandb.log({
+        "Train Loss": train_loss, 
+        "Train Dice Score": avg_train_dice,
+        "Train Dice Score (Background)": avg_train_dice_all[0],
+        "Train Dice Score (Femoral Cart.)": avg_train_dice_all[1],
+        "Train Dice Score (Tibial Cart.)": avg_train_dice_all[2],
+        "Train Dice Score (Patellar Cart.)": avg_train_dice_all[3],
+        "Train Dice Score (Meniscus)": avg_train_dice_all[4],
+        "Val Loss": validation_loss, 
+        "Val Dice Score": avg_validation_dice,
+        "Val Dice Score (Background)": avg_validation_dice_all[0],
+        "Val Dice Score (Femoral Cart.)": avg_validation_dice_all[1],
+        "Val Dice Score (Tibial Cart.)": avg_validation_dice_all[2],
+        "Val Dice Score (Patellar Cart.)": avg_validation_dice_all[3],
+        "Val Dice Score (Meniscus)": avg_validation_dice_all[4],
+    })
     
     # save as best if val loss is lowest so far
     if validation_loss < min_validation_loss:
