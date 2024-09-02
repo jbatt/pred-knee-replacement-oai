@@ -22,7 +22,7 @@ def train_loop(dataloader, device, model, loss_fn, optimizer, pred_threshold, nu
     epoch_loss = []
     epoch_dice = []
     # Initialise separate dic earray which will capture dice of all tissues indvidually
-    epoch_dice_all = np.array(shape=(len(dataloader), num_classes))
+    epoch_dice_all = np.empty(shape=(len(dataloader), num_classes))
 
     size = len(dataloader.dataset)
     print(f"Dataset size = {size}")
@@ -101,7 +101,7 @@ def validation_loop(dataloader, device, model, loss_fn, pred_threshold, num_clas
     valid_epoch_loss = []
     valid_epoch_dice = []
     # Initialise separate dic earray which will capture dice of all tissues indvidually
-    valid_epoch_dice_all = np.array(shape=(len(dataloader), num_classes))
+    valid_epoch_dice_all = np.empty(shape=(len(dataloader), num_classes))
 
     # Set the model to evaluation mode
     model.eval()
