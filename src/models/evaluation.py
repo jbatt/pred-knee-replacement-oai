@@ -104,17 +104,35 @@ def dice_coefficient_multi_batch(pred_mask_batch, gt_mask_batch, num_labels, smo
     # Remove dim of 1 from predicted mask and ground truth 
     gt_mask_batch = torch.squeeze(gt_mask_batch, dim=1)
     
-    dice = 0
-    for index in range(num_labels):
+    # dice = 0
+    # for index in range(num_labels):
         
-        # Release all unoccupied cached memory
-        gc.collect()
-        torch.cuda.empty_cache()
+    #     # Release all unoccupied cached memory
+    #     gc.collect()
+    #     torch.cuda.empty_cache()
          
-        dice += float(dice_coefficient_batch(pred_mask_batch[:,index,:,:,:], gt_mask_batch[:,index,:,:,:], smooth=smooth))
+    #     dice += float(dice_coefficient_batch(pred_mask_batch[:,index,:,:,:], gt_mask_batch[:,index,:,:,:], smooth=smooth))
     
-    print(f"\nDice score = {dice}\n")
-    return dice / num_labels # Returnn average dice from all class labels
+    # print(f"\nDice score = {dice}\n")
+    # return dice / num_labels # Returnn average dice from all class labels
+
+
+    # Flatten the tensors to shape (batch_size, num_classes, num_elements)
+    y_true_flat = gt_mask_batch.view(gt_mask_batch.size(0), gt_mask_batch.size(1), -1)
+    y_pred_flat = pred_mask_batch.view(pred_mask_batch.size(0), pred_mask_batch.size(1), -1)
+
+    # Calculate intersection and union for each class
+    intersection = (y_true_flat * y_pred_flat).sum(dim=2)
+    union = y_true_flat.sum(dim=2) + y_pred_flat.sum(dim=2)
+
+    # Calculate Dice coefficient for each class
+    dice_per_class = (2. * intersection + smooth) / (union + smooth)
+
+    # Return the mean Dice coefficient across all classes
+    mean_dice = dice_per_class.mean()
+
+    return mean_dice
+
 
 
 
