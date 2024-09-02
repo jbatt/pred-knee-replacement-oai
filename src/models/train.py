@@ -1,8 +1,9 @@
 # Define functions to help with model training
 import gc
 import torch
+import numpy as np
 
-from models.evaluation import dice_coefficient_multi_batch
+from models.evaluation import dice_coefficient_multi_batch, dice_coefficient_multi_batch_all
 
 # Define a training loop function for reuse later 
 def train_loop(dataloader, device, model, loss_fn, optimizer, pred_threshold, num_classes):
@@ -19,12 +20,14 @@ def train_loop(dataloader, device, model, loss_fn, optimizer, pred_threshold, nu
 
     # Initialise variables
     epoch_loss = []
-
-    # TODO: make this non-speciifc to dice - have another loss function var?
     epoch_dice = []
+    # Initialise separate dic earray which will capture dice of all tissues indvidually
+    epoch_dice_all = np.array(shape=(len(dataloader), num_classes))
 
     size = len(dataloader.dataset)
     print(f"Dataset size = {size}")
+
+
 
     # Set the model to training mode
     print(f"Setting model to train mode...")
@@ -75,12 +78,14 @@ def train_loop(dataloader, device, model, loss_fn, optimizer, pred_threshold, nu
         # Append the batch loss to enable calculation of the average epoch loss
         epoch_loss.append(loss)
         epoch_dice.append(dice_coefficient_multi_batch(pred, y, num_labels=num_classes).item())
+        epoch_dice_all[batch] = dice_coefficient_multi_batch_all(pred, y, num_labels=num_classes).detach().tolist()
 
     # Calculate the average loss and accuracy for the epoch
     avg_epoch_loss = sum(epoch_loss) / len(epoch_loss)
     avg_epoch_dice =  sum(epoch_dice) / len(epoch_loss) 
+    avg_epoch_dice_all = epoch_dice_all.mean(axis=0)
 
-    return avg_epoch_loss, avg_epoch_dice
+    return avg_epoch_loss, avg_epoch_dice, avg_epoch_dice_all
 
 
 
@@ -95,6 +100,8 @@ def validation_loop(dataloader, device, model, loss_fn, pred_threshold, num_clas
     
     valid_epoch_loss = []
     valid_epoch_dice = []
+    # Initialise separate dic earray which will capture dice of all tissues indvidually
+    valid_epoch_dice_all = np.array(shape=(len(dataloader), num_classes))
 
     # Set the model to evaluation mode
     model.eval()
@@ -114,7 +121,7 @@ def validation_loop(dataloader, device, model, loss_fn, pred_threshold, num_clas
     with torch.no_grad():
 
         # Loop through Xs and ys in dataloader batch
-        for X, y in dataloader:
+        for batch, (X, y) in enumerate(dataloader):
             
             # Load X and y to releavnt device
             X = X.to(device)
@@ -128,11 +135,19 @@ def validation_loop(dataloader, device, model, loss_fn, pred_threshold, num_clas
 
             # Determine dice score associated with the current predictions and add to batch dice score
             validation_dice += dice_coefficient_multi_batch(pred, y, num_labels=num_classes).item()
+            valid_epoch_dice_all[batch] = dice_coefficient_multi_batch_all(pred, y, num_labels=num_classes).detach().tolist()
+
 
     validation_loss /= num_batches
     validation_dice /= num_batches
+    valid_avg_epoch_dice_all = valid_epoch_dice_all.mean(axis=0)
 
-    print(f"Validation Error: \n Validation dice: {(100*validation_dice):>0.1f}%, Validation avg loss: {validation_loss:>8f} \n")
+    print(f"""\n
+          Validation Error: \n 
+          Validation dice: {(100*validation_dice):>0.1f}%
+          Validation dice by tissue: {valid_avg_epoch_dice_all}%
+          Validation avg loss: {validation_loss:>8f} \n
+    """)
 
     # Append the batch loss to enable calculation of the average epoch loss
     valid_epoch_loss.append(validation_loss)
@@ -144,7 +159,7 @@ def validation_loop(dataloader, device, model, loss_fn, pred_threshold, num_clas
     # Calculate the average dice score for the epoch
     avg_valid_epoch_dice = sum(valid_epoch_dice) / len(valid_epoch_dice)
 
-    return avg_valid_epoch_loss, avg_valid_epoch_dice
+    return avg_valid_epoch_loss, avg_valid_epoch_dice, valid_avg_epoch_dice_all
 
 
 
