@@ -220,19 +220,19 @@ class KneeSegDataset3DMulticlass(Dataset):
             mask_all[:,:,:,3] = mask[:,:,:,3]
             mask_all[:,:,:,4] = minisc_mask
             
-            print(f"Dataset original gt mask dimension: {mask_all.shape}")
+            # print(f"Dataset original gt mask dimension: {mask_all.shape}")
 
             # Change dimension order to match prediction output dimensions for loss function
             mask_all = mask_all.transpose(3,0,1,2)
 
-            print(f"Dataset post-transpose gt mask dimension: {mask_all.shape}")
+            # print(f"Dataset post-transpose gt mask dimension: {mask_all.shape}")
 
         # # Clip in case ground truths overlap
         # mask = np.clip(mask_all, 0, 1) 
         
         # crop image/mask
-        image = crop_im(image, dim1_lower=72, dim1_upper=312, dim2_lower=74, dim2_upper=322)
-        mask = crop_mask(mask_all, dim1_lower=72, dim1_upper=312, dim2_lower=74, dim2_upper=322)
+        image = crop_im(image, dim1_lower=56, dim1_upper=312, dim2_lower=58, dim2_upper=322)
+        mask = crop_mask(mask_all, dim1_lower=56, dim1_upper=312, dim2_lower=58, dim2_upper=322)
 
         # normalise image
         image = clip_and_norm(image, 0.005)
