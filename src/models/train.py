@@ -74,7 +74,7 @@ def train_loop(dataloader, device, model, loss_fn, optimizer, pred_threshold, nu
 
         # Append the batch loss to enable calculation of the average epoch loss
         epoch_loss.append(loss)
-        epoch_dice.append(dice_coefficient_multi_batch(pred, y, num_labels=num_classes))
+        epoch_dice.append(dice_coefficient_multi_batch(pred, y, num_labels=num_classes).item())
 
     # Calculate the average loss and accuracy for the epoch
     avg_epoch_loss = sum(epoch_loss) / len(epoch_loss)
