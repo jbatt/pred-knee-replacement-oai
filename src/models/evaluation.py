@@ -131,6 +131,8 @@ def dice_coefficient_multi_batch(pred_mask_batch, gt_mask_batch, num_labels, smo
     # Return the mean Dice coefficient across all classes
     mean_dice = dice_per_class.mean()
 
+    print(f"Mean dice = {mean_dice}")
+    
     return mean_dice
 
 
