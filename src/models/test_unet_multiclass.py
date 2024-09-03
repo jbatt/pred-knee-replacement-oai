@@ -12,7 +12,7 @@ if '..\\src' not in sys.path:
 
 from models.model_unet import UNet3D, UNet3DMulticlass
 import models.evaluation
-from models.evaluation import bce_dice_loss_batch, dice_coefficient_batch, dice_coefficient
+from models.evaluation import dice_coefficient_batch, dice_coefficient, dice_coefficient_multi_batch_all
 
 import data.datasets
 from data.datasets import KneeSegDataset3D, KneeSegDataset3DMulticlass
@@ -82,6 +82,7 @@ model.eval
 model.to(device)
 
 dice_scores = []
+dice_scores_all_classes = []
 
 # loop through testloader (use tqdm)
 for idx, (im, mask) in enumerate(test_multi_loader):
@@ -101,15 +102,23 @@ for idx, (im, mask) in enumerate(test_multi_loader):
     pred_binary_mask = (pred>0.5).astype(int)
 
     # calculate dice coefficient
-    dice = dice_coefficient(mask.squeeze(0).squeeze(0), pred_binary_mask)
-    dice_scores.append(dice)
+    dice_score_all_classes = dice_coefficient_multi_batch_all(mask, pred_binary_mask)
+    dice_scores_all_classes.append(dice_score_all_classes)
+
+    dice_score = dice_score_all_classes.mean()
+    dice_scores.append(dice_score)
     
-    print(f"Im {idx+1} ({test_paths[idx]}): Dice = {dice}")
+    print(f"Im {idx+1} ({test_paths[idx]}): Dice = {dice_score}")
+    print(f"Im {idx+1} ({test_paths[idx]}): Dice by call = {dice_score_all_classes}")
 
     # save predicted mask
     np.save(os.path.join(DATA_PROCESSED_DIRECTORY, test_paths[idx]), pred_binary_mask)
 
 
+dice_scores_all_classes = np.array(dice_scores_all_classes)
 dice_scores = np.array(dice_scores)
 
-dice_scores.mean()
+# np.save(os.path.join(RESULTS_PATH, "dice_scores_mean"), pred_binary_mask)
+
+print(f"Mean dice score: {dice_scores.mean()}")
+print(f"Mean dice score for each class: {dice_scores.mean(axis=0)}")
