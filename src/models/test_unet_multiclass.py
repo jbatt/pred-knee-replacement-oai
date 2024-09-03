@@ -57,7 +57,10 @@ print(f"Current device: {device}")
 
 
 # Define test file paths
-test_paths = [os.path.basename(x).split(".")[0] for x in glob.glob(f"{DATA_TEST_DIRECTORY}\\*")]
+test_paths = [os.path.basename(x).split(".")[0] for x in glob.glob(os.path.join(DATA_TEST_DIRECTORY, "*"))]
+print(f"length of test_paths: {len(test_paths)}")
+print(f"test_paths first entry: {test_paths[0]}")
+
 
 # Create test dataset and dataloader
 test_multi_dataset = KneeSegDataset3DMulticlass(test_paths, DATA_DIRECTORY, split='test', num_classes=5)
@@ -85,15 +88,15 @@ dice_scores = []
 dice_scores_all_classes = []
 
 # loop through testloader (use tqdm)
-for idx, (im, mask) in enumerate(test_multi_loader):
+for idx, (im, gt_mask) in enumerate(test_multi_loader):
 
     # 	load im to device
     im.to(device)
     print(f"Image shape: {im.shape}")
 
-    mask = mask.squeeze(axis=1)
-    mask.to(device)
-    print(f"Mask shape: {mask.shape}\n")
+    gt_mask = gt_mask.squeeze(axis=1)
+    gt_mask.to(device)
+    print(f"Mask shape: {gt_mask.shape}\n")
 
     # make prediction using model
     pred = model(im)
@@ -102,7 +105,7 @@ for idx, (im, mask) in enumerate(test_multi_loader):
     pred_binary_mask = (pred>0.5).astype(int)
 
     # calculate dice coefficient
-    dice_score_all_classes = dice_coefficient_multi_batch_all(mask, pred_binary_mask)
+    dice_score_all_classes = dice_coefficient_multi_batch_all(gt_mask, pred_binary_mask)
     dice_scores_all_classes.append(dice_score_all_classes)
 
     dice_score = dice_score_all_classes.mean()
