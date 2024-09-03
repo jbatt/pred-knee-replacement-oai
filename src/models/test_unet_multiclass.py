@@ -7,8 +7,8 @@ import os
 import sys
 
 # Include src directory in path to import custom modules
-if '..\\src' not in sys.path:
-    sys.path.append('..\\src')
+if '../src' not in sys.path:
+    sys.path.append('../src')
 
 from models.model_unet import UNet3D, UNet3DMulticlass
 import models.evaluation
