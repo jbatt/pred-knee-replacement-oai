@@ -105,11 +105,11 @@ for idx, (im, gt_mask) in enumerate(test_multi_loader):
     pred_binary_mask = (pred>0.5).int()
 
     # calculate dice coefficient
-    dice_score_all_classes = dice_coefficient_multi_batch_all(gt_mask, pred_binary_mask)
-    dice_scores_all_classes.append(dice_score_all_classes)
+    dice_score_all_classes = dice_coefficient_multi_batch_all(gt_mask, pred_binary_mask, num_labels=5).detach()
+    dice_scores_all_classes.append(dice_score_all_classes.tolist())
 
     dice_score = dice_score_all_classes.mean()
-    dice_scores.append(dice_score)
+    dice_scores.append(dice_score.item())
     
     print(f"Im {idx+1} ({test_paths[idx]}): Dice = {dice_score}")
     print(f"Im {idx+1} ({test_paths[idx]}): Dice by call = {dice_score_all_classes}")
