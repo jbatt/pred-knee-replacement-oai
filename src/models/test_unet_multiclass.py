@@ -102,7 +102,7 @@ for idx, (im, gt_mask) in enumerate(test_multi_loader):
     pred = model(im)
     print(f"Prediction shape: {pred.shape}\n")
 
-    pred_binary_mask = (pred>0.5).astype(int)
+    pred_binary_mask = (pred>0.5).int()
 
     # calculate dice coefficient
     dice_score_all_classes = dice_coefficient_multi_batch_all(gt_mask, pred_binary_mask)
