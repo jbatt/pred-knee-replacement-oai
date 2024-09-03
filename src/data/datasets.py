@@ -150,13 +150,25 @@ class KneeSegDataset3DMulticlass(Dataset):
             with h5py.File(seg_path,'r') as hf:
                 mask = np.array(hf['data'])
 
-        # Extract the meniscus mask
         
-        # TODO: extract all masks 
+        # Extract all masks 
         
         # If test data - continue with all four classes
         if self.split == 'test':
-            pass
+
+            # Reorder dimensions to match model
+            mask = mask.transpose(3,0,1,2)
+
+            # Add background to mask
+            all_classes_zero_mask = np.all(mask == 0, axis=0)
+            # Set background masks to be intergers
+            background_mask = all_classes_zero_mask.astype(int)
+
+            # Add dimension of ones to enable concatenation
+            background_mask = np.expand_dims(background_mask, axis=0)
+
+            # Concatenate background to 4-class mask
+            mask = np.concatenate([background_mask, mask], axis=0)
         
         # If train or validation - combine the medial/lateral masks for the tibial cart. and meniscus 
         else:
@@ -219,6 +231,24 @@ class KneeSegDataset3DMulticlass(Dataset):
             mask_all[:,:,:,2] = tibial_mask 
             mask_all[:,:,:,3] = mask[:,:,:,3]
             mask_all[:,:,:,4] = minisc_mask
+
+            # Set background to 1 everywhere that all others masks are zero (clip will sort any overlapping masks)
+            # mask_all[:,:,:,0] = 1
+            # mask_all[:,:,:,0] = np.subtract(mask_all[:,:,:,0], mask_all[:,:,:,1])
+            # mask_all[:,:,:,0] = np.subtract(mask_all[:,:,:,0], mask_all[:,:,:,2])
+            # mask_all[:,:,:,0] = np.subtract(mask_all[:,:,:,0], mask_all[:,:,:,3])
+            # mask_all[:,:,:,0] = np.subtract(mask_all[:,:,:,0], mask_all[:,:,:,4])
+
+            # Identify positions where every other class is zero 
+            all_classes_zero_mask = np.all(mask_all == 0, axis=3)
+            # Set background masks to be intergers
+            background_mask = all_classes_zero_mask.astype(int)
+            # Set appropriate slice to backgrond mask
+            mask_all[:,:,:,0] = background_mask
+
+            # background_mask = np.expand_dims(background_mask, axis=0)
+            # mask_all = np.concatenate([mask_all, background_mask], axis=0)
+
             
             # print(f"Dataset original gt mask dimension: {mask_all.shape}")
 
