@@ -1,6 +1,7 @@
 import torch
 import torch.optim as optim
 from torch.utils.data import DataLoader
+import torch.nn as nn
 import numpy as np
 import glob
 import os
@@ -102,7 +103,10 @@ for idx, (im, gt_mask) in enumerate(test_multi_loader):
     pred = model(im)
     print(f"Prediction shape: {pred.shape}\n")
 
-    pred_binary_mask = (pred>0.5).int()
+    # convert model outputs from logits to probability
+    pred_prob = nn.functional.softmax(pred, dim=1)
+
+    pred_binary_mask = (pred_prob>0.5).int()
 
     # calculate dice coefficient
     dice_score_all_classes = dice_coefficient_multi_batch_all(gt_mask, pred_binary_mask, num_labels=5).detach()
@@ -112,7 +116,7 @@ for idx, (im, gt_mask) in enumerate(test_multi_loader):
     dice_scores.append(dice_score.item())
     
     print(f"Im {idx+1} ({test_paths[idx]}): Dice = {dice_score}")
-    print(f"Im {idx+1} ({test_paths[idx]}): Dice by call = {dice_score_all_classes}")
+    print(f"Im {idx+1} ({test_paths[idx]}): Dice by class = {dice_score_all_classes}")
 
     # save predicted mask
     np.save(os.path.join(DATA_PROCESSED_DIRECTORY, test_paths[idx]), pred_binary_mask)
