@@ -72,7 +72,7 @@ val_paths = np.array([os.path.basename(i).split('.')[0] for i in glob.glob(f'{DA
 
 # Set transforms
 if hyperparams['transforms'] == "True":
-    # Let's try a horizontal flip transform
+    # Horizontal flip transform
     transform = transforms.functional.hflip
 else:
     transform = None
