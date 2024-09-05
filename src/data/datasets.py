@@ -162,17 +162,21 @@ class KneeSegDataset3DMulticlass(Dataset):
             # Reorder dimensions to match model
             mask = mask.transpose(3,0,1,2)
 
+
+            # Removed background from masks
+
             # Add background to mask
-            all_classes_zero_mask = np.all(mask == 0, axis=0)
+            # all_classes_zero_mask = np.all(mask == 0, axis=0)
 
-            # Set background masks to be intergers
-            background_mask = all_classes_zero_mask.astype(int)
+            # # Set background masks to be intergers
+            # background_mask = all_classes_zero_mask.astype(int)
 
-            # Add dimension of ones to enable concatenation
-            background_mask = np.expand_dims(background_mask, axis=0)
+            # # Add dimension of ones to enable concatenation
+            # background_mask = np.expand_dims(background_mask, axis=0)
 
-            # Concatenate background to 4-class mask
-            mask = np.concatenate([background_mask, mask], axis=0)
+            # # Concatenate background to 4-class mask
+            # mask = np.concatenate([background_mask, mask], axis=0)
+
         
         # If train or validation - combine the medial/lateral masks for the tibial cart. and meniscus 
         else:
@@ -230,10 +234,10 @@ class KneeSegDataset3DMulticlass(Dataset):
             mask_all = np.zeros(mask_dims)
 
             # Fill in each layer of multiclass mask with each classes seg mask
-            mask_all[:,:,:,1] = mask[:,:,:,0]
-            mask_all[:,:,:,2] = tibial_mask 
-            mask_all[:,:,:,3] = mask[:,:,:,3]
-            mask_all[:,:,:,4] = minisc_mask
+            mask_all[:,:,:,0] = mask[:,:,:,0]
+            mask_all[:,:,:,1] = tibial_mask 
+            mask_all[:,:,:,2] = mask[:,:,:,3]
+            mask_all[:,:,:,3] = minisc_mask
 
             # Set background to 1 everywhere that all others masks are zero (clip will sort any overlapping masks)
             # mask_all[:,:,:,0] = 1
@@ -242,12 +246,15 @@ class KneeSegDataset3DMulticlass(Dataset):
             # mask_all[:,:,:,0] = np.subtract(mask_all[:,:,:,0], mask_all[:,:,:,3])
             # mask_all[:,:,:,0] = np.subtract(mask_all[:,:,:,0], mask_all[:,:,:,4])
 
-            # Identify positions where every other class is zero 
-            all_classes_zero_mask = np.all(mask_all == 0, axis=3)
-            # Set background masks to be intergers
-            background_mask = all_classes_zero_mask.astype(int)
-            # Set appropriate slice to backgrond mask
-            mask_all[:,:,:,0] = background_mask
+
+            # Removed background from mask
+            
+            # # Identify positions where every other class is zero 
+            # all_classes_zero_mask = np.all(mask_all == 0, axis=3)
+            # # Set background masks to be intergers
+            # background_mask = all_classes_zero_mask.astype(int)
+            # # Set appropriate slice to backgrond mask
+            # mask_all[:,:,:,0] = background_mask
 
             # background_mask = np.expand_dims(background_mask, axis=0)
             # mask_all = np.concatenate([mask_all, background_mask], axis=0)
