@@ -1,7 +1,6 @@
 import torch
 import torch.nn as nn
 import sys
-import torch.nn as nn
 import gc
 
 
@@ -122,15 +121,16 @@ def dice_coefficient_multi_batch_all(pred_mask_batch, gt_mask_batch, num_labels,
 
     # Calculate intersection and union for each class
     intersection = (y_true_flat * y_pred_flat).sum(dim=2)
-    union = y_true_flat.sum(dim=2) + y_pred_flat.sum(dim=2)
+    size = y_true_flat.sum(dim=2) + y_pred_flat.sum(dim=2)
 
     # Calculate Dice coefficient for each class
-    dice_per_class = (2. * intersection + smooth) / (union + smooth)
+    dice_per_class = (2. * intersection + smooth) / (size + smooth)
     
     # Take mean over batch dimension
     dice_per_class = dice_per_class.mean(dim=0)
 
     return dice_per_class
+
 
 
 def dice_coefficient_multi_batch(pred_mask_batch, gt_mask_batch, num_labels, smooth=1e-5):
@@ -167,10 +167,10 @@ def dice_coefficient_multi_batch(pred_mask_batch, gt_mask_batch, num_labels, smo
 
     # Calculate intersection and union for each class
     intersection = (y_true_flat * y_pred_flat).sum(dim=2)
-    union = y_true_flat.sum(dim=2) + y_pred_flat.sum(dim=2)
+    size = y_true_flat.sum(dim=2) + y_pred_flat.sum(dim=2)
 
     # Calculate Dice coefficient for each class
-    dice_per_class = (2. * intersection + smooth) / (union + smooth)
+    dice_per_class = (2. * intersection + smooth) / (size + smooth)
 
     # Return the mean Dice coefficient across all classes
     mean_dice = dice_per_class.mean()
