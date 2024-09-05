@@ -164,6 +164,7 @@ class KneeSegDataset3DMulticlass(Dataset):
 
             # Add background to mask
             all_classes_zero_mask = np.all(mask == 0, axis=0)
+
             # Set background masks to be intergers
             background_mask = all_classes_zero_mask.astype(int)
 
@@ -175,7 +176,6 @@ class KneeSegDataset3DMulticlass(Dataset):
         
         # If train or validation - combine the medial/lateral masks for the tibial cart. and meniscus 
         else:
-
             # Define medial meniscus mask
             menisc_med_mask = mask[...,-1]
 
