@@ -22,7 +22,7 @@ if '../src' not in sys.path:
 print(sys.path)
 
 from models.model_unet import UNet3DMulticlass
-from utils.utils import read_hyperparams
+from utils.utils import read_hyperparams, EarlyStopper
 from data.datasets import KneeSegDataset3DMulticlass
 from models.evaluation import ce_dice_loss_multi_batch #, dice_coefficient, batch_dice_coeff
 from models.train import train_loop, validation_loop 
@@ -54,7 +54,7 @@ else:
 
  
 
-NUM_CLASSES = 5
+NUM_CLASSES = 4
 
 # Set Device
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -90,7 +90,7 @@ validation_dataloader = DataLoader(validation_dataset, batch_size=2, num_workers
 
 
 # Create model - 5 output channels for 5 classes
-model = UNet3DMulticlass(1, 5, 16)
+model = UNet3DMulticlass(1, NUM_CLASSES, 16)
 
 # Load model to device
 print(f"Loading model to device: {device}")
@@ -123,8 +123,6 @@ wandb.init(
     }
 )
 
-
-
 # Use multiple gpu in parallel if available
 if torch.cuda.device_count() > 1:
     model = nn.DataParallel(model)
@@ -135,6 +133,9 @@ if torch.cuda.device_count() > 1:
 # Capture training start time for output data files
 train_start = str(datetime.now())
 train_start_file = train_start.replace(" ", "-").replace(".","").replace(":","_")
+
+# Initalise early stopping object
+early_stopper = EarlyStopper(patience=3, min_delta=0.001)
 
 # Initialise minimum validation loss as infinity
 min_validation_loss = float('inf')
@@ -152,21 +153,21 @@ for epoch in range(num_epochs):
     wandb.log({
         "Train Loss": train_loss, 
         "Train Dice Score": avg_train_dice,
-        "Train Dice Score (Background)": avg_train_dice_all[0],
-        "Train Dice Score (Femoral Cart.)": avg_train_dice_all[1],
-        "Train Dice Score (Tibial Cart.)": avg_train_dice_all[2],
-        "Train Dice Score (Patellar Cart.)": avg_train_dice_all[3],
-        "Train Dice Score (Meniscus)": avg_train_dice_all[4],
+        #"Train Dice Score (Background)": avg_train_dice_all[0],
+        "Train Dice Score (Femoral Cart.)": avg_train_dice_all[0],
+        "Train Dice Score (Tibial Cart.)": avg_train_dice_all[1],
+        "Train Dice Score (Patellar Cart.)": avg_train_dice_all[2],
+        "Train Dice Score (Meniscus)": avg_train_dice_all[3],
         "Val Loss": validation_loss, 
         "Val Dice Score": avg_validation_dice,
-        "Val Dice Score (Background)": avg_validation_dice_all[0],
-        "Val Dice Score (Femoral Cart.)": avg_validation_dice_all[1],
-        "Val Dice Score (Tibial Cart.)": avg_validation_dice_all[2],
-        "Val Dice Score (Patellar Cart.)": avg_validation_dice_all[3],
-        "Val Dice Score (Meniscus)": avg_validation_dice_all[4],
+        #"Val Dice Score (Background)": avg_validation_dice_all[0],
+        "Val Dice Score (Femoral Cart.)": avg_validation_dice_all[0],
+        "Val Dice Score (Tibial Cart.)": avg_validation_dice_all[1],
+        "Val Dice Score (Patellar Cart.)": avg_validation_dice_all[2],
+        "Val Dice Score (Meniscus)": avg_validation_dice_all[3],
     })
     
-    # save as best if val loss is lowest so far
+    # Save as best if val loss is lowest so far
     if validation_loss < min_validation_loss:
         print(f'Validation Loss Decreased({min_validation_loss:.6f}--->{validation_loss:.6f}) \t Saving The Model')
         model_path = os.path.join(MODELS_CHECKPOINTS_PATH, f"{train_start_file}_multiclass_{hyperparams['run_name']}_best_E.pth")
@@ -175,6 +176,14 @@ for epoch in range(num_epochs):
         
         # reset min as current
         min_validation_loss = validation_loss
+
+    # Save model if early stopping triggered
+    if early_stopper.early_stop(validation_loss):   
+        print(f'Early stopping triggered! ({min_validation_loss:.6f}--->{validation_loss:.6f}) \t Saving The Model')
+        model_path = os.path.join(MODELS_CHECKPOINTS_PATH, f"{train_start_file}_multiclass_{hyperparams['run_name']}_early_stop_E{epoch+1}.pth")
+        torch.save(model.state_dict(), model_path)
+        print(f"Early stop epoch: {epoch + 1}") 
+
 
 
 # Once training is done, save final model
