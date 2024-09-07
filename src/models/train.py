@@ -6,7 +6,7 @@ import numpy as np
 from models.evaluation import dice_coefficient_multi_batch, dice_coefficient_multi_batch_all
 
 # Define a training loop function for reuse later 
-def train_loop(dataloader, device, model, loss_fn, optimizer, pred_threshold, num_classes):
+def train_loop(dataloader, device, model, loss_fn, optimizer, num_classes):
 
     print("Running training loop...")
 
@@ -90,7 +90,7 @@ def train_loop(dataloader, device, model, loss_fn, optimizer, pred_threshold, nu
 
 
 # Define a validation loop function for reuse later 
-def validation_loop(dataloader, device, model, loss_fn, pred_threshold, num_classes):
+def validation_loop(dataloader, device, model, loss_fn, lr_scheduler, num_classes):
 
     print("Running validation loop...")
 
@@ -141,6 +141,8 @@ def validation_loop(dataloader, device, model, loss_fn, pred_threshold, num_clas
     validation_loss /= num_batches
     validation_dice /= num_batches
     valid_avg_epoch_dice_all = valid_epoch_dice_all.mean(axis=0)
+
+    lr_scheduler.step(validation_loss/len(dataloader))
 
     print(f"""\n
           Validation Error: \n 
