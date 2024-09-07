@@ -232,7 +232,7 @@ class KneeSegDataset3DMulticlass(Dataset):
             # Fill in each layer of multiclass mask with each classes seg mask
             mask_all[:,:,:,1] = mask[:,:,:,0]
             mask_all[:,:,:,2] = tibial_mask 
-            mask_all[:,:,:,3] = mask[:,:,:,3]
+            mask_all[:,:,:,3] = mask[:,:,:,2]
             mask_all[:,:,:,4] = minisc_mask
 
             # Set background to 1 everywhere that all others masks are zero (clip will sort any overlapping masks)
@@ -248,6 +248,7 @@ class KneeSegDataset3DMulticlass(Dataset):
             background_mask = all_classes_zero_mask.astype(int)
             # Set appropriate slice to backgrond mask
             mask_all[:,:,:,0] = background_mask
+
 
             # background_mask = np.expand_dims(background_mask, axis=0)
             # mask_all = np.concatenate([mask_all, background_mask], axis=0)
