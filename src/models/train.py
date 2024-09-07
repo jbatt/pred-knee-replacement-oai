@@ -161,7 +161,7 @@ def validation_loop(dataloader, device, model, loss_fn, lr_scheduler, num_classe
     # Calculate the average dice score for the epoch
     avg_valid_epoch_dice = sum(valid_epoch_dice) / len(valid_epoch_dice)
 
-    return avg_valid_epoch_loss, avg_valid_epoch_dice, valid_avg_epoch_dice_all
+    return avg_valid_epoch_loss, avg_valid_epoch_dice, valid_avg_epoch_dice_all, lr_scheduler
 
 
 
