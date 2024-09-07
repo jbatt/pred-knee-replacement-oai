@@ -94,6 +94,7 @@ sweep_configuration = {
 
 sweep_id = wandb.sweep(sweep=sweep_configuration, project="oai_subset_knee_seg_unet-sweep")
 
+print(f"WandB run name: {wandb.name}")
 print(f"hyperparams = {sweep_configuration}")
       
 
@@ -126,6 +127,8 @@ def main():
         transform = transforms.functional.hflip
     else:
         transform = None
+    
+    print(f"Current hyperparameter values:\n {wandb.config}")
 
     # Define train, validation and output direcotry path
     data_dir, models_checkpoints_dir, train_paths, val_paths = define_dataset_paths(hpc=HPC_FLAG)
