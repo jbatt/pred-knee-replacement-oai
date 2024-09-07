@@ -94,8 +94,7 @@ sweep_configuration = {
 
 sweep_id = wandb.sweep(sweep=sweep_configuration, project="oai_subset_knee_seg_unet-sweep")
 
-print(f"WandB run name: {wandb.name}")
-print(f"hyperparams = {sweep_configuration}")
+
       
 
 
@@ -114,7 +113,9 @@ def main():
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print(f"device = {device}")    
 
-        
+    print(f"WandB run name: {run.name}")
+    print(f"hyperparams = {run.config}")       
+
     lr = wandb.config.lr
     batch_size = wandb.config.batch_size
     weight_decay = wandb.config.weight_decay
@@ -199,7 +200,7 @@ def main():
         # Save as best if val loss is lowest so far
         if validation_loss < min_validation_loss:
             print(f'Validation Loss Decreased({min_validation_loss:.6f}--->{validation_loss:.6f}) \t Saving The Model')
-            model_path = os.path.join(models_checkpoints_dir, f"{train_start_file}_multiclass_{wandb.name}_best_E.pth")
+            model_path = os.path.join(models_checkpoints_dir, f"{train_start_file}_multiclass_{run.name}_best_E.pth")
             torch.save(model.state_dict(), model_path)
             print(f"Best epoch yet: {epoch + 1}")
             
@@ -209,14 +210,14 @@ def main():
         # Save model if early stopping triggered
         if early_stopper.early_stop(validation_loss):   
             print(f'Early stopping triggered! ({min_validation_loss:.6f}--->{validation_loss:.6f}) \t Saving The Model')
-            model_path = os.path.join(models_checkpoints_dir, f"{train_start_file}_multiclass_{wandb.name}_early_stop_E{epoch+1}.pth")
+            model_path = os.path.join(models_checkpoints_dir, f"{train_start_file}_multiclass_{run.name}_early_stop_E{epoch+1}.pth")
             torch.save(model.state_dict(), model_path)
             print(f"Early stop epoch: {epoch + 1}") 
 
 
 
     # Once training is done, save final model
-    model_path = os.path.join(models_checkpoints_dir, f"{train_start_file}_{wandb.name}_final.pth")
+    model_path = os.path.join(models_checkpoints_dir, f"{train_start_file}_{run.name}_final.pth")
     torch.save(model.state_dict(), model_path)
 
 
