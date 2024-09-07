@@ -22,7 +22,7 @@ if '../src' not in sys.path:
 print(sys.path)
 
 from models.model_unet import UNet3DMulticlass
-from utils.utils import read_hyperparams
+from utils.utils import read_hyperparams, EarlyStopper
 from data.datasets import KneeSegDataset3DMulticlass
 from models.evaluation import ce_dice_loss_multi_batch #, dice_coefficient, batch_dice_coeff
 from models.train import train_loop, validation_loop 
@@ -90,7 +90,7 @@ validation_dataloader = DataLoader(validation_dataset, batch_size=2, num_workers
 
 
 # Create model - 5 output channels for 5 classes
-model = UNet3DMulticlass(1, 5, 16)
+model = UNet3DMulticlass(1, NUM_CLASSES, 16)
 
 # Load model to device
 print(f"Loading model to device: {device}")
@@ -100,6 +100,8 @@ model.to(device)
 loss_fn = ce_dice_loss_multi_batch
 l_rate = hyperparams['l_rate']
 optimizer = optim.Adam(model.parameters(), lr=l_rate)
+
+early_stopper = EarlyStopper(patience=4, min_delta=0.001)
 
 # How long to train for?
 num_epochs = int(hyperparams['num_epochs'])
@@ -122,8 +124,6 @@ wandb.init(
     "threshold": pred_threshold,
     }
 )
-
-
 
 # Use multiple gpu in parallel if available
 if torch.cuda.device_count() > 1:
@@ -166,7 +166,7 @@ for epoch in range(num_epochs):
         "Val Dice Score (Meniscus)": avg_validation_dice_all[4],
     })
     
-    # save as best if val loss is lowest so far
+    # Save as best if val loss is lowest so far
     if validation_loss < min_validation_loss:
         print(f'Validation Loss Decreased({min_validation_loss:.6f}--->{validation_loss:.6f}) \t Saving The Model')
         model_path = os.path.join(MODELS_CHECKPOINTS_PATH, f"{train_start_file}_multiclass_{hyperparams['run_name']}_best_E.pth")
@@ -175,6 +175,14 @@ for epoch in range(num_epochs):
         
         # reset min as current
         min_validation_loss = validation_loss
+
+    # Save model if early stopping triggered
+    if early_stopper.early_stop(validation_loss):   
+        print(f'Early stopping triggered! ({min_validation_loss:.6f}--->{validation_loss:.6f}) \t Saving The Model')
+        model_path = os.path.join(MODELS_CHECKPOINTS_PATH, f"{train_start_file}_multiclass_{hyperparams['run_name']}_early_stop_E{epoch+1}.pth")
+        torch.save(model.state_dict(), model_path)
+        print(f"Early stop epoch: {epoch + 1}") 
+
 
 
 # Once training is done, save final model
