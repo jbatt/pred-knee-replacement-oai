@@ -199,7 +199,7 @@ def main():
         # Save as best if val loss is lowest so far
         if validation_loss < min_validation_loss:
             print(f'Validation Loss Decreased({min_validation_loss:.6f}--->{validation_loss:.6f}) \t Saving The Model')
-            model_path = os.path.join(models_checkpoints_dir, f"{train_start_file}_multiclass_{wandb.config.name}_best_E.pth")
+            model_path = os.path.join(models_checkpoints_dir, f"{train_start_file}_multiclass_{wandb.name}_best_E.pth")
             torch.save(model.state_dict(), model_path)
             print(f"Best epoch yet: {epoch + 1}")
             
@@ -209,14 +209,14 @@ def main():
         # Save model if early stopping triggered
         if early_stopper.early_stop(validation_loss):   
             print(f'Early stopping triggered! ({min_validation_loss:.6f}--->{validation_loss:.6f}) \t Saving The Model')
-            model_path = os.path.join(models_checkpoints_dir, f"{train_start_file}_multiclass_{wandb.config.name}_early_stop_E{epoch+1}.pth")
+            model_path = os.path.join(models_checkpoints_dir, f"{train_start_file}_multiclass_{wandb.name}_early_stop_E{epoch+1}.pth")
             torch.save(model.state_dict(), model_path)
             print(f"Early stop epoch: {epoch + 1}") 
 
 
 
     # Once training is done, save final model
-    model_path = os.path.join(models_checkpoints_dir, f"{train_start_file}_{wandb.config.name}_final.pth")
+    model_path = os.path.join(models_checkpoints_dir, f"{train_start_file}_{wandb.name}_final.pth")
     torch.save(model.state_dict(), model_path)
 
 
