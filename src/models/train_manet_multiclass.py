@@ -93,10 +93,10 @@ validation_dataloader = DataLoader(validation_dataset, batch_size=2, num_workers
 
 # Create model - 5 output channels for 5 classes
 model  = smp.MAnet(
-    # encoder_name='resnet34', # choose encoder, e.g. resnet34
-    # encoder_depth = 4,
-    # encoder_weights = 'imagenet',
-    # decoder_channels = (128, 64, 32, 16),
+    encoder_name='resnet34', # choose encoder, e.g. resnet34
+    encoder_depth = 4,
+    encoder_weights = 'imagenet',
+    decoder_channels = (128, 64, 32, 16),
     in_channels=1,                  # model input channels (1 for gray-scale volumes, 3 for RGB, etc.)
     classes=NUM_CLASSES,                      # model output channels (number of classes in your dataset)
 )
