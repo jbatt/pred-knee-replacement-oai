@@ -44,6 +44,9 @@ def train_loop(dataloader, device, model, loss_fn, optimizer, num_classes):
 
         X = X.to(device)
         y = y.to(device)
+        
+        print(f"Image shape: {X.size}")
+        print(f"Mask shape: {y.size}")
 
         # Compute prediction and loss
         print("Computing model predictions...")
