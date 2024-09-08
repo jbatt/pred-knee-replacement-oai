@@ -265,8 +265,8 @@ class KneeSegDataset3DMulticlass(Dataset):
         # mask = np.clip(mask_all, 0, 1) 
         
         # crop image/mask
-        image = crop_im(image, dim1_lower=56, dim1_upper=312, dim2_lower=58, dim2_upper=322)
-        mask = crop_mask(mask, dim1_lower=56, dim1_upper=312, dim2_lower=58, dim2_upper=322)
+        image = crop_im(image, dim1_lower=56, dim1_upper=312, dim2_lower=58, dim2_upper=314)
+        mask = crop_mask(mask, dim1_lower=56, dim1_upper=312, dim2_lower=58, dim2_upper=314)
 
         # normalise image
         image = clip_and_norm(image, 0.005)
