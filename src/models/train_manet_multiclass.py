@@ -94,9 +94,9 @@ validation_dataloader = DataLoader(validation_dataset, batch_size=2, num_workers
 # Create model - 5 output channels for 5 classes
 model  = smp.MAnet(
     encoder_name='resnet34', # choose encoder, e.g. resnet34
-    encoder_depth = 4,
+    encoder_depth = 4, # matches unet architecture
     encoder_weights = None,
-    decoder_channels = (128, 64, 32, 16),
+    decoder_channels = (128, 64, 32, 16), # matches unet architecture
     in_channels=1,                  # model input channels (1 for gray-scale volumes, 3 for RGB, etc.)
     classes=NUM_CLASSES,                      # model output channels (number of classes in your dataset)
 )
@@ -133,7 +133,7 @@ wandb.init(
     # track hyperparameters and run metadata
     config={
     "learning_rate": l_rate,
-    "architecture": "3D MAnet",
+    "architecture": "3D MAnet No Pre-Train",
     "kernel_num": 16,
     "dataset": "IWOAI",
     "epochs": num_epochs,
@@ -185,7 +185,7 @@ for epoch in range(num_epochs):
     # Save as best if val loss is lowest so far
     if validation_loss < min_validation_loss:
         print(f'Validation Loss Decreased({min_validation_loss:.6f}--->{validation_loss:.6f}) \t Saving The Model')
-        model_path = os.path.join(MODELS_CHECKPOINTS_PATH, f"{train_start_file}_multiclass_manet_best_E.pth")
+        model_path = os.path.join(MODELS_CHECKPOINTS_PATH, f"{train_start_file}_multiclass_manet_no_pretrain_best_E.pth")
         torch.save(model.state_dict(), model_path)
         print(f"Best epoch yet: {epoch + 1}")
         
@@ -195,14 +195,14 @@ for epoch in range(num_epochs):
     # Save model if early stopping triggered
     if early_stopper.early_stop(validation_loss):   
         print(f'Early stopping triggered! ({min_validation_loss:.6f}--->{validation_loss:.6f}) \t Saving The Model')
-        model_path = os.path.join(MODELS_CHECKPOINTS_PATH, f"{train_start_file}_multiclass_manet_early_stop_E{epoch+1}.pth")
+        model_path = os.path.join(MODELS_CHECKPOINTS_PATH, f"{train_start_file}_multiclass_manet_no_pre_train_early_stop_E{epoch+1}.pth")
         torch.save(model.state_dict(), model_path)
         print(f"Early stop epoch: {epoch + 1}") 
 
 
 
 # Once training is done, save final model
-model_path = os.path.join(MODELS_CHECKPOINTS_PATH, f"{train_start_file}_manet_final.pth")
+model_path = os.path.join(MODELS_CHECKPOINTS_PATH, f"{train_start_file}_manet_no_pretrain_final.pth")
 torch.save(model.state_dict(), model_path)
 
 wandb.finish()
