@@ -63,7 +63,7 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print(f"Current device: {device}")
 
 # Read in hyperparams
-hyperparams = read_hyperparams('../src/models/hyperparams_unet.txt')
+hyperparams = read_hyperparams('../src/models/hyperparams_manet.txt')
 print(hyperparams)
 
 
@@ -102,9 +102,6 @@ model  = smp.MAnet(
 )
 
 
-
-
-
 # Load model to device
 print(f"Loading model to device: {device}")
 model.to(device)
@@ -114,8 +111,9 @@ loss_fn = ce_dice_loss_multi_batch
 l_rate = hyperparams['l_rate']
 optimizer = optim.Adam(model.parameters(), lr=l_rate)
 
-lr_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=8, verbose=True,
-                                                              threshold=0.001, threshold_mode='abs')
+# Removed for now
+# lr_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=8, verbose=True,
+#                                                               threshold=0.001, threshold_mode='abs')
 
 early_stopper = EarlyStopper(patience=4, min_delta=0.001)
 
@@ -162,7 +160,7 @@ for epoch in range(num_epochs):
     print(f"Epoch {epoch+1}\n-------------------------------")
 
     train_loss, avg_train_dice, avg_train_dice_all = train_loop(train_dataloader, device, model, loss_fn, optimizer, num_classes=NUM_CLASSES)
-    validation_loss, avg_validation_dice, avg_validation_dice_all, lr_scheduler = validation_loop(validation_dataloader, device, model, loss_fn, lr_scheduler, num_classes=NUM_CLASSES)
+    validation_loss, avg_validation_dice, avg_validation_dice_all = validation_loop(validation_dataloader, device, model, loss_fn, num_classes=NUM_CLASSES)
 
     # log to wandb
     wandb.log({
@@ -185,7 +183,7 @@ for epoch in range(num_epochs):
     # Save as best if val loss is lowest so far
     if validation_loss < min_validation_loss:
         print(f'Validation Loss Decreased({min_validation_loss:.6f}--->{validation_loss:.6f}) \t Saving The Model')
-        model_path = os.path.join(MODELS_CHECKPOINTS_PATH, f"{train_start_file}_multiclass_manet_no_pretrain_best_E.pth")
+        model_path = os.path.join(MODELS_CHECKPOINTS_PATH, f"{train_start_file}_{hyperparams["run_name"]}_best_E{epoch+1}.pth")
         torch.save(model.state_dict(), model_path)
         print(f"Best epoch yet: {epoch + 1}")
         
@@ -195,14 +193,14 @@ for epoch in range(num_epochs):
     # Save model if early stopping triggered
     if early_stopper.early_stop(validation_loss):   
         print(f'Early stopping triggered! ({min_validation_loss:.6f}--->{validation_loss:.6f}) \t Saving The Model')
-        model_path = os.path.join(MODELS_CHECKPOINTS_PATH, f"{train_start_file}_multiclass_manet_no_pre_train_early_stop_E{epoch+1}.pth")
+        model_path = os.path.join(MODELS_CHECKPOINTS_PATH, f"{train_start_file}_{hyperparams["run_name"]}_early_stop_E{epoch+1}.pth")
         torch.save(model.state_dict(), model_path)
         print(f"Early stop epoch: {epoch + 1}") 
 
 
 
 # Once training is done, save final model
-model_path = os.path.join(MODELS_CHECKPOINTS_PATH, f"{train_start_file}_manet_no_pretrain_final.pth")
+model_path = os.path.join(MODELS_CHECKPOINTS_PATH, f"{train_start_file}_{hyperparams["run_name"]}_final.pth")
 torch.save(model.state_dict(), model_path)
 
 wandb.finish()

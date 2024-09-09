@@ -93,7 +93,7 @@ def train_loop(dataloader, device, model, loss_fn, optimizer, num_classes):
 
 
 # Define a validation loop function for reuse later 
-def validation_loop(dataloader, device, model, loss_fn, lr_scheduler, num_classes):
+def validation_loop(dataloader, device, model, loss_fn, num_classes):
 
     print("Running validation loop...")
 
@@ -145,7 +145,7 @@ def validation_loop(dataloader, device, model, loss_fn, lr_scheduler, num_classe
     validation_dice /= num_batches
     valid_avg_epoch_dice_all = valid_epoch_dice_all.mean(axis=0)
 
-    lr_scheduler.step(validation_loss/len(dataloader))
+    # lr_scheduler.step(validation_loss/len(dataloader))
 
     print(f"""\n
           Validation Error: \n 
@@ -164,7 +164,7 @@ def validation_loop(dataloader, device, model, loss_fn, lr_scheduler, num_classe
     # Calculate the average dice score for the epoch
     avg_valid_epoch_dice = sum(valid_epoch_dice) / len(valid_epoch_dice)
 
-    return avg_valid_epoch_loss, avg_valid_epoch_dice, valid_avg_epoch_dice_all, lr_scheduler
+    return avg_valid_epoch_loss, avg_valid_epoch_dice, valid_avg_epoch_dice_all # , lr_scheduler
 
 
 
