@@ -147,8 +147,8 @@ print(f"TRAINING MODEL \n-------------------------------")
 for epoch in range(num_epochs):
     print(f"Epoch {epoch+1}\n-------------------------------")
 
-    train_loss, avg_train_dice, avg_train_dice_all = train_loop(train_dataloader, device, model, loss_fn, optimizer, pred_threshold, num_classes=NUM_CLASSES)
-    validation_loss, avg_validation_dice, avg_validation_dice_all = validation_loop(validation_dataloader, device, model, loss_fn, pred_threshold, num_classes=NUM_CLASSES)
+    train_loss, avg_train_dice, avg_train_dice_all = train_loop(train_dataloader, device, model, loss_fn, optimizer, num_classes=NUM_CLASSES)
+    validation_loss, avg_validation_dice, avg_validation_dice_all = validation_loop(validation_dataloader, device, model, loss_fn, num_classes=NUM_CLASSES)
 
     # log to wandb
     wandb.log({
