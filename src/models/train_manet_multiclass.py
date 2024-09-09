@@ -183,7 +183,7 @@ for epoch in range(num_epochs):
     # Save as best if val loss is lowest so far
     if validation_loss < min_validation_loss:
         print(f'Validation Loss Decreased({min_validation_loss:.6f}--->{validation_loss:.6f}) \t Saving The Model')
-        model_path = os.path.join(MODELS_CHECKPOINTS_PATH, f"{train_start_file}_{hyperparams["run_name"]}_best_E{epoch+1}.pth")
+        model_path = os.path.join(MODELS_CHECKPOINTS_PATH, f"{train_start_file}_{hyperparams["run_name"]}_best_E.pth")
         torch.save(model.state_dict(), model_path)
         print(f"Best epoch yet: {epoch + 1}")
         
@@ -195,7 +195,7 @@ for epoch in range(num_epochs):
         print(f'Early stopping triggered! ({min_validation_loss:.6f}--->{validation_loss:.6f}) \t Saving The Model')
         model_path = os.path.join(MODELS_CHECKPOINTS_PATH, f"{train_start_file}_{hyperparams["run_name"]}_early_stop_E{epoch+1}.pth")
         torch.save(model.state_dict(), model_path)
-        print(f"Early stop epoch: {epoch + 1}") 
+        print(f"Early stop epoch: {epoch + 1}")
 
 
 
