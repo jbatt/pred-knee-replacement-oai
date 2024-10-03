@@ -1,9 +1,3 @@
-"""
-File where all datasets are defined.
-For the 3D U-Net, the 3D dataset class was used, where the full images and masks were loaded.
-
-"""
-
 import random
 import torch
 from torch.utils.data import Dataset
@@ -11,101 +5,10 @@ import torchvision.transforms as transforms
 import h5py
 import os
 import numpy as np
-from utils.utils import crop_im, crop_mask, clip_and_norm, pad_to_square
+from utils.utils import crop_im, crop_mask, clip_and_norm
 
 
-# Define the 3D Dataset class
-# Image and mask both need same transforms to be applied, so DO NOT USE RANDOM TRANSFORMS
-# - use e.g. transforms.functional.hflip which has no randomness.
-
-class KneeSegDataset3D(Dataset):
-    def __init__(self, file_paths, data_dir, split='train', transform=None, transform_chance=0.5):
-        self.file_paths = file_paths
-        self.data_dir = data_dir
-        self.split = split
-        self.transform = transform
-        self.transform_chance = transform_chance
-
-    # Return length of dataset
-    def __len__(self):
-        return len(self.file_paths)
-
-    # Get an item from the dataset
-    def __getitem__(self, index):
-        
-        path = self.file_paths[index]
-
-        # Test data is arranged differently, and as mask is numpy as opposed to h5py
-        # Load image and segmentation mask from test data (numpy arrays)
-        if self.split == 'test':
-            im_path = os.path.join(self.data_dir, self.split, path + '.im')
-            seg_path = os.path.join(self.data_dir, 'test_gt', path + '.npy')
-            with h5py.File(im_path,'r') as hf:
-                image = np.array(hf['data'])
-            mask = np.load(seg_path)
-
-        # Train and Validation h5py files
-        # Extract image and mask from training and validation data
-        else: 
-            # get full paths and read in
-            im_path = os.path.join(self.data_dir, self.split, path + '.im')
-            seg_path = os.path.join(self.data_dir, self.split, path + '.seg')
-            with h5py.File(im_path,'r') as hf:
-                image = np.array(hf['data'])
-            with h5py.File(seg_path,'r') as hf:
-                mask = np.array(hf['data'])
-
-
-        # Extract the meniscus mask
-        
-        # TODO: extract all masks 
-        if self.split == 'test':
-            minisc_mask = mask[...,-1]
-        else:
-
-            # medial meniscus
-            med_mask = mask[...,-1]
-
-            # THERE IS ONE ERRANT CASE IN TRAIN SET. LATERAL MENISCUS IS AT WRONG INDEX
-            # lateral
-            if path == 'train_026_V01':
-                lat_mask = mask[...,2]
-            else:
-                lat_mask = mask[...,-2]
-
-            # both together
-            minisc_mask = np.add(med_mask,lat_mask)
-
-        mask = np.clip(minisc_mask, 0, 1) #just incase the two menisci ground truths overlap, clip at 1
-
-        # TODO: update cropping to include all masks
-        # crop image/mask
-        image = crop_im(image, dim1_lower=120, dim1_upper=320, dim2_lower=70, dim2_upper=326)
-        mask = crop_im(mask, dim1_lower=120, dim1_upper=320, dim2_lower=70, dim2_upper=326)
-
-        # normalise image
-        image = clip_and_norm(image, 0.005)
-
-        # turn to torch, add channel dimension, and return
-        image = torch.from_numpy(image).float().unsqueeze(0)
-        mask = torch.from_numpy(mask).float().unsqueeze(0)
-
-        # transforms?
-        if self.transform != None:
-
-            # Manually apply trasnforms with randomisation as image and mask must have the same transforms applied
-            # Generate a random number, if above a threshold apply the transform to the image and the mask 
-            if random.random() < self.transform_chance:
-                image = self.transform(image)
-                mask = self.transform(mask)
-
-        return image, mask
-
-
-
-
-
-# Multiclass knee cartiage segmentation masks
+# Multiclass knee cartilage MRI volumes and segmentation masks
 class KneeSegDataset3DMulticlass(Dataset):
     def __init__(self, file_paths, data_dir, num_classes, split='train', transform=None, transform_chance=0.5):
         self.file_paths = file_paths
@@ -124,7 +27,8 @@ class KneeSegDataset3DMulticlass(Dataset):
         
         path = self.file_paths[index]
 
-        # Test data is arranged differently, and as mask is numpy as opposed to h5py
+        # Test data are saved as numpy as instead of h5py
+
         # Load image and segmentation mask from test data (numpy arrays)
         if self.split == 'test':
             im_path = os.path.join(self.data_dir, self.split, path + '.im')
@@ -138,7 +42,8 @@ class KneeSegDataset3DMulticlass(Dataset):
             mask = np.load(seg_path)
 
 
-        # Train and Validation h5py files
+        # Train and validation data are h5py files
+
         # Extract image and mask from training and validation data
         else: 
             # get full paths and read in
@@ -154,15 +59,19 @@ class KneeSegDataset3DMulticlass(Dataset):
                 mask = np.array(hf['data'])
 
         
-        # Extract all masks 
+
+        # Manipulate masks so there are 5 masks in the right order: 
+            # Masks: background, femoral cart., tibial cart., patellar cart., meniscus   
         
-        # If test data - continue with all four classes
+        # If test data (test data already has just four classes) - continue with all four classes
         if self.split == 'test':
+            
+            # Define background mask for the test data
 
             # Reorder dimensions to match model
             mask = mask.transpose(3,0,1,2)
 
-            # Add background to mask
+            # Add background to mask - if everything in a position is zero, it's a background voxel
             all_classes_zero_mask = np.all(mask == 0, axis=0)
 
             # Set background masks to be intergers
@@ -171,9 +80,10 @@ class KneeSegDataset3DMulticlass(Dataset):
             # Add dimension of ones to enable concatenation
             background_mask = np.expand_dims(background_mask, axis=0)
 
-            # Concatenate background to 4-class mask
+            # Concatenate background to 4-class mask (background first, then 4 tissue types)
             mask = np.concatenate([background_mask, mask], axis=0)
         
+
         # If train or validation - combine the medial/lateral masks for the tibial cart. and meniscus 
         else:
             # Define medial meniscus mask
@@ -186,96 +96,56 @@ class KneeSegDataset3DMulticlass(Dataset):
             else:
                 menisc_lat_mask = mask[...,-2]
 
-            # both together
+            # Combine lateral and medial meniscus masks
             minisc_mask = np.add(menisc_med_mask, menisc_lat_mask)
 
-            # # Define tibial medial and lateral cart. masks
-            # tib_med_mask = mask[...,1]
-            # tib_lat_mask = mask[...,2]
-            
-            # # Combine tibial masks
-            # tib_mask = np.add(tib_med_mask, tib_lat_mask)
-
-            # # Define femoral cart. mask
-            # fem_mask =  mask[...,0]
-
-            # # Define femoral cart. mask
-            # pat_mask =  mask[...,3]
-
-            # # Create mask using combined tissue masks
-            # combined_mask = np.stack([fem_mask, tib_mask, pat_mask, minisc_mask], axis=-1)
-
+            # Combine medial and lateral tibial masks
             tibial_mask = np.add(mask[:,:,:,1], mask[:,:,:,2])
 
-            # Clip minsc and tibial masks at 1 in case the two ground truths overlap
+            # Clip miniscus and tibial masks at 1 in case the two overlap
             minisc_mask = np.clip(minisc_mask, 0, 1)
             tibial_mask = np.clip(tibial_mask, 0, 1)
 
-            # # Create base mask of all zero using shape of mensicus mask
-            # menisc_mask_shape = minisc_mask.shape
-            # mask_all = np.zeros(menisc_mask_shape)
-
-            # # Fill in class index values based on binary masks: 0=background, 1=femoral, 2=tibial, 3=patellar, 4=meniscus
-            # mask_all[mask[:,:,:,0]==1] = 1
-            # mask_all[tibial_mask[:,:,:]==1] = 2
-            # mask_all[mask[:,:,:,3]==1] = 3
-            # mask_all[minisc_mask[:,:,:]==1] = 4
-
+            # Initialise final masks dimensions using existing masks, but switch 4 class to 6
             # Adjust mask dimension from 6 classes to 4 classes
             mask_dims = mask.shape[:-1]
             mask_dims += (self.num_classes,)
             mask_dims
+            mask_all = np.zeros(mask_dims) # Initalise mask using previosuly defined dimensions
 
-            # Initalise mask
-            mask_all = np.zeros(mask_dims)
 
             # Fill in each layer of multiclass mask with each classes seg mask
             mask_all[:,:,:,1] = mask[:,:,:,0]
             mask_all[:,:,:,2] = tibial_mask 
             mask_all[:,:,:,3] = mask[:,:,:,2]
             mask_all[:,:,:,4] = minisc_mask
-
-            # Set background to 1 everywhere that all others masks are zero (clip will sort any overlapping masks)
-            # mask_all[:,:,:,0] = 1
-            # mask_all[:,:,:,0] = np.subtract(mask_all[:,:,:,0], mask_all[:,:,:,1])
-            # mask_all[:,:,:,0] = np.subtract(mask_all[:,:,:,0], mask_all[:,:,:,2])
-            # mask_all[:,:,:,0] = np.subtract(mask_all[:,:,:,0], mask_all[:,:,:,3])
-            # mask_all[:,:,:,0] = np.subtract(mask_all[:,:,:,0], mask_all[:,:,:,4])
-
-            # Identify positions where every other class is zero 
-            all_classes_zero_mask = np.all(mask_all == 0, axis=3)
-            # Set background masks to be intergers
-            background_mask = all_classes_zero_mask.astype(int)
-            # Set appropriate slice to backgrond mask
-            mask_all[:,:,:,0] = background_mask
-
-
-            # background_mask = np.expand_dims(background_mask, axis=0)
-            # mask_all = np.concatenate([mask_all, background_mask], axis=0)
-
             
-            # print(f"Dataset original gt mask dimension: {mask_all.shape}")
+            # Define background mask for the train data
+
+            # Identify positions where every other classes are zero 
+            all_classes_zero_mask = np.all(mask_all == 0, axis=3)
+
+            # Set background masks to be intergers (so background equal to 1 where all other sare zero)
+            background_mask = all_classes_zero_mask.astype(int)
+            
+            # Set appropriate multiclass mask slice to backgrond mask
+            mask_all[:,:,:,0] = background_mask
 
             # Change dimension order to match prediction output dimensions for loss function
             mask = mask_all.transpose(3,0,1,2)
-
-            # print(f"Dataset post-transpose gt mask dimension: {mask_all.shape}")
-
-        # # Clip in case ground truths overlap
-        # mask = np.clip(mask_all, 0, 1) 
         
-        # crop image/mask
+        # Crop images and masks
         image = crop_im(image, dim1_lower=56, dim1_upper=312, dim2_lower=58, dim2_upper=314)
         mask = crop_mask(mask, dim1_lower=56, dim1_upper=312, dim2_lower=58, dim2_upper=314)
 
-        # normalise image
+        # Normalise image
         image = clip_and_norm(image, 0.005)
 
-        # turn to torch, add channel dimension, and return
+        # Create torch tensor from numpy, add channel dimension
         image = torch.from_numpy(image).float().unsqueeze(0)
         mask = torch.from_numpy(mask).float().unsqueeze(0)
 
-        # Transforms
+        # Apply transforms
         if self.transform != None:
 
             # Manually apply trasnforms with randomisation as image and mask must have the same transforms applied
