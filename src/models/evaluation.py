@@ -43,6 +43,7 @@ def dice_coefficient(pred_mask: torch.Tensor, gt_mask: torch.Tensor, debug=False
 def dice_coefficient_batch(pred_mask_batch: torch.Tensor, 
                            gt_mask_batch: torch.Tensor, 
                            smooth=1e-5) -> torch.Tensor:
+    
     """Returns the dice coefficient for a batch of predicted and 
     ground truth masks.
 
@@ -87,8 +88,23 @@ def dice_coefficient_batch(pred_mask_batch: torch.Tensor,
 
 
 
-def dice_coefficient_multi_batch_all(pred_mask_batch, gt_mask_batch, num_labels, smooth=1e-5):
+def dice_coefficient_multi_batch_all(pred_mask_batch, gt_mask_batch, smooth=1e-5):
     
+    """Calculates multi-class Dice coefficient 
+    
+    Takes input multi-class predicted masks (logit values) and ground truth masks (binary values) and outputs a tensor with a dice score for each class
+
+    Args:
+        pred_mask_batch (torch.Tensor): Predicted multi-class **logit** mask - expected dims (num_classes, height, width, depth): 
+        gt_mask_batch (torch.Tensor): Ground truth multi-class **binary** mask batch - expected dims (batch, num_classes, height, width, depth)
+        smooth (float, optional): Constant to avoid NaN errors 
+        when volume is zero. Defaults to 1e-5.
+    
+    Returns:
+        tensor: Dice score for each class 
+    """
+
+
     # Release all unoccupied cached memory
     gc.collect()
     torch.cuda.empty_cache()
@@ -101,18 +117,6 @@ def dice_coefficient_multi_batch_all(pred_mask_batch, gt_mask_batch, num_labels,
     
     # Remove dim of 1 from predicted mask and ground truth 
     gt_mask_batch = torch.squeeze(gt_mask_batch, dim=1)
-    
-    # dice = 0
-    # for index in range(num_labels):
-        
-    #     # Release all unoccupied cached memory
-    #     gc.collect()
-    #     torch.cuda.empty_cache()
-         
-    #     dice += float(dice_coefficient_batch(pred_mask_batch[:,index,:,:,:], gt_mask_batch[:,index,:,:,:], smooth=smooth))
-    
-    # print(f"\nDice score = {dice}\n")
-    # return dice / num_labels # Returnn average dice from all class labels
 
 
     # Flatten the tensors to shape (batch_size, num_classes, num_elements)
@@ -133,8 +137,22 @@ def dice_coefficient_multi_batch_all(pred_mask_batch, gt_mask_batch, num_labels,
 
 
 
-def dice_coefficient_multi_batch(pred_mask_batch, gt_mask_batch, num_labels, smooth=1e-5):
+def dice_coefficient_multi_batch(pred_mask_batch, gt_mask_batch, smooth=1e-5):
+
+    """Calculates the mean multi-class Dice coefficient (by class) 
     
+    Takes input multi-class predicted masks (logit values) and ground truth masks (binary values) and outputs a tensor with a dice score for each class
+
+    Args:
+        pred_mask_batch (torch.Tensor): Predicted multi-class **logit** mask - expected dims (num_classes, height, width, depth): 
+        gt_mask_batch (torch.Tensor): Ground truth multi-class **binary** mask batch - expected dims (batch, num_classes, height, width, depth)
+        smooth (float, optional): Constant to avoid NaN errors 
+        when volume is zero. Defaults to 1e-5.
+    
+    Returns:
+        tensor: Mean Dice score - average taken across each class 
+    """
+
     # Release all unoccupied cached memory
     gc.collect()
     torch.cuda.empty_cache()
@@ -147,19 +165,6 @@ def dice_coefficient_multi_batch(pred_mask_batch, gt_mask_batch, num_labels, smo
     
     # Remove dim of 1 from predicted mask and ground truth 
     gt_mask_batch = torch.squeeze(gt_mask_batch, dim=1)
-    
-    # dice = 0
-    # for index in range(num_labels):
-        
-    #     # Release all unoccupied cached memory
-    #     gc.collect()
-    #     torch.cuda.empty_cache()
-         
-    #     dice += float(dice_coefficient_batch(pred_mask_batch[:,index,:,:,:], gt_mask_batch[:,index,:,:,:], smooth=smooth))
-    
-    # print(f"\nDice score = {dice}\n")
-    # return dice / num_labels # Returnn average dice from all class labels
-
 
     # Flatten the tensors to shape (batch_size, num_classes, num_elements)
     y_true_flat = gt_mask_batch.view(gt_mask_batch.size(0), gt_mask_batch.size(1), -1)
@@ -186,9 +191,8 @@ def dice_coefficient_multi_batch(pred_mask_batch, gt_mask_batch, num_labels, smo
 def dice_loss_batch(pred_mask_batch: torch.Tensor, 
                     gt_mask_batch: torch.Tensor,
                     num_labels, 
-                    smooth=1e-5
                     ):
-    """Returns the Dice loss calculated as 1 - Dice coefficient
+    """Returns the Dice loss calculated as 1 - Dice coefficient. This uses the Dice score for a single-class segmentation mask.
 
     Args:
         pred_mask_batch (torch.Tensor): Predicted mask batch
@@ -212,11 +216,11 @@ def dice_loss_multi_batch(pred_mask_batch: torch.Tensor,
                     num_labels, 
                     smooth=1e-5
                     ):
-    """Returns the Dice loss calculated as 1 - Dice coefficient
+    """Returns the Dice loss calculated as 1 - Dice coefficient for multi-class segmentation masks
 
     Args:
-        pred_mask_batch (torch.Tensor): Predicted mask batch
-        gt_mask_batch (torch.Tensor): Ground truth mask batch
+        pred_mask_batch (torch.Tensor): Predicted mask batch (multi-class)
+        gt_mask_batch (torch.Tensor): Ground truth mask batch (multi-class)
         smooth (float, optional): Constant to avoid NaN errors 
         when volume is zero. Defaults to 1e-5.
 
@@ -225,7 +229,8 @@ def dice_loss_multi_batch(pred_mask_batch: torch.Tensor,
     """
     mean_loss = 1 - dice_coefficient_multi_batch(pred_mask_batch, 
                                            gt_mask_batch, 
-                                           num_labels)
+                                           num_labels,
+                                           smooth)
 
     return mean_loss
 
@@ -261,9 +266,11 @@ def ce_dice_loss_multi_batch(pred_mask_batch_logits, gt_mask_batch, num_labels):
     """Returns batch loss caluclated as the sum of the  
     cross-entropy loss and dice loss.
 
+    Logit values are used for the predicted segmentation mask as the Pytorch cross-entropy function expects logit values. 
+
     Args:
-        pred_mask_batch (torch.Tensor): Predicted mask batch
-        gt_mask_batch (torch.Tensor): Ground truth mask batch
+        pred_mask_batch_logits (torch.Tensor): Predicted multi-class mask batch (logit values)
+        gt_mask_batch (torch.Tensor): Ground truth mask batch (binary values)
         
     Returns:
         float: Binary cross-entropy and Dice loss summed
@@ -278,11 +285,17 @@ def ce_dice_loss_multi_batch(pred_mask_batch_logits, gt_mask_batch, num_labels):
     print(f"squeezed gt_mask_batch shape = {gt_mask_batch.shape}")
     print(f"pred_mask_batch_logits shape = {pred_mask_batch_logits.shape}")
     
-    # Calculate softmax to generate probabiltiies for dice score
-    pred_mask_batch_probs = nn.functional.softmax(pred_mask_batch_logits, dim=1)
+    # Removed the softmax call below for now - think this leads to calling softmax twice on logits 
+
+    # # Calculate softmax to generate probabiltiies for dice score
+    # pred_mask_batch_probs = nn.functional.softmax(pred_mask_batch_logits, dim=1)
+
+    # Changed to call on logits and softmax gets call in the Dice score calculation
 
     # Caluclate dice loss for batch using probabilities
-    dice = dice_loss_multi_batch(pred_mask_batch_probs, gt_mask_batch, num_labels)
+    # dice = dice_loss_multi_batch(pred_mask_batch_probs, gt_mask_batch, num_labels)
+    dice = dice_loss_multi_batch(pred_mask_batch_logits, gt_mask_batch, num_labels)
+
     
     # Caluclate cross entropy loss using logits
     ce_loss = nn.CrossEntropyLoss()
