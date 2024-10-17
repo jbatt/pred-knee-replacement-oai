@@ -1,6 +1,6 @@
 {
     "method": "bayes",
-    "name": "sweep_40_epoch",
+    "name": "manet_sweep_40_epoch",
     "metric": {"goal": "minimize", "name": "Val Loss"},
     "parameters": {
         "lr": {"max": 0.005, "min": 0.0005},
