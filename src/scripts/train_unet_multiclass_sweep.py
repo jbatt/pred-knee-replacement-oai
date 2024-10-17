@@ -23,8 +23,8 @@ print(sys.path)
 from models.model_unet import UNet3DMulticlass
 from utils.utils import read_hyperparams, EarlyStopper
 from data.datasets import KneeSegDataset3DMulticlass
-from models.evaluation import ce_dice_loss_multi_batch #, dice_coefficient, batch_dice_coeff
-from models.train import train_loop, validation_loop 
+from src.metrics.evaluation import ce_dice_loss_multi_batch #, dice_coefficient, batch_dice_coeff
+from src.trainer.trainer import train_loop, validation_loop 
 
 
 # Set running environment (True for HPC, False for local)
