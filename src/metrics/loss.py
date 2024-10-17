@@ -46,7 +46,6 @@ def dice_loss_multi_batch(pred_mask_batch: torch.Tensor,
     """
     mean_loss = 1 - dice_coefficient_multi_batch(pred_mask_batch, 
                                            gt_mask_batch, 
-                                           num_labels,
                                            smooth)
 
     return mean_loss
