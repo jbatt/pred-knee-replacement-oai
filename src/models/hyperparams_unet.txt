@@ -1,6 +1,0 @@
-run_name=unet_no_lr_sched_0_001_lr_40_epoch
-l_rate=0.001
-num_epochs=40
-batch_size=1
-threshold=0.5
-transforms=True
