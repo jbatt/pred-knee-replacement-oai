@@ -22,7 +22,7 @@ def train_loop(dataloader, device, model, loss_fn, optimizer, num_classes):
     # Initialise variables
     epoch_loss = []
     epoch_dice = []
-    
+
     # Initialise separate dic earray which will capture dice of all tissues indvidually
     epoch_dice_all = np.empty(shape=(len(dataloader), num_classes))
 
@@ -81,8 +81,8 @@ def train_loop(dataloader, device, model, loss_fn, optimizer, num_classes):
 
         # Append the batch loss to enable calculation of the average epoch loss
         epoch_loss.append(loss)
-        epoch_dice.append(dice_coefficient_multi_batch(pred, y, num_labels=num_classes).item())
-        epoch_dice_all[batch] = dice_coefficient_multi_batch_all(pred, y, num_labels=num_classes).detach().tolist()
+        epoch_dice.append(dice_coefficient_multi_batch(pred, y).item())
+        epoch_dice_all[batch] = dice_coefficient_multi_batch_all(pred, y).detach().tolist()
 
     # Calculate the average loss and accuracy for the epoch
     avg_epoch_loss = sum(epoch_loss) / len(epoch_loss)
@@ -138,8 +138,8 @@ def validation_loop(dataloader, device, model, loss_fn, num_classes):
             validation_loss += loss_fn(pred, y, num_classes).item()
 
             # Determine dice score associated with the current predictions and add to batch dice score
-            validation_dice += dice_coefficient_multi_batch(pred, y, num_labels=num_classes).item()
-            valid_epoch_dice_all[batch] = dice_coefficient_multi_batch_all(pred, y, num_labels=num_classes).detach().tolist()
+            validation_dice += dice_coefficient_multi_batch(pred, y).item()
+            valid_epoch_dice_all[batch] = dice_coefficient_multi_batch_all(pred, y).detach().tolist()
 
 
     validation_loss /= num_batches

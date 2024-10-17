@@ -53,7 +53,8 @@ parser = argparse.ArgumentParser(
 parser.add_argument('-hpc', '--hpc-flag', help='flag for whether program is run on locally or on hpc (hpc=1))') # add arg for hpc_flag
 parser.add_argument('-m', '--model') # add arg for model 
 args = parser.parse_args()
-print(args)
+
+print(f"Command line args = {args}")
 
 
 # Set running environment (True for HPC, False for local)
@@ -61,10 +62,6 @@ HPC_FLAG = args.hpc_flag
 
 print(f"HPC_FLAG = {args.hpc_flag}")
 print(f"Model = {args.model}")
-
-
-# HPC_FLAG = sys.argv[1]
-# HPC_FLAG
 
 NUM_CLASSES = 5
 
