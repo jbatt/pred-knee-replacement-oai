@@ -164,8 +164,8 @@ def main():
                         in_channels =wandb.config.in_channels, 
                         out_channels=wandb.config.out_channels, 
                         num_kernels= wandb.config.num_kernels, 
-                        encoder=wandb.config.encoder, 
-                        encoder_depth=wandb.config.encoder_depth
+                        encoder=wandb.config.encoder, # None/null used in config file if not relevant for model
+                        encoder_depth=wandb.config.encoder_depth # None/null used if not relevant for model
     )
     
     # Set transforms

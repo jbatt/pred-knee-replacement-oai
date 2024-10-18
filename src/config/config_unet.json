@@ -11,6 +11,8 @@
         "in_channels": {"values": [1]},
         "out_channels": {"values": [5]},
         "num_kernels": {"values": [16]},
+        "encoder": {"values": [null]}, 
+        "encoder_depth": {"values": [null]}
     }
 }
 
