@@ -152,8 +152,6 @@ def main():
     train_start = str(datetime.now())
     train_start_file = train_start.replace(" ", "-").replace(".","").replace(":","_")
 
-
-
     # Set training hyperparameters from config file
     lr = wandb.config.lr
     batch_size = wandb.config.batch_size
@@ -206,8 +204,9 @@ def main():
     loss_fn = ce_dice_loss_multi_batch
     optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
 
-    lr_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=8, verbose=True,
-                                                              threshold=0.001, threshold_mode='abs')
+    # Removed for now
+    # lr_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=8, verbose=True,
+    #                                                           threshold=0.001, threshold_mode='abs')
     
     early_stopper = EarlyStopper(patience=5, min_delta=0.001)
 
@@ -227,7 +226,7 @@ def main():
         print(f"Epoch {epoch+1}\n-------------------------------")
 
         train_loss, avg_train_dice, avg_train_dice_all = train_loop(train_dataloader, device, model, loss_fn, optimizer, num_classes=NUM_CLASSES)
-        validation_loss, avg_validation_dice, avg_validation_dice_all, lr_scheduler = validation_loop(validation_dataloader, device, model, loss_fn, lr_scheduler, num_classes=NUM_CLASSES)
+        validation_loss, avg_validation_dice, avg_validation_dice_all = validation_loop(validation_dataloader, device, model, loss_fn, num_classes=NUM_CLASSES)
 
         # log to wandb
         wandb.log({
@@ -250,7 +249,7 @@ def main():
         # Save as best if val loss is lowest so far
         if validation_loss < min_validation_loss:
             print(f'Validation Loss Decreased({min_validation_loss:.6f}--->{validation_loss:.6f}) \t Saving The Model')
-            model_path = os.path.join(models_checkpoints_dir, f"{train_start_file}_multiclass_{run.name}_best_E.pth")
+            model_path = os.path.join(models_checkpoints_dir, f"{train_start_file}_{args.model}_multiclass_{run.name}_best_E.pth")
             torch.save(model.state_dict(), model_path)
             print(f"Best epoch yet: {epoch + 1}")
             
@@ -260,7 +259,7 @@ def main():
         # Save model if early stopping triggered
         if early_stopper.early_stop(validation_loss):   
             print(f'Early stopping triggered! ({min_validation_loss:.6f}--->{validation_loss:.6f}) \t Saving The Model')
-            model_path = os.path.join(models_checkpoints_dir, f"{train_start_file}_multiclass_{run.name}_early_stop_E{epoch+1}.pth")
+            model_path = os.path.join(models_checkpoints_dir, f"{train_start_file}_{args.model}_multiclass_{run.name}_early_stop_E{epoch+1}.pth")
             torch.save(model.state_dict(), model_path)
             print(f"Early stop epoch: {epoch + 1}") 
 
