@@ -104,6 +104,7 @@ def validation_loop(dataloader, device, model, loss_fn, num_classes):
     
     valid_epoch_loss = []
     valid_epoch_dice = []
+    
     # Initialise separate dic earray which will capture dice of all tissues indvidually
     valid_epoch_dice_all = np.empty(shape=(len(dataloader), num_classes))
 
