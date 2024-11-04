@@ -9,7 +9,7 @@
         "transforms": {"values": [true]},
         "in_channels": {"values": [1]},
         "out_channels": {"values": [5]},
-        "num_kernels": {"values": [null]},
+        "num_kernels": {"values": [8,16,32]},
         "encoder": {"values": ["resnet34"]}, 
         "encoder_depth": {"values": [4]}
     }
