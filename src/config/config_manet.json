@@ -1,16 +1,15 @@
 {
-    "method": "bayes",
+    "method": "grid",
     "name": "manet_sweep_40_epoch",
     "metric": {"goal": "minimize", "name": "Val Loss"},
     "parameters": {
-        "lr": {"max": 0.005, "min": 0.0005},
+        "lr": {"values": [1e-5, 1e-4, 1e-3]},
         "batch_size": {"values": [1]},
-        "weight_decay": {"values": [0.00001, 0.00005, 0.0001, 0.0005, 0.001, 0.005]},
         "num_epochs": {"values": [40]},
         "transforms": {"values": [true]},
         "in_channels": {"values": [1]},
         "out_channels": {"values": [5]},
-        "num_kernels": {"values": [8,16,32]},
+        "num_kernels": {"values": [null]},
         "encoder": {"values": ["resnet34"]}, 
         "encoder_depth": {"values": [4]}
     }
