@@ -78,13 +78,12 @@ def define_dataset_paths(hpc):
 
     if hpc == "1":
         # Define data directory - ARC4
-        # Using absolute paths because ray-tune changing working directory
         data_dir = '/nobackup/scjb/data/oai_subset'
         data_train_dir = '/nobackup/scjb/data/oai_subset/train'
         data_valid_dir = '/nobackup/scjb/data/oai_subset/valid'
         results_dir = '/home/home02/scjb/pred-knee-replacement-oai/results'
         models_dir = '/home/home02/scjb/pred-knee-replacement-oai/models'
-        models_checkpoints_dir = '/home/home02/scjb/pred-knee-replacement-oai/models/checkpoints'
+        models_checkpoints_dir = '/nobackup/scjb/models/checkpoints'
 
     else:
         # Define data directory for local runs
@@ -155,7 +154,7 @@ def main():
     # Set training hyperparameters from config file
     lr = wandb.config.lr
     batch_size = wandb.config.batch_size
-    weight_decay = wandb.config.weight_decay
+    # weight_decay = wandb.config.weight_decay # removed weight decay for now - will include if regularisation required
     num_epochs = wandb.config.num_epochs 
 
 
@@ -202,7 +201,9 @@ def main():
 
     # Specifiy criterion and optimiser
     loss_fn = ce_dice_loss_multi_batch
-    optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
+    # optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
+    optimizer = torch.optim.Adam(model.parameters(), lr=lr) # Removed weight decay for now as will address regularisation later if it's required
+
 
     # Removed for now
     # lr_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=8, verbose=True,
