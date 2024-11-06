@@ -1,0 +1,18 @@
+{
+    "method": "grid",
+    "name": "manet_sweep_40_epoch",
+    "metric": {"goal": "minimize", "name": "Val Loss"},
+    "parameters": {
+        "lr": {"values": [1e-5, 1e-4, 1e-3]},
+        "batch_size": {"values": [1]},
+        "num_epochs": {"values": [40]},
+        "transforms": {"values": [true]},
+        "in_channels": {"values": [1]},
+        "out_channels": {"values": [5]},
+        "num_kernels": {"values": [8,16,32]},
+        "encoder": {"values": ["resnet34"]}, 
+        "encoder_depth": {"values": [4]}
+    }
+}
+
+

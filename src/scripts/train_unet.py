@@ -24,8 +24,8 @@ print(sys.path)
 from models.model_unet import UNet3D
 from utils.utils import read_hyperparams
 from data.datasets import KneeSegDataset3D
-from models.evaluation import bce_dice_loss_batch #, dice_coefficient, batch_dice_coeff
-from models.train import train_loop, validation_loop 
+from src.metrics.evaluation import bce_dice_loss_batch #, dice_coefficient, batch_dice_coeff
+from src.trainer.trainer import train_loop, validation_loop 
 
 
 # Define data directory - ARC4

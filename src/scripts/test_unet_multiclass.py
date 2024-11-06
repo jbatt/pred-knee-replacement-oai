@@ -12,8 +12,8 @@ if '../src' not in sys.path:
     sys.path.append('../src')
 
 from models.model_unet import UNet3D, UNet3DMulticlass
-import models.evaluation
-from models.evaluation import dice_coefficient_batch, dice_coefficient, dice_coefficient_multi_batch_all
+import src.metrics.evaluation
+from src.metrics.evaluation import dice_coefficient_batch, dice_coefficient, dice_coefficient_multi_batch_all
 
 import data.datasets
 from data.datasets import KneeSegDataset3D, KneeSegDataset3DMulticlass

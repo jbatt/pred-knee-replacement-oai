@@ -10,6 +10,8 @@ import torch.optim as optim
 from torch.utils.data import DataLoader
 import torchvision.transforms as transforms
 
+import segmentation_models_pytorch_3d as smp
+
 import numpy as np
 from datetime import datetime
 
@@ -21,11 +23,10 @@ if '../src' not in sys.path:
 
 print(sys.path)
 
-from models.model_unet import UNet3DMulticlass
 from utils.utils import read_hyperparams, EarlyStopper
 from data.datasets import KneeSegDataset3DMulticlass
-from models.evaluation import ce_dice_loss_multi_batch #, dice_coefficient, batch_dice_coeff
-from models.train import train_loop, validation_loop 
+from src.metrics.evaluation import ce_dice_loss_multi_batch #, dice_coefficient, batch_dice_coeff
+from src.trainer.trainer import train_loop, validation_loop 
 
 
 # Set running environment (True for HPC, False for local)
@@ -61,7 +62,7 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print(f"Current device: {device}")
 
 # Read in hyperparams
-hyperparams = read_hyperparams('../src/models/hyperparams_unet.txt')
+hyperparams = read_hyperparams('../src/models/hyperparams_manet.txt')
 print(hyperparams)
 
 
@@ -90,7 +91,15 @@ validation_dataloader = DataLoader(validation_dataset, batch_size=2, num_workers
 
 
 # Create model - 5 output channels for 5 classes
-model = UNet3DMulticlass(1, NUM_CLASSES, 16)
+model  = smp.MAnet(
+    encoder_name='resnet34', # choose encoder, e.g. resnet34
+    encoder_depth = 4, # matches unet architecture
+    encoder_weights = None,
+    decoder_channels = (128, 64, 32, 16), # matches unet architecture
+    in_channels=1,                  # model input channels (1 for gray-scale volumes, 3 for RGB, etc.)
+    classes=NUM_CLASSES,                      # model output channels (number of classes in your dataset)
+)
+
 
 # Load model to device
 print(f"Loading model to device: {device}")
@@ -100,6 +109,10 @@ model.to(device)
 loss_fn = ce_dice_loss_multi_batch
 l_rate = hyperparams['l_rate']
 optimizer = optim.Adam(model.parameters(), lr=l_rate)
+
+# Removed for now
+# lr_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=8, verbose=True,
+#                                                               threshold=0.001, threshold_mode='abs')
 
 early_stopper = EarlyStopper(patience=4, min_delta=0.001)
 
@@ -112,20 +125,18 @@ pred_threshold = hyperparams['threshold']
 # start a new wandb run to track this script - LOG IN ON CONSOLE BEFORE RUNNING
 run = wandb.init(
     # set the wandb project where this run will be logged
-    project="oai_subset_knee_seg_unet",
+    project="oai_subset_knee_seg_MAnet",
     
     # track hyperparameters and run metadata
     config={
     "learning_rate": l_rate,
-    "architecture": "3D UNet",
+    "architecture": "3D MAnet No Pre-Train",
     "kernel_num": 16,
     "dataset": "IWOAI",
     "epochs": num_epochs,
     "threshold": pred_threshold,
     }
 )
-
-print(f"WandB run name: {run.name}\n")
 
 # Use multiple gpu in parallel if available
 if torch.cuda.device_count() > 1:
@@ -171,7 +182,7 @@ for epoch in range(num_epochs):
     # Save as best if val loss is lowest so far
     if validation_loss < min_validation_loss:
         print(f'Validation Loss Decreased({min_validation_loss:.6f}--->{validation_loss:.6f}) \t Saving The Model')
-        model_path = os.path.join(MODELS_CHECKPOINTS_PATH, f"{train_start_file}_{run.name}_unet_multiclass_{hyperparams['run_name']}_best_E.pth")
+        model_path = os.path.join(MODELS_CHECKPOINTS_PATH, f"{train_start_file}_{run.name}_manet_{hyperparams["run_name"]}_best_E.pth")
         torch.save(model.state_dict(), model_path)
         print(f"Best epoch yet: {epoch + 1}")
         
@@ -181,14 +192,14 @@ for epoch in range(num_epochs):
     # Save model if early stopping triggered
     if early_stopper.early_stop(validation_loss):   
         print(f'Early stopping triggered! ({min_validation_loss:.6f}--->{validation_loss:.6f}) \t Saving The Model')
-        model_path = os.path.join(MODELS_CHECKPOINTS_PATH, f"{train_start_file}_{run.name}_unet_multiclass_{hyperparams['run_name']}_early_stop_E{epoch+1}.pth")
+        model_path = os.path.join(MODELS_CHECKPOINTS_PATH, f"{train_start_file}_{run.name}_manet_{hyperparams["run_name"]}_early_stop_E{epoch+1}.pth")
         torch.save(model.state_dict(), model_path)
-        print(f"Early stop epoch: {epoch + 1}") 
+        print(f"Early stop epoch: {epoch + 1}")
 
 
 
 # Once training is done, save final model
-model_path = os.path.join(MODELS_CHECKPOINTS_PATH, f"{train_start_file}_{run.name}_unet_multiclass_{hyperparams['run_name']}_final.pth")
+model_path = os.path.join(MODELS_CHECKPOINTS_PATH, f"{train_start_file}_{run.name}_manet_{hyperparams["run_name"]}_final.pth")
 torch.save(model.state_dict(), model_path)
 
 wandb.finish()
