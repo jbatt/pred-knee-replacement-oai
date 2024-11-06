@@ -14,6 +14,8 @@ import numpy as np
 from datetime import datetime
 
 import wandb  # Import Weights and Biases for tracking model training
+os.environ["WANDB__SERVICE_WAIT"] = "300" # Included to prevent wandb.sdk.service.service.ServiceStartTimeoutError: Timed out waiting for wandb service to start after 30.0 seconds error
+
 import yaml # To read in the wandb config yaml file
 
 # Include src directory in path to import custom modules
