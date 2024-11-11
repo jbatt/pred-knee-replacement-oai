@@ -2,7 +2,7 @@
 #$ -V -cwd
 
 #Request some time- min 15 mins - max 48 hours
-#$ -l h_rt=03:00:00
+#$ -l h_rt=48:00:00
 
 #Request GPU
 #$ -l coproc_v100=1
@@ -10,9 +10,15 @@
 #Get email at start and end of the job
 #$ -m be
 
+# Set tasks 1-4
+#$ -t 1-2
+
 #Now run the job
 # module load python/anaconda3
 module load cuda
 # module load pytorch
 
-python models/train_unet.py
+
+infile=$(sed -n -e "$SGE_TASK_ID p" config/config_unet.txt)
+
+python train.py --model unet --hpc-flag 1 < $infile
