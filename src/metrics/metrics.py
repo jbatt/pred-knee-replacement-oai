@@ -2,6 +2,16 @@ import torch
 import torch.nn as nn
 import sys
 import gc
+import numpy as np
+import monai
+
+
+# TODO: add ASSD metric loss function as hyperparameter
+    # MONAI ASSD function
+    # Add ASSD metric
+    # Add ASSD as loss
+    # Create loss hyperparameter in config file
+    # Add in loss hyperparam in train.py
 
 
 # Include src directory in path to import custom modules
@@ -183,3 +193,25 @@ def dice_coefficient_multi_batch(pred_mask_batch, gt_mask_batch, smooth=1e-5):
     print(f"Mean dice = {mean_dice}")
 
     return mean_dice
+
+
+
+
+#########################################################################
+# ASSD
+#########################################################################
+
+def average_surface_distance(pred_mask, gt_mask, spacing=[0.36,0.36,0.7]):
+
+    # ASSD function expects batch dimension so add dim back
+    pred_mask = np.expand_dims(pred_mask, axis=0)
+    gt_mask = np.expand_dims(gt_mask, axis=0)
+
+    # Compute ASSD - [0.36,0.36,0.7] is voxel resolution
+    assd = monai.metrics.compute_average_surface_distance(pred_mask, gt_mask, symmetric=True, include_background=True, spacing=spacing)
+    
+    return assd
+
+
+
+
