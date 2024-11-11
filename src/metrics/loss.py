@@ -3,6 +3,9 @@ import torch.nn as nn
 import sys
 import gc
 from metrics.metrics import dice_coefficient_batch, dice_coefficient_multi_batch, dice_coefficient_multi_batch_all
+from monai.losses.hausdorff_loss import HausdorffDTLoss
+
+
 
 # Caluclate Dice loss as 1 - dice coefficient
 def dice_loss_batch(pred_mask_batch: torch.Tensor, 
@@ -21,16 +24,14 @@ def dice_loss_batch(pred_mask_batch: torch.Tensor,
         float: Dice loss for the input batch
     """
     mean_loss = 1 - dice_coefficient_batch(pred_mask_batch, 
-                                           gt_mask_batch, 
-                                           num_labels)
+                                           gt_mask_batch)
 
     return mean_loss
 
 
 # Caluclate Dice loss as 1 - dice coefficient
 def dice_loss_multi_batch(pred_mask_batch: torch.Tensor, 
-                    gt_mask_batch: torch.Tensor,
-                    num_labels, 
+                    gt_mask_batch: torch.Tensor, 
                     smooth=1e-5
                     ):
     """Returns the Dice loss calculated as 1 - Dice coefficient for multi-class segmentation masks
@@ -77,7 +78,7 @@ def bce_dice_loss_batch(pred_mask_batch, gt_mask_batch):
 
 
 # Loss includes both cross-entropy and dice loss (summed)
-def ce_dice_loss_multi_batch(pred_mask_batch_logits, gt_mask_batch, num_labels):
+def ce_dice_loss_multi_batch(pred_mask_batch_logits, gt_mask_batch):
     
     """Returns batch loss caluclated as the sum of the  
     cross-entropy loss and dice loss.
@@ -110,7 +111,7 @@ def ce_dice_loss_multi_batch(pred_mask_batch_logits, gt_mask_batch, num_labels):
 
     # Caluclate dice loss for batch using probabilities
     # dice = dice_loss_multi_batch(pred_mask_batch_probs, gt_mask_batch, num_labels)
-    dice = dice_loss_multi_batch(pred_mask_batch_logits, gt_mask_batch, num_labels)
+    dice = dice_loss_multi_batch(pred_mask_batch_logits, gt_mask_batch)
 
     
     # Caluclate cross entropy loss using logits
@@ -118,3 +119,37 @@ def ce_dice_loss_multi_batch(pred_mask_batch_logits, gt_mask_batch, num_labels):
     ce = ce_loss(pred_mask_batch_logits, gt_mask_batch)
     
     return ce + dice
+
+
+
+def ce_dice_hausdorff_loss(pred_mask_batch, gt_mask_batch):
+
+    """Returns batch loss caluclated as the sum of the  
+    cross-entropy loss, dice loss and Hausdorff loss.
+
+    Logit values are used for the predicted segmentation mask as the Pytorch cross-entropy function expects logit values. 
+
+    Args:
+        pred_mask_batch_logits (torch.Tensor): Predicted multi-class mask batch (logit values)
+        gt_mask_batch (torch.Tensor): Ground truth mask batch (binary values)
+        
+    Returns:
+        float: Cross-Entropy, Dice loss and Hausdorff Loss summed
+    """
+    ce_dice = ce_dice_loss_multi_batch(pred_mask_batch, gt_mask_batch)
+
+    hausdorff = HausdorffDTLoss(pred_mask_batch, gt_mask_batch)
+
+    return ce_dice + hausdorff
+
+
+def create_loss(input_loss_arg):
+
+    if input_loss_arg == "ce_dice":
+        # Create CE, Dice loss
+        loss = ce_dice_loss_multi_batch
+
+    elif input_loss_arg == "ce_dice_hausdorff":
+        # Create CE, Dice, Hausdorff
+        loss = ce_dice_hausdorff_loss
+    return loss
