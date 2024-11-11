@@ -1,5 +1,7 @@
-# Import libraries
+# TODO: log Hausdorff distance in wandb?
+# TODO: learning rate scheduler? 
 
+# Import libraries
 import os
 import sys
 import glob
@@ -33,6 +35,7 @@ from models.create_model import create_model
 
 import argparse
 
+NUM_CLASSES = 5
 
 ###############################################################################################
 # PARSE COMMAND LINE ARGUMENTS
@@ -58,23 +61,21 @@ args = parser.parse_args()
 
 print(f"Command line args = {args}")
 
-
 # Set running environment (True for HPC, False for local)
 HPC_FLAG = args.hpc_flag
 
 print(f"HPC_FLAG = {args.hpc_flag}")
 print(f"Model = {args.model}")
 
-NUM_CLASSES = 5
-
-# Set Device
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-print(f"Current device: {device}")
 
 
 ###############################################################################################
 # SET UP TRAIN AND VALIDATION PATHS TO IMAGES AND MASKS
 ###############################################################################################
+
+# Set Device
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+print(f"Current device: {device}")
 
 def define_dataset_paths(hpc): 
 
@@ -107,17 +108,32 @@ def define_dataset_paths(hpc):
 
 
 #####################################################################################
-# SET HYPERPARAMETERS
+# SET HYPERPARAMETERS - PARSE STANRDARD INPUT (JSON)
 #####################################################################################
 
-# Load in hyperparams using model CLI argument
-config_filepath = os.path.join('.', 'config', f'config_{args.model}.json')
+# # Load in hyperparams using model CLI argument
+# config_filepath = os.path.join('.', 'config', f'config_{args.model}.json')
 
-with open(config_filepath) as f:
-    sweep_configuration = json.load(f)
+# with open(config_filepath) as f:
+#     sweep_configuration = json.load(f)
 
-print(f"sweep_configuation = {sweep_configuration}")
+# print(f"sweep_configuation = {sweep_configuration}")
 
+std_input_data = None
+
+# If there is std input, read it into a variable
+if not sys.stdin.isatty(): 
+    std_input_data = sys.stdin.read()
+    print(f"Data from standard input:\n{std_input_data}")
+
+# If standard input data is present parse it as JSON data
+if std_input_data:
+    try:
+        sweep_configuration = json.loads(std_input_data)
+        print(f"Parsed json hyperparameter config:\n{sweep_configuration}")
+    
+    except json.JSONDecodeError as e:
+        print(f"Error reading JSON data from standard input:\n{e}")
 
 
 sweep_id = wandb.sweep(sweep=sweep_configuration, project="oai-subset-knee-cart-seg")
@@ -157,7 +173,7 @@ def main():
     
     # Parrallelise model 
     model = nn.DataParallel(model)
-    
+
     # Set transforms
     if wandb.config.transforms == True:
         
