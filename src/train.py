@@ -110,21 +110,7 @@ def define_dataset_paths(hpc):
 # SET HYPERPARAMETERS
 #####################################################################################
 
-# # WandB hyperparams settings
-# sweep_configuration = {
-#     "method": "bayes",
-#     "name": "sweep_40_epoch",
-#     "metric": {"goal": "minimize", "name": "Val Loss"},
-#     "parameters": {
-#         "lr": {"max": 0.005, "min": 0.0005},
-#         "batch_size": {"values": [1]},
-#         "weight_decay": {"values": [0.00001, 0.00005, 0.0001, 0.0005, 0.001, 0.005]},
-#         "num_epochs": {"values": [40]},
-#         "transforms": {"values": [True]}
-#     },
-# }
-
-# Load in hyperparams using model cli arg
+# Load in hyperparams using model CLI argument
 config_filepath = os.path.join('.', 'config', f'config_{args.model}.json')
 
 with open(config_filepath) as f:
@@ -168,6 +154,9 @@ def main():
                         encoder=wandb.config.encoder, # None/null used in config file if not relevant for model
                         encoder_depth=wandb.config.encoder_depth # None/null used if not relevant for model
     )
+    
+    # Parrallelise model 
+    model = nn.DataParallel(model)
     
     # Set transforms
     if wandb.config.transforms == True:
