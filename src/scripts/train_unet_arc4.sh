@@ -10,7 +10,7 @@
 #Get email at start and end of the job
 #$ -m be
 
-# Set tasks 1-4
+# Set tasks 1-2
 #$ -t 1-2
 
 #Now run the job
