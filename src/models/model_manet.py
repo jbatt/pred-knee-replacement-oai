@@ -16,15 +16,15 @@ class MANet3D(nn.Module):
 
         # Could use this later to automatically update the decoder channels for values of 
         # num_kernels and encoder depth - i.e. doubles every layer
-        decoder_channels = [x*(2**(encoder_depth-(i+1))) for i,x  in enumerate(decoder_channels)]
-        print(decoder_channels)
+        decoder_channels = (x*(2**(encoder_depth-(i+1))) for i,x  in enumerate(decoder_channels))
+        print(f"decoder_channels = {decoder_channels}")
 
 
         self.model = smp.MAnet(
             encoder_name=self.encoder,
             encoder_depth=self.encoder_depth,
             encoder_weights=None,
-            decoder_channels=(128,64,32,16),
+            decoder_channels=decoder_channels,
             in_channels=1,
             classes=out_channels
         ) 
