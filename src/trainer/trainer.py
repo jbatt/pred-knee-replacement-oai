@@ -67,7 +67,7 @@ def train_loop(
         print(f"Prediction shape: {pred.shape}")
 
         print("Calculating loss...")
-        loss = loss_fn(pred, y, num_classes)
+        loss = loss_fn(pred, y)
 
         # Backpropagation
         print("Computing backpropagation...")
