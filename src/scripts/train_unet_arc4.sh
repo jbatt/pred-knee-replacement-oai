@@ -5,7 +5,7 @@
 #$ -l h_rt=48:00:00
 
 #Request GPU
-#$ -l coproc_v100=1
+#$ -l coproc_v100=4
 
 #Get email at start and end of the job
 #$ -m be
