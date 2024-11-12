@@ -17,7 +17,6 @@ def train_loop(
         loss_fn, 
         optimizer, 
         num_classes,
-        gpu_id: int
     ):
 
     print("Running training loop...")
