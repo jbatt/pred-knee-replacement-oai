@@ -6,8 +6,19 @@ import numpy as np
 # from src.metrics.evaluation import dice_coefficient_multi_batch, dice_coefficient_multi_batch_all
 from metrics.metrics import dice_coefficient_multi_batch, dice_coefficient_multi_batch_all
 
+from monai.losses.hausdorff_loss import HausdorffDTLoss
+
+
 # Define a training loop function for reuse later 
-def train_loop(dataloader, device, model, loss_fn, optimizer, num_classes):
+def train_loop(
+        dataloader, 
+        device, 
+        model, 
+        loss_fn, 
+        optimizer, 
+        num_classes,
+        gpu_id: int
+    ):
 
     print("Running training loop...")
 
@@ -23,8 +34,10 @@ def train_loop(dataloader, device, model, loss_fn, optimizer, num_classes):
     epoch_loss = []
     epoch_dice = []
 
-    # Initialise separate dic earray which will capture dice of all tissues indvidually
+    # Initialise separate dice/hausdorff array which will capture dice of all tissues indvidually
     epoch_dice_all = np.empty(shape=(len(dataloader), num_classes))
+    epoch_haus_loss_all = np.empty(shape=(len(dataloader), num_classes))
+
 
     size = len(dataloader.dataset)
     print(f"Dataset size = {size}")
@@ -83,13 +96,16 @@ def train_loop(dataloader, device, model, loss_fn, optimizer, num_classes):
         epoch_loss.append(loss)
         epoch_dice.append(dice_coefficient_multi_batch(pred, y).item())
         epoch_dice_all[batch] = dice_coefficient_multi_batch_all(pred, y).detach().tolist()
+        epoch_haus_loss_all[batch] = HausdorffDTLoss(pred, y, softmax=True).detach().tolist()
 
     # Calculate the average loss and accuracy for the epoch
     avg_epoch_loss = sum(epoch_loss) / len(epoch_loss)
     avg_epoch_dice =  sum(epoch_dice) / len(epoch_loss) 
     avg_epoch_dice_all = epoch_dice_all.mean(axis=0)
+    avg_epoch_haus_loss_all = epoch_haus_loss_all.mean(axis=0)
+    
 
-    return avg_epoch_loss, avg_epoch_dice, avg_epoch_dice_all
+    return avg_epoch_loss, avg_epoch_dice, avg_epoch_dice_all, avg_epoch_haus_loss_all
 
 
 
@@ -107,6 +123,7 @@ def validation_loop(dataloader, device, model, loss_fn, num_classes):
     
     # Initialise separate dic earray which will capture dice of all tissues indvidually
     valid_epoch_dice_all = np.empty(shape=(len(dataloader), num_classes))
+    valid_epoch_haus_loss_all = np.empty(shape=(len(dataloader), num_classes))
 
     # Set the model to evaluation mode
     model.eval()
@@ -121,6 +138,7 @@ def validation_loop(dataloader, device, model, loss_fn, num_classes):
     # Initialise loss
     validation_loss = 0
     validation_dice = 0
+    
 
     # Evaluating the model with torch.no_grad() ensures that no gradients are computed during test mode
     with torch.no_grad():
@@ -141,11 +159,13 @@ def validation_loop(dataloader, device, model, loss_fn, num_classes):
             # Determine dice score associated with the current predictions and add to batch dice score
             validation_dice += dice_coefficient_multi_batch(pred, y).item()
             valid_epoch_dice_all[batch] = dice_coefficient_multi_batch_all(pred, y).detach().tolist()
-
+            valid_epoch_haus_loss_all[batch] = HausdorffDTLoss(pred, y, softmax=True).detach().tolist()
 
     validation_loss /= num_batches
     validation_dice /= num_batches
     valid_avg_epoch_dice_all = valid_epoch_dice_all.mean(axis=0)
+    valid_avg_epoch_haus_loss_all = valid_epoch_haus_loss_all.mean(axis=0)
+
 
     # lr_scheduler.step(validation_loss/len(dataloader))
 
@@ -166,7 +186,7 @@ def validation_loop(dataloader, device, model, loss_fn, num_classes):
     # Calculate the average dice score for the epoch
     avg_valid_epoch_dice = sum(valid_epoch_dice) / len(valid_epoch_dice)
 
-    return avg_valid_epoch_loss, avg_valid_epoch_dice, valid_avg_epoch_dice_all # , lr_scheduler
+    return avg_valid_epoch_loss, avg_valid_epoch_dice, valid_avg_epoch_dice_all, valid_avg_epoch_haus_loss_all # , lr_scheduler
 
 
 
