@@ -162,6 +162,9 @@ def main():
     num_epochs = wandb.config.num_epochs 
 
 
+    #####################################################################################
+    # CREATE MODEL AND PARALLELISE IF MULTIPLE GPUS AVAILABLE
+    #####################################################################################
     # Create model using wandb config hyperparams
     model = create_model(input_model_arg=args.model, 
                         in_channels =wandb.config.in_channels, 
@@ -170,10 +173,22 @@ def main():
                         encoder=wandb.config.encoder, # None/null used in config file if not relevant for model
                         encoder_depth=wandb.config.encoder_depth # None/null used if not relevant for model
     )
-    
-    # Parrallelise model 
-    model = nn.DataParallel(model)
 
+    # Check available device
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    print(f"device = {device}")
+
+    # Use multiple gpu in parallel if available
+    if torch.cuda.device_count() > 1:
+        model = nn.DataParallel(model)
+
+    # Load model to device
+    print(f"Loading model to device: {device}")
+    model.to(device)
+
+    #####################################################################################
+    # TRANSFORMS
+    #####################################################################################
     # Set transforms
     if wandb.config.transforms == True:
         
@@ -184,13 +199,15 @@ def main():
     
     print(f"Current hyperparameter values:\n {wandb.config}")
 
-    # Check available device
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    print(f"device = {device}")
-
+    #####################################################################################
+    # DEFINE DATASET PATHS
+    #####################################################################################
     # Define train, validation and output direcotry path
     data_dir, models_checkpoints_dir, train_paths, val_paths = define_dataset_paths(hpc=args.hpc_flag)
 
+    #####################################################################################
+    # DATALOADERS
+    #####################################################################################
     # Define PyTorch datasets and dataloader
 
     # Define datasets
@@ -202,15 +219,13 @@ def main():
     validation_dataloader = DataLoader(validation_dataset, batch_size=2, num_workers = 1, shuffle=False)
 
 
-    # Load model to device
-    print(f"Loading model to device: {device}")
-    model.to(device)
-
+    #####################################################################################
+    # LOSS FUNCTION AND OPTIMISERS
+    #####################################################################################
     # Specifiy criterion and optimiser
     loss_fn = ce_dice_loss_multi_batch
     # optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
     optimizer = torch.optim.Adam(model.parameters(), lr=lr) # Removed weight decay for now as will address regularisation later if it's required
-
 
     # Removed for now
     # lr_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=8, verbose=True,
@@ -219,13 +234,9 @@ def main():
     early_stopper = EarlyStopper(patience=5, min_delta=0.001)
 
 
-    # Use multiple gpu in parallel if available
-    if torch.cuda.device_count() > 1:
-        model = nn.DataParallel(model)
-
 
     # Initialise minimum validation loss as infinity
-    min_validation_loss = float('inf')
+    min_valid_loss = float('inf')
 
     # Model training
     print(f"TRAINING MODEL \n-------------------------------")
@@ -233,8 +244,8 @@ def main():
     for epoch in range(num_epochs):
         print(f"Epoch {epoch+1}\n-------------------------------")
 
-        train_loss, avg_train_dice, avg_train_dice_all = train_loop(train_dataloader, device, model, loss_fn, optimizer, num_classes=NUM_CLASSES)
-        validation_loss, avg_validation_dice, avg_validation_dice_all = validation_loop(validation_dataloader, device, model, loss_fn, num_classes=NUM_CLASSES)
+        train_loss, avg_train_dice, avg_train_dice_all, avg_train_haus_loss_all = train_loop(train_dataloader, device, model, loss_fn, optimizer, num_classes=NUM_CLASSES)
+        valid_loss, avg_valid_dice, avg_valid_dice_all, avg_valid_haus_loss_all = validation_loop(validation_dataloader, device, model, loss_fn, num_classes=NUM_CLASSES)
 
         # log to wandb
         wandb.log({
@@ -245,28 +256,38 @@ def main():
             "Train Dice Score (Tibial Cart.)": avg_train_dice_all[2],
             "Train Dice Score (Patellar Cart.)": avg_train_dice_all[3],
             "Train Dice Score (Meniscus)": avg_train_dice_all[4],
-            "Val Loss": validation_loss, 
-            "Val Dice Score": avg_validation_dice,
-            "Val Dice Score (Background)": avg_validation_dice_all[0],
-            "Val Dice Score (Femoral Cart.)": avg_validation_dice_all[1],
-            "Val Dice Score (Tibial Cart.)": avg_validation_dice_all[2],
-            "Val Dice Score (Patellar Cart.)": avg_validation_dice_all[3],
-            "Val Dice Score (Meniscus)": avg_validation_dice_all[4],
+            "Train Hausdorff Loss (Background)": avg_train_haus_loss_all[0],
+            "Train Hausdorff Loss (Femoral Cart.)": avg_train_haus_loss_all[1],
+            "Train Hausdorff Loss (Tibial Cart.)": avg_train_haus_loss_all[2],
+            "Train Hausdorff Loss (Patellar Cart.)": avg_train_haus_loss_all[3],
+            "Train Hausdorff Loss (Meniscus)": avg_train_haus_loss_all[4],
+            "Val Loss": valid_loss, 
+            "Val Dice Score": avg_valid_dice,
+            "Val Dice Score (Background)": avg_valid_dice_all[0],
+            "Val Dice Score (Femoral Cart.)": avg_valid_dice_all[1],
+            "Val Dice Score (Tibial Cart.)": avg_valid_dice_all[2],
+            "Val Dice Score (Patellar Cart.)": avg_valid_dice_all[3],
+            "Val Dice Score (Meniscus)": avg_valid_dice_all[4],
+            "Val Hausdorff Loss (Background)": avg_valid_haus_loss_all[0],
+            "Val Hausdorff Loss (Femoral Cart.)": avg_valid_haus_loss_all[1],
+            "Val Hausdorff Loss (Tibial Cart.)": avg_valid_haus_loss_all[2],
+            "Val Hausdorff Loss (Patellar Cart.)": avg_valid_haus_loss_all[3],
+            "Val Hausdorff Loss (Meniscus)": avg_valid_haus_loss_all[4],
         })
         
         # Save as best if val loss is lowest so far
-        if validation_loss < min_validation_loss:
-            print(f'Validation Loss Decreased({min_validation_loss:.6f}--->{validation_loss:.6f}) \t Saving The Model')
+        if valid_loss < min_valid_loss:
+            print(f'Validation Loss Decreased({min_valid_loss:.6f}--->{valid_loss:.6f}) \t Saving The Model')
             model_path = os.path.join(models_checkpoints_dir, f"{train_start_file}_{args.model}_multiclass_{run.name}_best_E.pth")
             torch.save(model.state_dict(), model_path)
             print(f"Best epoch yet: {epoch + 1}")
             
             # reset min as current
-            min_validation_loss = validation_loss
+            min_valid_loss = valid_loss
 
         # Save model if early stopping triggered
-        if early_stopper.early_stop(validation_loss):   
-            print(f'Early stopping triggered! ({min_validation_loss:.6f}--->{validation_loss:.6f}) \t Saving The Model')
+        if early_stopper.early_stop(valid_loss):   
+            print(f'Early stopping triggered! ({min_valid_loss:.6f}--->{valid_loss:.6f}) \t Saving The Model')
             model_path = os.path.join(models_checkpoints_dir, f"{train_start_file}_{args.model}_multiclass_{run.name}_early_stop_E{epoch+1}.pth")
             torch.save(model.state_dict(), model_path)
             print(f"Early stop epoch: {epoch + 1}") 
