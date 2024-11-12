@@ -1,2 +1,2 @@
-config_unet_1.json
-config_unet_2.json
+config/config_unet_1.json
+config/config_unet_2.json
