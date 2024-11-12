@@ -136,6 +136,7 @@ if std_input_data:
         print(f"Error reading JSON data from standard input:\n{e}")
 
 
+# Launch WandB sweep using hyperparameter sweep config
 sweep_id = wandb.sweep(sweep=sweep_configuration, project="oai-subset-knee-cart-seg")
 
 
