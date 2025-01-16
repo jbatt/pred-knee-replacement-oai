@@ -1,0 +1,15 @@
+name: environment.yml
+
+dependencies:
+    - python=3.12
+    - numpy
+    - pandas
+    - scipy
+    - scikit-learn
+    - matplotlib
+    - torch
+    - monai 
+    - wandb
+    - pip
+    - pip:
+        - monai
