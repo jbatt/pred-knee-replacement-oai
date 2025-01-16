@@ -7,7 +7,7 @@ dependencies:
     - scipy
     - scikit-learn
     - matplotlib
-    - torch
+    - pytorch
     - wandb
     - pip
     - pip:
