@@ -89,15 +89,14 @@ def define_dataset_paths(hpc):
         # models_checkpoints_dir = '/nobackup/scjb/models/checkpoints'
 
         # Define data directory - Aire
-        data_dir = os.path.join('mnt', 'scratch', 'scjb', 'data', 'oai_subset')
+        data_dir = os.path.join('', 'mnt', 'scratch', 'scjb', 'data', 'oai_subset')
         data_train_dir = os.path.join(data_dir, 'train')
         data_valid_dir = os.path.join(data_dir, 'valid')
 
         print(f"data_train_dir = {data_train_dir}")
         print(f"data_valid_dir = {data_valid_dir}")
 
-
-        models_dir = os.path.join('mnt', 'scratch', 'scjb', 'models')
+        models_dir = os.path.join('', 'mnt', 'scratch', 'scjb', 'models')
         models_checkpoints_dir = os.path.join(models_dir, 'checkpoints')
         home_dir = os.path.join('users', 'scjb')
         results_dir = os.path.join(home_dir, 'pred-knee-replacement-oai', 'results')
