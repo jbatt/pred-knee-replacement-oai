@@ -11,5 +11,5 @@ module load cuda
 
 
 # Run the training script with the selected input file
-python train.py --model unet --hpc-flag 1 < $infile
+python train.py --model unet --hpc-flag 1 < config/config_unet_1.json
 
