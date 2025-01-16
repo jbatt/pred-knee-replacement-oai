@@ -9,6 +9,7 @@ dependencies:
     - matplotlib
     - pytorch
     - torchvision
+    - h5py
     - wandb
     - pip
     - pip:
