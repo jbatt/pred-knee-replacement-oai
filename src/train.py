@@ -93,6 +93,10 @@ def define_dataset_paths(hpc):
         data_train_dir = os.path.join(data_dir, 'train')
         data_valid_dir = os.path.join(data_dir, 'valid')
 
+        print(f"data_train_dir = {data_train_dir}")
+        print(f"data_valid_dir = {data_valid_dir}")
+
+
         models_dir = os.path.join('mnt', 'scratch', 'scjb', 'models')
         models_checkpoints_dir = os.path.join(models_dir, 'checkpoints')
         home_dir = os.path.join('users', 'scjb')
@@ -111,6 +115,9 @@ def define_dataset_paths(hpc):
     # Return file name from filepath
     train_paths = np.array([os.path.basename(i).split('.')[0] for i in glob.glob(f'{data_train_dir}/*.im')])
     val_paths = np.array([os.path.basename(i).split('.')[0] for i in glob.glob(f'{data_valid_dir}/*.im')])
+
+    print(f"train_paths = {train_paths}")
+    print*(f"val_paths = {val_paths}")
 
     return data_dir, models_checkpoints_dir, train_paths, val_paths  
 
