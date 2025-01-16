@@ -8,6 +8,7 @@ dependencies:
     - scikit-learn
     - matplotlib
     - pytorch
+    - torchvision
     - wandb
     - pip
     - pip:
