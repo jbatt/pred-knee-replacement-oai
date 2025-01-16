@@ -1,4 +1,4 @@
-name: environment.yml
+name: pred-knee-replacement-oai
 
 dependencies:
     - python=3.12
@@ -8,7 +8,6 @@ dependencies:
     - scikit-learn
     - matplotlib
     - torch
-    - monai 
     - wandb
     - pip
     - pip:
