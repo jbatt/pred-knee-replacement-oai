@@ -3,7 +3,7 @@
 #SBATCH --partition=gpu     # Request the GPU partition
 #SBATCH --gres=gpu:1        # Request a single GPU
 
-#SBATCH --time=12:00:00
+#SBATCH --time=4:00:00
 #SBATCH --array=1-2 # Set up a task arrya with two tasks 
 
 # Load necessary modules
