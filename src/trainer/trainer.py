@@ -87,10 +87,6 @@ def train_loop(
 
             print(f"loss: {loss:>7f}  [{current:>5d}/{size:>5d}]")
 
-        # # Determine number of correct predictions for top 1 accuracy
-        # correct += (pred.argmax(1) == y).type(torch.float).sum().item()
-
-
         # Append the batch loss to enable calculation of the average epoch loss
         epoch_loss.append(loss)
         epoch_dice.append(dice_coefficient_multi_batch(pred, y).item())
