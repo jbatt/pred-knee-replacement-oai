@@ -138,7 +138,7 @@ def ce_dice_hausdorff_loss(pred_mask_batch, gt_mask_batch):
     """
     ce_dice = ce_dice_loss_multi_batch(pred_mask_batch, gt_mask_batch)
 
-    hausdorff = HausdorffDTLoss(pred_mask_batch, gt_mask_batch)
+    hausdorff = HausdorffDTLoss(pred_mask_batch, gt_mask_batch, softmax=True, reduction="none")
 
     return ce_dice + hausdorff
 
