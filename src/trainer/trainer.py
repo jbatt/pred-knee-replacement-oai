@@ -91,7 +91,7 @@ def train_loop(
         epoch_loss.append(loss)
         epoch_dice.append(dice_coefficient_multi_batch(pred, y).item())
         epoch_dice_all[batch] = dice_coefficient_multi_batch_all(pred, y).detach().tolist()
-        epoch_haus_loss_all[batch] = HausdorffDTLoss(pred, y, softmax=True, reduction="none").detach().tolist()
+        epoch_haus_loss_all[batch] = HausdorffDTLoss(pred, y, softmax=True, reduction="none").tolist()
 
     # Calculate the average loss and accuracy for the epoch
     avg_epoch_loss = sum(epoch_loss) / len(epoch_loss)
@@ -154,7 +154,7 @@ def validation_loop(dataloader, device, model, loss_fn, num_classes):
             # Determine dice score associated with the current predictions and add to batch dice score
             validation_dice += dice_coefficient_multi_batch(pred, y).item()
             valid_epoch_dice_all[batch] = dice_coefficient_multi_batch_all(pred, y).detach().tolist()
-            valid_epoch_haus_loss_all[batch] = HausdorffDTLoss(pred, y, softmax=True, reduction="none").detach().tolist()
+            valid_epoch_haus_loss_all[batch] = HausdorffDTLoss(pred, y, softmax=True, reduction="none").tolist()
 
     validation_loss /= num_batches
     validation_dice /= num_batches
