@@ -7,7 +7,7 @@ import numpy as np
 from metrics.metrics import dice_coefficient_multi_batch, dice_coefficient_multi_batch_all
 
 from monai.losses.hausdorff_loss import HausdorffDTLoss
-
+from monai.metrics import compute_hausdorff_distance
 
 # Define a training loop function for reuse later 
 def train_loop(
@@ -32,6 +32,7 @@ def train_loop(
     # Initialise variables
     epoch_loss = []
     epoch_dice = []
+    epoch_haus = []
 
     # Initialise separate dice/hausdorff array which will capture dice of all tissues indvidually
     epoch_dice_all = np.empty(shape=(len(dataloader), num_classes))
@@ -91,16 +92,31 @@ def train_loop(
         epoch_loss.append(loss)
         epoch_dice.append(dice_coefficient_multi_batch(pred, y).item())
         epoch_dice_all[batch] = dice_coefficient_multi_batch_all(pred, y).detach().tolist()
-        epoch_haus_loss_all[batch] = HausdorffDTLoss(pred, y, softmax=True, reduction="none").tolist()
+        
+
+        # Calculate Hausdorff distance:
+        # Turn model outputs from logits to onehot encoding required by hausdorff function
+        pred_softmax = torch.softmax(pred, dim=1)
+        pred_onehot = torch.zeros_like(pred_softmax)
+        # Scatter ones along the class dimension in to position of the max softmax value
+        pred_onehot.scatter_(1, pred_softmax.argmax(dim=1, keepdim=True), 1)
+        
+        # Calculate Hausdorff distance
+        hausdoff_distance = compute_hausdorff_distance(pred_onehot, y, softmax=True).detach().tolist()
+        epoch_haus_loss_all[batch] = hausdoff_distance
+        epoch_haus.append(hausdoff_distance.mean(dim=0))
 
     # Calculate the average loss and accuracy for the epoch
     avg_epoch_loss = sum(epoch_loss) / len(epoch_loss)
     avg_epoch_dice =  sum(epoch_dice) / len(epoch_loss) 
+    avg_epoch_haus = sum(epoch_haus) / len(epoch_loss)
+    
     avg_epoch_dice_all = epoch_dice_all.mean(axis=0)
     avg_epoch_haus_loss_all = epoch_haus_loss_all.mean(axis=0)
     
 
-    return avg_epoch_loss, avg_epoch_dice, avg_epoch_dice_all, avg_epoch_haus_loss_all
+    return (avg_epoch_loss, avg_epoch_dice, avg_epoch_haus, 
+            avg_epoch_dice_all, avg_epoch_haus_loss_all)
 
 
 
@@ -115,6 +131,7 @@ def validation_loop(dataloader, device, model, loss_fn, num_classes):
     
     valid_epoch_loss = []
     valid_epoch_dice = []
+    valid_epoch_haus = []
     
     # Initialise separate dic earray which will capture dice of all tissues indvidually
     valid_epoch_dice_all = np.empty(shape=(len(dataloader), num_classes))
@@ -154,26 +171,43 @@ def validation_loop(dataloader, device, model, loss_fn, num_classes):
             # Determine dice score associated with the current predictions and add to batch dice score
             validation_dice += dice_coefficient_multi_batch(pred, y).item()
             valid_epoch_dice_all[batch] = dice_coefficient_multi_batch_all(pred, y).detach().tolist()
-            valid_epoch_haus_loss_all[batch] = HausdorffDTLoss(pred, y, softmax=True, reduction="none").tolist()
+            
+            # Determine hasudorff distance associated with the current predictions and add to batch hausdorff distance
+            # Turn model outputs from logits to onehot encoding required by hausdorff function
+            pred_softmax = torch.softmax(pred, dim=1)
+            pred_onehot = torch.zeros_like(pred_softmax)
+            # Scatter ones along the class dimension in to position of the max softamx value
+            pred_onehot.scatter_(1, pred_softmax.argmax(dim=1, keepdim=True), 1)
+            
+            validation_hausdorff = validation_hausdorff.mean(dim=0)
+            
+            # Calculate Hausdorff distance
+            valid_epoch_haus_loss_all[batch] = compute_hausdorff_distance(pred_onehot, y, softmax=True).detach().tolist()
+            validation_hausdorff = valid_epoch_haus_loss_all.mean()
+
 
     validation_loss /= num_batches
     validation_dice /= num_batches
+    validation_hausdorff /= num_batches
+
     valid_avg_epoch_dice_all = valid_epoch_dice_all.mean(axis=0)
     valid_avg_epoch_haus_loss_all = valid_epoch_haus_loss_all.mean(axis=0)
-
 
     # lr_scheduler.step(validation_loss/len(dataloader))
 
     print(f"""\n
-          Validation Error: \n 
-          Validation dice: {(100*validation_dice):>0.1f}%
-          Validation dice by tissue: {valid_avg_epoch_dice_all}%
-          Validation avg loss: {validation_loss:>8f} \n
+        Validation Error: \n 
+        Validation dice: {(100*validation_dice):>0.1f}%
+        Validation dice by tissue: {valid_avg_epoch_dice_all}%
+        Validation hausdorff: {validation_hausdorff:>8f} \n
+        Validation hausdorff by tissue: {valid_avg_epoch_haus_loss_all} \n
+        Validation avg loss: {validation_loss:>8f} \n
     """)
 
     # Append the batch loss to enable calculation of the average epoch loss
     valid_epoch_loss.append(validation_loss)
     valid_epoch_dice.append(validation_dice)
+    valid_epoch_haus.append(validation_hausdorff)
 
     # Calculate the average loss for the epoch
     avg_valid_epoch_loss = sum(valid_epoch_loss) / len(valid_epoch_loss)
@@ -181,7 +215,11 @@ def validation_loop(dataloader, device, model, loss_fn, num_classes):
     # Calculate the average dice score for the epoch
     avg_valid_epoch_dice = sum(valid_epoch_dice) / len(valid_epoch_dice)
 
-    return avg_valid_epoch_loss, avg_valid_epoch_dice, valid_avg_epoch_dice_all, valid_avg_epoch_haus_loss_all # , lr_scheduler
+    # Calculate the average hausdorff distance for the epoch
+    avg_valid_epoch_haus = sum(valid_epoch_haus) / len(valid_epoch_haus)
+
+    return (avg_valid_epoch_loss, avg_valid_epoch_dice, avg_valid_epoch_haus, 
+            valid_avg_epoch_dice_all, valid_avg_epoch_haus_loss_all) # , lr_scheduler
 
 
 
