@@ -29,7 +29,7 @@ print(sys.path)
 from models.model_unet import UNet3DMulticlass
 from utils.utils import EarlyStopper
 from data.datasets import KneeSegDataset3DMulticlass
-from metrics.loss import ce_dice_loss_multi_batch #, dice_coefficient, batch_dice_coeff
+from metrics.loss import create_loss, ce_dice_loss_multi_batch #, dice_coefficient, batch_dice_coeff
 from trainer.trainer import train_loop, validation_loop 
 from models.create_model import create_model
 
@@ -240,7 +240,9 @@ def main():
     # LOSS FUNCTION AND OPTIMISERS
     #####################################################################################
     # Specifiy criterion and optimiser
-    loss_fn = ce_dice_loss_multi_batch
+    loss_fn = create_loss(wandb.config.loss)
+    # loss_fn = ce_dice_loss_multi_batch
+    
     # optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
     optimizer = torch.optim.Adam(model.parameters(), lr=lr) # Removed weight decay for now as will address regularisation later if it's required
 
