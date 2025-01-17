@@ -101,8 +101,9 @@ def train_loop(
         # Scatter ones along the class dimension in to position of the max softmax value
         pred_onehot.scatter_(1, pred_softmax.argmax(dim=1, keepdim=True), 1)
         
-        # Calculate Hausdorff distance
-        hausdoff_distance = compute_hausdorff_distance(pred_onehot, y,).detach().tolist()
+        # Calculate Hausdorff distance for each class
+        # Remove dim of 1 ground truth
+        hausdoff_distance = compute_hausdorff_distance(pred_onehot, torch.squeeze(y, dim=1)).detach().tolist()
         epoch_haus_loss_all[batch] = hausdoff_distance
         epoch_haus.append(hausdoff_distance.mean(dim=0))
 
@@ -182,7 +183,8 @@ def validation_loop(dataloader, device, model, loss_fn, num_classes):
             validation_hausdorff = validation_hausdorff.mean(dim=0)
             
             # Calculate Hausdorff distance
-            valid_epoch_haus_loss_all[batch] = compute_hausdorff_distance(pred_onehot, y).detach().tolist()
+            # Remove dim of 1 ground truth
+            valid_epoch_haus_loss_all[batch] = compute_hausdorff_distance(pred_onehot, torch.squeeze(y, dim=1)).detach().tolist()
             validation_hausdorff = valid_epoch_haus_loss_all.mean()
 
 
