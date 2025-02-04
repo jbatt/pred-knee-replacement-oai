@@ -187,7 +187,7 @@ def validation_loop(dataloader, device, model, loss_fn, num_classes):
             pred = model(X)
 
             # Determine the loss associated with the current predictions and add to batch loss
-            validation_loss += loss_fn(pred, y, num_classes).item()
+            validation_loss += loss_fn(pred, y).item()
 
             # Determine dice score associated with the current predictions and add to batch dice score
             validation_dice += dice_coefficient_multi_batch(pred, y).item()
