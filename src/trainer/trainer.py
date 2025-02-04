@@ -208,11 +208,11 @@ def validation_loop(dataloader, device, model, loss_fn, num_classes):
             
             # Add class mean hausdorff distance to batch hausdorff distance list
             valid_epoch_haus.append(valid_hausdorff_distance_all.mean(dim=0))
+            
+            # Take mean of dim=1 as compute_hausdorff_distance returns tensor of shape (1, num_classes) 
+            validation_hausdorff_distance += valid_hausdorff_distance_all.mean(dim=1).item()
 
-            validation_hausdorff_distance += valid_hausdorff_distance_all.mean(dim=0).item()
-
-
-
+    
 
     validation_loss /= num_batches
     validation_dice /= num_batches
