@@ -97,7 +97,11 @@ def train_loop(
         # Calculate Hausdorff distance:
         # Turn model outputs from logits to onehot encoding required by hausdorff function
         pred_softmax = torch.softmax(pred, dim=1)
+        print(f"Softmax shape: {pred_softmax.shape}")
+
         pred_onehot = torch.zeros_like(pred_softmax)
+        print(f"Onehot shape: {pred_onehot.shape}")
+        
         # Scatter ones along the class dimension in to position of the max softmax value
         pred_onehot.scatter_(1, pred_softmax.argmax(dim=1, keepdim=True), 1)
         
@@ -106,7 +110,7 @@ def train_loop(
         # Taking mean of Hausforff distance of each class
         hausdorff_distance = compute_hausdorff_distance(pred_onehot, torch.squeeze(y, dim=1)).detach()
 
-        print(f"Hausdorff distance tensor size: {hausdorff_distance.size()}")
+        print(f"Hausdorff distance tensor size: {hausdorff_distance.shape}")
 
         epoch_haus_loss_all[batch] = hausdorff_distance
         epoch_haus.append(hausdorff_distance.mean(dim=0))
