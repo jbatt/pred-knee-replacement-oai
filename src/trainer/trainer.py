@@ -101,16 +101,23 @@ def train_loop(
 
         pred_onehot = torch.zeros_like(pred_softmax)
         print(f"Onehot shape: {pred_onehot.shape}")
-        
+
         # Scatter ones along the class dimension in to position of the max softmax value
         pred_onehot.scatter_(1, pred_softmax.argmax(dim=1, keepdim=True), 1)
+        print(f"Onehot shape after scatter: {pred_onehot.shape}")
         
+        # a = torch.zeros([1, 1, 5, 256, 256, 160])
+        # a.shape
+        # a = torch.squeeze(a, dim=1)
+        # a.shape
+
         # Calculate Hausdorff distance for each class
         # Remove dim of 1 ground truth
         # Taking mean of Hausforff distance of each class
-        hausdorff_distance = compute_hausdorff_distance(pred_onehot, torch.squeeze(y, dim=1)).detach()
+        print(torch.squeeze(y, dim=1).shape))
+        hausdorff_distance = compute_hausdorff_distance(pred_onehot, torch.squeeze(y, dim=1)).detach().tolist()
 
-        print(f"Hausdorff distance tensor size: {hausdorff_distance.shape}")
+        print(f"Hausdorff distance: {hausdorff_distance}")
 
         epoch_haus_loss_all[batch] = hausdorff_distance
         epoch_haus.append(hausdorff_distance.mean(dim=0))
