@@ -106,7 +106,7 @@ def train_loop(
         # Taking mean of Hausforff distance of each class
         hausdorff_distance = compute_hausdorff_distance(pred_onehot, torch.squeeze(y, dim=1)).detach()
 
-        print(f"Hausdorff distance tensor size: {hausdorff_distance.size()})
+        print(f"Hausdorff distance tensor size: {hausdorff_distance.size()}")
 
         epoch_haus_loss_all[batch] = hausdorff_distance
         epoch_haus.append(hausdorff_distance.mean(dim=0))
