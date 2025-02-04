@@ -111,10 +111,13 @@ def train_loop(
         # a = torch.squeeze(a, dim=1)
         # a.shape
 
+
+
         # Calculate Hausdorff distance for each class
         # Remove dim of 1 ground truth
         # Taking mean of Hausforff distance of each class
-        print(torch.squeeze(y, dim=1).shape))
+        # print(torch.squeeze(y, dim=1).shape))
+        
         hausdorff_distance = compute_hausdorff_distance(pred_onehot, torch.squeeze(y, dim=1)).detach().tolist()
 
         print(f"Hausdorff distance: {hausdorff_distance}")
