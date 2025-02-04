@@ -103,9 +103,14 @@ def train_loop(
         
         # Calculate Hausdorff distance for each class
         # Remove dim of 1 ground truth
-        hausdoff_distance = compute_hausdorff_distance(pred_onehot, torch.squeeze(y, dim=1)).detach().tolist()
-        epoch_haus_loss_all[batch] = hausdoff_distance
-        epoch_haus.append(hausdoff_distance.mean(dim=0))
+
+
+        hausdorff_distance = compute_hausdorff_distance(pred_onehot, torch.squeeze(y, dim=1)).detach().item()
+        
+        # TODO: fix error wandb: ERROR ValueError: setting an array element with a sequence. 
+        # The requested array would exceed the maximum number of dimension of 1.
+        epoch_haus_loss_all[batch] = hausdorff_distance
+        epoch_haus.append(hausdorff_distance.mean(dim=0))
 
     # Calculate the average loss and accuracy for the epoch
     avg_epoch_loss = sum(epoch_loss) / len(epoch_loss)
