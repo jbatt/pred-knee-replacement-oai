@@ -105,27 +105,21 @@ def train_loop(
         # Scatter ones along the class dimension in to position of the max softmax value
         pred_onehot.scatter_(1, pred_softmax.argmax(dim=1, keepdim=True), 1)
         print(f"Onehot shape after scatter: {pred_onehot.shape}")
-        
-        # a = torch.zeros([1, 1, 5, 256, 256, 160])
-        # a.shape
-        # a = torch.squeeze(a, dim=1)
-        # a.shape
-
 
 
         # Calculate Hausdorff distance for each class
         # Remove dim of 1 ground truth
-        # Taking mean of Hausforff distance of each class
+        # Taking mean of Hausdorff distance of each class
         # print(torch.squeeze(y, dim=1).shape))
         
-        hausdorff_distance = compute_hausdorff_distance(pred_onehot, 
+        hausdorff_distance_all = compute_hausdorff_distance(pred_onehot, 
                                                         torch.squeeze(y, dim=1),
                                                         include_background=True).detach()
 
-        print(f"Hausdorff distance: {hausdorff_distance}")
+        print(f"Hausdorff distance: {hausdorff_distance_all}")
 
-        epoch_haus_loss_all[batch] = hausdorff_distance.tolist()[0]
-        epoch_haus.append(hausdorff_distance.mean(dim=0))
+        epoch_haus_loss_all[batch] = hausdorff_distance_all.tolist()[0]
+        epoch_haus.append(hausdorff_distance_all.mean(dim=0))
 
     # Calculate the average loss and accuracy for the epoch
     avg_epoch_loss = sum(epoch_loss) / len(epoch_loss)
@@ -171,6 +165,7 @@ def validation_loop(dataloader, device, model, loss_fn, num_classes):
     # Initialise loss
     validation_loss = 0
     validation_dice = 0
+    validation_hausdorff_distance = 0
     
 
     # Evaluating the model with torch.no_grad() ensures that no gradients are computed during test mode
@@ -200,17 +195,28 @@ def validation_loop(dataloader, device, model, loss_fn, num_classes):
             # Scatter ones along the class dimension in to position of the max softamx value
             pred_onehot.scatter_(1, pred_softmax.argmax(dim=1, keepdim=True), 1)
             
-            validation_hausdorff = validation_hausdorff.mean(dim=0)
+            # validation_hausdorff = validation_hausdorff.mean(dim=0)
             
             # Calculate Hausdorff distance
             # Remove dim of 1 ground truth
-            valid_epoch_haus_loss_all[batch] = compute_hausdorff_distance(pred_onehot, torch.squeeze(y, dim=1)).detach().tolist()
-            validation_hausdorff = valid_epoch_haus_loss_all.mean()
+            valid_hausdorff_distance_all = compute_hausdorff_distance(pred_onehot, 
+                                                                  torch.squeeze(y, dim=1),
+                                                                  include_background=True).detach()
+            
+            # Add hausdorff distance for each class to batch hausdorff distance list
+            valid_epoch_haus_loss_all[batch] = valid_hausdorff_distance_all.tolist()[0]
+            
+            # Add class mean hausdorff distance to batch hausdorff distance list
+            valid_epoch_haus.append(valid_hausdorff_distance_all.mean(dim=0))
+
+            validation_hausdorff_distance += valid_hausdorff_distance_all.mean(dim=0)
+
+
 
 
     validation_loss /= num_batches
     validation_dice /= num_batches
-    validation_hausdorff /= num_batches
+    validation_hausdorff_distance /= num_batches
 
     valid_avg_epoch_dice_all = valid_epoch_dice_all.mean(axis=0)
     valid_avg_epoch_haus_loss_all = valid_epoch_haus_loss_all.mean(axis=0)
@@ -221,7 +227,7 @@ def validation_loop(dataloader, device, model, loss_fn, num_classes):
         Validation Error: \n 
         Validation dice: {(100*validation_dice):>0.1f}%
         Validation dice by tissue: {valid_avg_epoch_dice_all}%
-        Validation hausdorff: {validation_hausdorff:>8f} \n
+        Validation hausdorff: {validation_hausdorff_distance:>8f} \n
         Validation hausdorff by tissue: {valid_avg_epoch_haus_loss_all} \n
         Validation avg loss: {validation_loss:>8f} \n
     """)
@@ -229,15 +235,18 @@ def validation_loop(dataloader, device, model, loss_fn, num_classes):
     # Append the batch loss to enable calculation of the average epoch loss
     valid_epoch_loss.append(validation_loss)
     valid_epoch_dice.append(validation_dice)
-    valid_epoch_haus.append(validation_hausdorff)
+    valid_epoch_haus.append(validation_hausdorff_distance)
 
     # Calculate the average loss for the epoch
+    print(f"Length of valid_epoch_loss: {len(valid_epoch_loss)}")
     avg_valid_epoch_loss = sum(valid_epoch_loss) / len(valid_epoch_loss)
 
     # Calculate the average dice score for the epoch
+    print(f"Length of valid_epoch_dice: {len(valid_epoch_dice)}")
     avg_valid_epoch_dice = sum(valid_epoch_dice) / len(valid_epoch_dice)
 
     # Calculate the average hausdorff distance for the epoch
+    print(f"Length of valid_epoch_haus: {len(valid_epoch_haus)}")
     avg_valid_epoch_haus = sum(valid_epoch_haus) / len(valid_epoch_haus)
 
     return (avg_valid_epoch_loss, avg_valid_epoch_dice, avg_valid_epoch_haus, 
