@@ -120,11 +120,11 @@ def train_loop(
         
         hausdorff_distance = compute_hausdorff_distance(pred_onehot, 
                                                         torch.squeeze(y, dim=1),
-                                                        include_background=True).detach().tolist()[0]
+                                                        include_background=True).detach()
 
         print(f"Hausdorff distance: {hausdorff_distance}")
 
-        epoch_haus_loss_all[batch] = hausdorff_distance
+        epoch_haus_loss_all[batch] = hausdorff_distance.tolist()[0]
         epoch_haus.append(hausdorff_distance.mean(dim=0))
 
     # Calculate the average loss and accuracy for the epoch
