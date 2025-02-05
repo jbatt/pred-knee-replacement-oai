@@ -210,7 +210,9 @@ def validation_loop(dataloader, device, model, loss_fn, num_classes):
             valid_epoch_haus.append(valid_hausdorff_distance_all.mean(dim=0))
             
             # Take mean of dim=1 as compute_hausdorff_distance returns tensor of shape (1, num_classes) 
-            validation_hausdorff_distance += valid_hausdorff_distance_all.mean(dim=1).item()
+            print(f"valid_hausdorff_distance_all: {valid_hausdorff_distance_all}")
+            print(f"valid_hausdorff_distance_all shape: {valid_hausdorff_distance_all.shape}")
+            validation_hausdorff_distance += valid_hausdorff_distance_all.mean().item()
 
     
 
