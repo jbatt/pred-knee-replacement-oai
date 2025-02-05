@@ -233,7 +233,7 @@ def main():
 
     # Define dataloaders
     train_dataloader = DataLoader(train_dataset, batch_size=int(batch_size), num_workers = 1, shuffle=True)
-    validation_dataloader = DataLoader(validation_dataset, batch_size=2, num_workers = 1, shuffle=False)
+    validation_dataloader = DataLoader(validation_dataset, batch_size=4, num_workers = 1, shuffle=False)
 
 
     #####################################################################################
