@@ -199,6 +199,7 @@ def validation_loop(dataloader, device, model, loss_fn, num_classes):
             
             # Calculate Hausdorff distance
             # Remove dim of 1 ground truth
+            # Validation dataloader batch size set at 2 so compute_hausdorff_distance returns tensor of shape (2, num_classes)
             valid_hausdorff_distance_all = compute_hausdorff_distance(pred_onehot, 
                                                                   torch.squeeze(y, dim=1),
                                                                   include_background=True).detach()
@@ -209,7 +210,8 @@ def validation_loop(dataloader, device, model, loss_fn, num_classes):
             # Add class mean hausdorff distance to batch hausdorff distance list
             valid_epoch_haus.append(valid_hausdorff_distance_all.mean(dim=0))
             
-            # Take mean of dim=1 as compute_hausdorff_distance returns tensor of shape (1, num_classes) 
+            # Take mean of of whole tensor (classes and batch as compute_hausdorff_distance returns tensor of shape (2, num_classes) 
+            # Validation dataloader batch size set at 2, so tensor has shape (2, num_classes)
             print(f"valid_hausdorff_distance_all: {valid_hausdorff_distance_all}")
             print(f"valid_hausdorff_distance_all shape: {valid_hausdorff_distance_all.shape}")
             validation_hausdorff_distance += valid_hausdorff_distance_all.mean().item()
