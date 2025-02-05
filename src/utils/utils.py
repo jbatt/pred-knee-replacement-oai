@@ -37,7 +37,12 @@ def clip_and_norm(image, upper_bound):
 
 
 # This function will crop the MRI images to a pre-chosen size.
-# May alter to allow range as an argument.
+# The lower dimension defines the top and left of the image.
+# The upper dimension defines the bottom and right of the image.
+# dim1_lower = top
+# dim1_upper = bottom
+# dim2_lower = left
+# dim2_upper = right
 def crop_im(image, dim1_lower, dim1_upper, dim2_lower, dim2_upper):
     # dim1_lower, dim1_upper = 120, 320
     # dim2_lower, dim2_upper = 70, 326
