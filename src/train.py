@@ -323,9 +323,6 @@ def main_train() -> None:
 
 if __name__ == '__main__':
 
-    local_rank = int(os.environ["LOCAL_RANK"])
-    rank = int(os.environ["RANK"])
-    world_size = int(os.environ["WORLD_SIZE"])
 
 
     ###############################################################################################
@@ -389,7 +386,6 @@ if __name__ == '__main__':
 
     # Launch WandB sweep using hyperparameter sweep config
     sweep_id = wandb.sweep(sweep=sweep_configuration, project="oai-subset-knee-cart-seg")
-
 
 
     wandb.agent(sweep_id, function=main_train)
