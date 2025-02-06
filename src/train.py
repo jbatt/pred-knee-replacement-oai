@@ -392,5 +392,5 @@ if __name__ == '__main__':
 
 
 
-    wandb.agent(sweep_id, function=main_train, count=8)
+    wandb.agent(sweep_id, function=main_train)
     
