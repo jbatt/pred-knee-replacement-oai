@@ -3,6 +3,10 @@
 #SBATCH --partition=gpu     # Request the GPU partition
 #SBATCH --gres=gpu:3        # Request 3 GPUs as 3 GPUs per node
 
+#SBATCH --ntasks-per-node=1
+#SBATCH --cpus-per-task=4
+#SBATCH --mem-per-cpu=2G   # memory per cpu-core
+
 #SBATCH --time=48:00:00
 
 #SBATCH --mail-user=scjb@leeds.ac.uk # Email address for notifications
