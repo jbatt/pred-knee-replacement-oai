@@ -209,8 +209,17 @@ def train(rank: int, world_size: int, config, args) -> None:
     # Define dataloaders
     # DistirbutedSampler - batch chunked over all gpus evently 
     # Shuffle = False required for DistributedSampler
-    train_dataloader = DataLoader(train_dataset, batch_size=int(batch_size), num_workers = 1, sampler=DistributedSampler, shuffle=False)
-    validation_dataloader = DataLoader(validation_dataset, batch_size=4, num_workers = 1, sampler=DistributedSampler, shuffle=False)
+    train_dataloader = DataLoader(train_dataset, 
+                                  batch_size=int(batch_size), 
+                                  #num_workers = 1, 
+                                  sampler=DistributedSampler(train_dataset), 
+                                  shuffle=False)
+                                  
+    validation_dataloader = DataLoader(validation_dataset, 
+                                       batch_size=4, 
+                                       #num_workers = 1, 
+                                       sampler=DistributedSampler(validation_dataset), 
+                                       shuffle=False)
 
 
     #####################################################################################
