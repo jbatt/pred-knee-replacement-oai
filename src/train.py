@@ -7,10 +7,17 @@ import sys
 import glob
 import json
 
+# Pytorch
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
 import torchvision.transforms as transforms
+
+# Pytorch distributed training
+import torch.multiprocessing as mp  # Wrap asround python's native numtiprocessing
+from torch.utils.data.distributed import DistributedSampler # Distributed inpout data across GPUs
+from torch.nn.parallel import DistributedDataParallel as DDP # Distribute model across GPUs
+from torch.distributed import init_process_group, destroy_process_group # Initialise process group for distributed training
 
 import numpy as np
 from datetime import datetime
@@ -35,7 +42,13 @@ from models.create_model import create_model
 
 import argparse
 
+
 NUM_CLASSES = 5
+
+local_rank = int(os.environ["LOCAL_RANK"])
+global_rank = int(os.environ["RANK"])
+world_size = int(os.environ["WORLD_SIZE"])
+
 
 ###############################################################################################
 # PARSE COMMAND LINE ARGUMENTS
@@ -44,8 +57,6 @@ NUM_CLASSES = 5
 # Parse command line arguments for:
 # Which model to train
 # Whether training is being done locally or on a HPC environment (this changes the data directory)
-
-
 # TODO - Take in model as argument (U-Net, MA-Net etc.), check it conforms to a set list
 # TODO - add dropout as hyperparameter - check how to do this in segmentation models library
 
@@ -68,7 +79,6 @@ print(f"HPC_FLAG = {args.hpc_flag}")
 print(f"Model = {args.model}")
 
 
-
 ###############################################################################################
 # SET UP TRAIN AND VALIDATION PATHS TO IMAGES AND MASKS
 ###############################################################################################
@@ -80,14 +90,6 @@ print(f"Current device: {device}")
 def define_dataset_paths(hpc): 
 
     if hpc == "1":
-        # Define data directory - ARC4
-        # data_dir = '/nobackup/scjb/data/oai_subset'
-        # data_train_dir = '/nobackup/scjb/data/oai_subset/train'
-        # data_valid_dir = '/nobackup/scjb/data/oai_subset/valid'
-        # results_dir = '/home/home02/scjb/pred-knee-replacement-oai/results'
-        # models_dir = '/home/home02/scjb/pred-knee-replacement-oai/models'
-        # models_checkpoints_dir = '/nobackup/scjb/models/checkpoints'
-
         # Define data directory - Aire
         data_dir = os.path.join('/mnt', 'scratch', 'scjb', 'data', 'oai_subset')
         data_train_dir = os.path.join(data_dir, 'train')
@@ -119,6 +121,25 @@ def define_dataset_paths(hpc):
     print(f"val_paths = {val_paths}")
 
     return data_dir, models_checkpoints_dir, train_paths, val_paths  
+
+
+
+###############################################################################################
+# PARRALLELSED TRAINING SETUP - DISTRIBUTED DATA PARALLEL 
+###############################################################################################
+def ddp_setup(local_rank: int, world_size: int)  -> None:
+    """ Set up distributed data parallel training using PyTorch's native multiprocessing library
+    Args:
+        rank (int): Unique identifier of each prcoess
+        world_size (int): Total number of processes
+    """
+    # IP address of machine running rank 0 process
+    os.environ['MASTER_ADDR'] = 'localhost'
+    os.environ['MASTER_PORT'] = '12355'
+
+    # Initialise process group - 
+    # nccl backend: nvidia collective communications library - optimised for Nvidia GPUs
+    init_process_group(backend='nccl', init_method='env://', rank=local_rank, world_size=world_size)
 
 
 
@@ -160,10 +181,8 @@ sweep_id = wandb.sweep(sweep=sweep_configuration, project="oai-subset-knee-cart-
 # START TRAINING RUN
 #####################################################################################
 
-def main():
+def main(local_rank: int, world_size: int) -> None:
     
-    # Initialise wandb run
-    run = wandb.init()
 
     print(f"WandB run name: {run.name}")
     print(f"config = {run.config}")  
@@ -182,6 +201,8 @@ def main():
     #####################################################################################
     # CREATE MODEL AND PARALLELISE IF MULTIPLE GPUS AVAILABLE
     #####################################################################################
+    ddp_setup(local_rank, world_size)
+    
     # Create model using wandb config hyperparams
     model = create_model(input_model_arg=args.model, 
                         in_channels =wandb.config.in_channels, 
@@ -196,8 +217,16 @@ def main():
     print(f"device = {device}")
 
     # Use multiple gpu in parallel if available
-    if torch.cuda.device_count() > 1:
-        model = nn.DataParallel(model)
+    # if torch.cuda.device_count() > 1:
+    #     device_ids = [i for i in range(torch.cuda.device_count())]
+    #     model = nn.DataParallel(model, device_ids)
+    
+    # Convert model batchnorm layers to sync batchnorm layers
+    model = nn.SyncBatchNorm.convert_sync_batchnorm(model)
+
+    # Distribute model across multiple GPUs
+    model = DDP(model, device_ids=[gpu_id])
+
 
     # Load model to device
     print(f"Loading model to device: {device}")
@@ -232,8 +261,10 @@ def main():
     validation_dataset = KneeSegDataset3DMulticlass(val_paths, data_dir, num_classes=NUM_CLASSES, split='valid')
 
     # Define dataloaders
-    train_dataloader = DataLoader(train_dataset, batch_size=int(batch_size), num_workers = 1, shuffle=True)
-    validation_dataloader = DataLoader(validation_dataset, batch_size=4, num_workers = 1, shuffle=False)
+    # DistirbutedSampler - batch chunked over all gpus evently 
+    # Shuffle = False required for DistributedSampler
+    train_dataloader = DataLoader(train_dataset, batch_size=int(batch_size), num_workers = 1, sampler=DistributedSampler, shuffle=False)
+    validation_dataloader = DataLoader(validation_dataset, batch_size=4, num_workers = 1, sampler=DistributedSampler, shuffle=False)
 
 
     #####################################################################################
@@ -297,20 +328,24 @@ def main():
         })
         
         # Save as best if val loss is lowest so far
-        if valid_loss < min_valid_loss:
+        # model.module.save required for DDP
+        # Save checkpoint only for the rank 0 process
+        if (valid_loss < min_valid_loss) and global_rank == 0:
             print(f'Validation Loss Decreased({min_valid_loss:.6f}--->{valid_loss:.6f}) \t Saving The Model')
             model_path = os.path.join(models_checkpoints_dir, f"{train_start_file}_{args.model}_multiclass_{run.name}_best_E.pth")
-            torch.save(model.state_dict(), model_path)
+            torch.save(model.module.state_dict(), model_path)
             print(f"Best epoch yet: {epoch + 1}")
             
             # reset min as current
             min_valid_loss = valid_loss
 
         # Save model if early stopping triggered
-        if early_stopper.early_stop(valid_loss):   
+        # model.module.save required for DDP
+        # Save checkpoint only for the rank 0 process
+        if early_stopper.early_stop(valid_loss) and global_rank == 0:
             print(f'Early stopping triggered! ({min_valid_loss:.6f}--->{valid_loss:.6f}) \t Saving The Model')
             model_path = os.path.join(models_checkpoints_dir, f"{train_start_file}_{args.model}_multiclass_{run.name}_early_stop_E{epoch+1}.pth")
-            torch.save(model.state_dict(), model_path)
+            torch.save(model.module.state_dict(), model_path)
             print(f"Early stop epoch: {epoch + 1}") 
 
 
@@ -319,6 +354,14 @@ def main():
     model_path = os.path.join(models_checkpoints_dir, f"{train_start_file}_{run.name}_final.pth")
     torch.save(model.state_dict(), model_path)
 
+    # Destroy process group to exit DDP training
+    destroy_process_group()
 
 
-wandb.agent(sweep_id, function=main, count=8)
+
+
+
+
+if __name__ == '__main__':
+    wandb.agent(sweep_id, function=main, count=8)
+    mp.spawn(main, args=(world_size,), nprocs=world_size, join=True)
