@@ -116,7 +116,7 @@ def ddp_setup(local_rank: int, world_size: int)  -> None:
 #####################################################################################
 
 # Distributed training function
-def train(rank: int, world_size: int, config) -> None:
+def train(rank: int, world_size: int, config, args) -> None:
     
     # Capture training start time for output data files
     train_start = str(datetime.now())
@@ -310,14 +310,14 @@ def train(rank: int, world_size: int, config) -> None:
 
 
 
-def main_train() -> None:
+def main_train(args) -> None:
     # Hyperparameter sweep configuration
     # config = wandb.config
     
     world_size = torch.cuda.device_count()
 
     # Set up distributed training
-    mp.spawn(train, args=(world_size, wandb.config), nprocs=world_size, join=True)
+    mp.spawn(train, args=(world_size, wandb.config, args), nprocs=world_size, join=True)
 
 
 
@@ -388,5 +388,5 @@ if __name__ == '__main__':
     sweep_id = wandb.sweep(sweep=sweep_configuration, project="oai-subset-knee-cart-seg")
 
 
-    wandb.agent(sweep_id, function=main_train)
+    wandb.agent(sweep_id, function=lambda: main_train(args))
     
