@@ -45,38 +45,6 @@ import argparse
 
 NUM_CLASSES = 5
 
-local_rank = int(os.environ["LOCAL_RANK"])
-global_rank = int(os.environ["RANK"])
-world_size = int(os.environ["WORLD_SIZE"])
-
-
-###############################################################################################
-# PARSE COMMAND LINE ARGUMENTS
-###############################################################################################
-
-# Parse command line arguments for:
-# Which model to train
-# Whether training is being done locally or on a HPC environment (this changes the data directory)
-# TODO - Take in model as argument (U-Net, MA-Net etc.), check it conforms to a set list
-# TODO - add dropout as hyperparameter - check how to do this in segmentation models library
-
-parser = argparse.ArgumentParser(
-    prog="train",
-    description="Trains an input model on the IWOAI OAI dataset subset",
-    epilog=""
-)
-
-parser.add_argument('-hpc', '--hpc-flag', help='flag for whether program is run on locally or on hpc (hpc=1))') # add arg for hpc_flag
-parser.add_argument('-m', '--model') # add arg for model 
-args = parser.parse_args()
-
-print(f"Command line args = {args}")
-
-# Set running environment (True for HPC, False for local)
-HPC_FLAG = args.hpc_flag
-
-print(f"HPC_FLAG = {args.hpc_flag}")
-print(f"Model = {args.model}")
 
 
 ###############################################################################################
@@ -143,65 +111,46 @@ def ddp_setup(local_rank: int, world_size: int)  -> None:
 
 
 
-
-#####################################################################################
-# SET HYPERPARAMETERS - PARSE STANRDARD INPUT (JSON)
-#####################################################################################
-
-# # Load in hyperparams using model CLI argument
-# config_filepath = os.path.join('.', 'config', f'config_{args.model}.json')
-
-# with open(config_filepath) as f:
-#     sweep_configuration = json.load(f)
-
-# print(f"sweep_configuation = {sweep_configuration}")
-
-std_input_data = None
-
-# If there is std input, read it into a variable
-if not sys.stdin.isatty(): 
-    std_input_data = sys.stdin.read()
-    print(f"Data from standard input:\n{std_input_data}")
-
-# If standard input data is present parse it as JSON data
-if std_input_data:
-    try:
-        sweep_configuration = json.loads(std_input_data)
-        print(f"Parsed json hyperparameter config:\n{sweep_configuration}")
-    
-    except json.JSONDecodeError as e:
-        print(f"Error reading JSON data from standard input:\n{e}")
-
-
-# Launch WandB sweep using hyperparameter sweep config
-sweep_id = wandb.sweep(sweep=sweep_configuration, project="oai-subset-knee-cart-seg")
-
-
 #####################################################################################
 # START TRAINING RUN
 #####################################################################################
 
-def main(local_rank: int, world_size: int) -> None:
+# Distributed training function
+def train(rank: int, world_size: int, config) -> None:
     
-
-    print(f"WandB run name: {run.name}")
-    print(f"config = {run.config}")  
-
     # Capture training start time for output data files
     train_start = str(datetime.now())
     train_start_file = train_start.replace(" ", "-").replace(".","").replace(":","_")
+
+    #####################################################################################
+    # CREATE MODEL AND PARALLELISE IF MULTIPLE GPUS AVAILABLE
+    #####################################################################################
+    # Check available device
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    print(f"device = {device}")
+
+    # Set up distributed data parallel training prcoesses 
+    ddp_setup(rank, world_size)
+
+    # Set device for each process
+    torch.cuda.set_device(rank)
+    device = torch.device("cuda", rank)
+
+    # Only initialize wandb normally on the master process (rank 0)
+    if rank == 0:
+        run = wandb.init(project="oai-subset-knee-cart-seg", config=config)
+    else:
+        # Disable wandb logging for non-master processes
+        run = wandb.init(mode="disabled")
+    
+    print(f"WandB run name: {run.name}")
+    print(f"config = {run.config}")  
 
     # Set training hyperparameters from config file
     lr = wandb.config.lr
     batch_size = wandb.config.batch_size
     # weight_decay = wandb.config.weight_decay # removed weight decay for now - will include if regularisation required
     num_epochs = wandb.config.num_epochs 
-
-
-    #####################################################################################
-    # CREATE MODEL AND PARALLELISE IF MULTIPLE GPUS AVAILABLE
-    #####################################################################################
-    ddp_setup(local_rank, world_size)
     
     # Create model using wandb config hyperparams
     model = create_model(input_model_arg=args.model, 
@@ -212,10 +161,6 @@ def main(local_rank: int, world_size: int) -> None:
                         encoder_depth=wandb.config.encoder_depth # None/null used if not relevant for model
     )
 
-    # Check available device
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    print(f"device = {device}")
-
     # Use multiple gpu in parallel if available
     # if torch.cuda.device_count() > 1:
     #     device_ids = [i for i in range(torch.cuda.device_count())]
@@ -224,13 +169,14 @@ def main(local_rank: int, world_size: int) -> None:
     # Convert model batchnorm layers to sync batchnorm layers
     model = nn.SyncBatchNorm.convert_sync_batchnorm(model)
 
+    model = model.to(device)
+
     # Distribute model across multiple GPUs
-    model = DDP(model, device_ids=[gpu_id])
+    model = DDP(model, device_ids=[rank])
 
-
-    # Load model to device
-    print(f"Loading model to device: {device}")
-    model.to(device)
+    # # Load model to device
+    # print(f"Loading model to device: {device}")
+    # model.to(device)
 
     #####################################################################################
     # TRANSFORMS
@@ -297,40 +243,41 @@ def main(local_rank: int, world_size: int) -> None:
         train_loss, avg_train_dice, avg_train_haus, avg_train_dice_all, avg_train_haus_loss_all = train_loop(train_dataloader, device, model, loss_fn, optimizer, num_classes=NUM_CLASSES)
         valid_loss, avg_valid_dice, avg_valid_haus, avg_valid_dice_all, avg_valid_haus_loss_all = validation_loop(validation_dataloader, device, model, loss_fn, num_classes=NUM_CLASSES)
 
-        # log to wandb
-        wandb.log({
-            "Train Loss": train_loss, 
-            "Train Dice Score": avg_train_dice,
-            "Train Dice Score (Background)": avg_train_dice_all[0],
-            "Train Dice Score (Femoral Cart.)": avg_train_dice_all[1],
-            "Train Dice Score (Tibial Cart.)": avg_train_dice_all[2],
-            "Train Dice Score (Patellar Cart.)": avg_train_dice_all[3],
-            "Train Dice Score (Meniscus)": avg_train_dice_all[4],
-            "Train Hausdorff Loss": avg_train_haus,
-            "Train Hausdorff Loss (Background)": avg_train_haus_loss_all[0],
-            "Train Hausdorff Loss (Femoral Cart.)": avg_train_haus_loss_all[1],
-            "Train Hausdorff Loss (Tibial Cart.)": avg_train_haus_loss_all[2],
-            "Train Hausdorff Loss (Patellar Cart.)": avg_train_haus_loss_all[3],
-            "Train Hausdorff Loss (Meniscus)": avg_train_haus_loss_all[4],
-            "Val Loss": valid_loss, 
-            "Val Dice Score": avg_valid_dice,
-            "Val Dice Score (Background)": avg_valid_dice_all[0],
-            "Val Dice Score (Femoral Cart.)": avg_valid_dice_all[1],
-            "Val Dice Score (Tibial Cart.)": avg_valid_dice_all[2],
-            "Val Dice Score (Patellar Cart.)": avg_valid_dice_all[3],
-            "Val Dice Score (Meniscus)": avg_valid_dice_all[4],
-            "Val Hausdorff Loss": avg_valid_haus,
-            "Val Hausdorff Loss (Background)": avg_valid_haus_loss_all[0],
-            "Val Hausdorff Loss (Femoral Cart.)": avg_valid_haus_loss_all[1],
-            "Val Hausdorff Loss (Tibial Cart.)": avg_valid_haus_loss_all[2],
-            "Val Hausdorff Loss (Patellar Cart.)": avg_valid_haus_loss_all[3],
-            "Val Hausdorff Loss (Meniscus)": avg_valid_haus_loss_all[4],
-        })
+        if rank == 0:
+            # log to wandb
+            wandb.log({
+                "Train Loss": train_loss, 
+                "Train Dice Score": avg_train_dice,
+                "Train Dice Score (Background)": avg_train_dice_all[0],
+                "Train Dice Score (Femoral Cart.)": avg_train_dice_all[1],
+                "Train Dice Score (Tibial Cart.)": avg_train_dice_all[2],
+                "Train Dice Score (Patellar Cart.)": avg_train_dice_all[3],
+                "Train Dice Score (Meniscus)": avg_train_dice_all[4],
+                "Train Hausdorff Loss": avg_train_haus,
+                "Train Hausdorff Loss (Background)": avg_train_haus_loss_all[0],
+                "Train Hausdorff Loss (Femoral Cart.)": avg_train_haus_loss_all[1],
+                "Train Hausdorff Loss (Tibial Cart.)": avg_train_haus_loss_all[2],
+                "Train Hausdorff Loss (Patellar Cart.)": avg_train_haus_loss_all[3],
+                "Train Hausdorff Loss (Meniscus)": avg_train_haus_loss_all[4],
+                "Val Loss": valid_loss, 
+                "Val Dice Score": avg_valid_dice,
+                "Val Dice Score (Background)": avg_valid_dice_all[0],
+                "Val Dice Score (Femoral Cart.)": avg_valid_dice_all[1],
+                "Val Dice Score (Tibial Cart.)": avg_valid_dice_all[2],
+                "Val Dice Score (Patellar Cart.)": avg_valid_dice_all[3],
+                "Val Dice Score (Meniscus)": avg_valid_dice_all[4],
+                "Val Hausdorff Loss": avg_valid_haus,
+                "Val Hausdorff Loss (Background)": avg_valid_haus_loss_all[0],
+                "Val Hausdorff Loss (Femoral Cart.)": avg_valid_haus_loss_all[1],
+                "Val Hausdorff Loss (Tibial Cart.)": avg_valid_haus_loss_all[2],
+                "Val Hausdorff Loss (Patellar Cart.)": avg_valid_haus_loss_all[3],
+                "Val Hausdorff Loss (Meniscus)": avg_valid_haus_loss_all[4],
+            })
         
         # Save as best if val loss is lowest so far
         # model.module.save required for DDP
         # Save checkpoint only for the rank 0 process
-        if (valid_loss < min_valid_loss) and global_rank == 0:
+        if (valid_loss < min_valid_loss) and rank == 0:
             print(f'Validation Loss Decreased({min_valid_loss:.6f}--->{valid_loss:.6f}) \t Saving The Model')
             model_path = os.path.join(models_checkpoints_dir, f"{train_start_file}_{args.model}_multiclass_{run.name}_best_E.pth")
             torch.save(model.module.state_dict(), model_path)
@@ -342,7 +289,7 @@ def main(local_rank: int, world_size: int) -> None:
         # Save model if early stopping triggered
         # model.module.save required for DDP
         # Save checkpoint only for the rank 0 process
-        if early_stopper.early_stop(valid_loss) and global_rank == 0:
+        if early_stopper.early_stop(valid_loss) and rank == 0:
             print(f'Early stopping triggered! ({min_valid_loss:.6f}--->{valid_loss:.6f}) \t Saving The Model')
             model_path = os.path.join(models_checkpoints_dir, f"{train_start_file}_{args.model}_multiclass_{run.name}_early_stop_E{epoch+1}.pth")
             torch.save(model.module.state_dict(), model_path)
@@ -354,14 +301,96 @@ def main(local_rank: int, world_size: int) -> None:
     model_path = os.path.join(models_checkpoints_dir, f"{train_start_file}_{run.name}_final.pth")
     torch.save(model.state_dict(), model_path)
 
-    # Destroy process group to exit DDP training
+    # Cleanup - destroy process group to exit DDP training
     destroy_process_group()
+    if rank == 0:
+        wandb.finish()
 
 
 
+
+
+def main_train() -> None:
+    # Hyperparameter sweep configuration
+    # config = wandb.config
+    
+    world_size = torch.cuda.device_count()
+
+    # Set up distributed training
+    mp.spawn(train, args=(world_size, wandb.config), nprocs=world_size, join=True)
 
 
 
 if __name__ == '__main__':
-    wandb.agent(sweep_id, function=main, count=8)
-    mp.spawn(main, args=(world_size,), nprocs=world_size, join=True)
+
+    local_rank = int(os.environ["LOCAL_RANK"])
+    rank = int(os.environ["RANK"])
+    world_size = int(os.environ["WORLD_SIZE"])
+
+
+    ###############################################################################################
+    # PARSE COMMAND LINE ARGUMENTS
+    ###############################################################################################
+
+    # Parse command line arguments for:
+    # Which model to train
+    # Whether training is being done locally or on a HPC environment (this changes the data directory)
+    # TODO - Take in model as argument (U-Net, MA-Net etc.), check it conforms to a set list
+    # TODO - add dropout as hyperparameter - check how to do this in segmentation models library
+
+    parser = argparse.ArgumentParser(
+        prog="train",
+        description="Trains an input model on the IWOAI OAI dataset subset",
+        epilog=""
+    )
+
+    parser.add_argument('-hpc', '--hpc-flag', help='flag for whether program is run on locally or on hpc (hpc=1))') # add arg for hpc_flag
+    parser.add_argument('-m', '--model') # add arg for model 
+    args = parser.parse_args()
+
+    print(f"Command line args = {args}")
+
+    # Set running environment (True for HPC, False for local)
+    HPC_FLAG = args.hpc_flag
+
+    print(f"HPC_FLAG = {args.hpc_flag}")
+    print(f"Model = {args.model}")
+
+
+
+    #####################################################################################
+    # SET HYPERPARAMETERS - PARSE STANRDARD INPUT (JSON)
+    #####################################################################################
+
+    # # Load in hyperparams using model CLI argument
+    # config_filepath = os.path.join('.', 'config', f'config_{args.model}.json')
+
+    # with open(config_filepath) as f:
+    #     sweep_configuration = json.load(f)
+
+    # print(f"sweep_configuation = {sweep_configuration}")
+
+    std_input_data = None
+
+    # If there is std input, read it into a variable
+    if not sys.stdin.isatty(): 
+        std_input_data = sys.stdin.read()
+        print(f"Data from standard input:\n{std_input_data}")
+
+    # If standard input data is present parse it as JSON data
+    if std_input_data:
+        try:
+            sweep_configuration = json.loads(std_input_data)
+            print(f"Parsed json hyperparameter config:\n{sweep_configuration}")
+        
+        except json.JSONDecodeError as e:
+            print(f"Error reading JSON data from standard input:\n{e}")
+
+
+    # Launch WandB sweep using hyperparameter sweep config
+    sweep_id = wandb.sweep(sweep=sweep_configuration, project="oai-subset-knee-cart-seg")
+
+
+
+    wandb.agent(sweep_id, function=main_train, count=8)
+    
