@@ -106,9 +106,8 @@ def ddp_setup(local_rank: int, world_size: int)  -> None:
 
     # Initialise process group - 
     # nccl backend: nvidia collective communications library - optimised for Nvidia GPUs
-    print(f"Setting up distributed data parallel training for rank {local_rank} of {world_size}")
+    print(f"\nSetting up distributed data parallel training for rank {local_rank} of {world_size}\n")
     init_process_group(backend='nccl', init_method='env://', rank=local_rank, world_size=world_size)
-
 
 
 #####################################################################################
@@ -127,7 +126,7 @@ def train(rank: int, world_size: int, config, args) -> None:
     #####################################################################################
     # Check available device
     device_type = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    print(f"device = {device_type}")
+    print(f"device type = {device_type}")
 
     # Set up distributed data parallel training prcoesses 
     ddp_setup(rank, world_size)
@@ -171,9 +170,12 @@ def train(rank: int, world_size: int, config, args) -> None:
     # Convert model batchnorm layers to sync batchnorm layers
     model = nn.SyncBatchNorm.convert_sync_batchnorm(model)
 
+    # Load model to device
+    print(f"\nLoading model to device: {device}\n")
     model = model.to(device)
 
     # Distribute model across multiple GPUs
+    print(f"\nDistributing model across GPU of rank: device_id = {rank}\n")
     model = DDP(model, device_ids=[rank])
 
     # # Load model to device
