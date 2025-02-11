@@ -330,9 +330,10 @@ def main_train(args) -> None:
 
 
 
+
+
+
 if __name__ == '__main__':
-
-
 
     ###############################################################################################
     # PARSE COMMAND LINE ARGUMENTS
@@ -395,7 +396,6 @@ if __name__ == '__main__':
 
     # Launch WandB sweep using hyperparameter sweep config
     sweep_id = wandb.sweep(sweep=sweep_configuration, project="oai-subset-knee-cart-seg")
-
-
+    
     wandb.agent(sweep_id, function=lambda: main_train(args))
     
