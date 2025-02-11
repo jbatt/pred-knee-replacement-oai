@@ -1,0 +1,19 @@
+{
+    "method": "grid",
+    "name": "unet_1",
+    "metric": {"goal": "minimize", "name": "Val Loss"},
+    "parameters": {
+        "lr": {"values": [1e-4, 1e-3]},
+        "batch_size": {"values": [6]},
+        "num_epochs": {"values": [40]},
+        "transforms": {"values": [true]},
+        "in_channels": {"values": [1]},
+        "out_channels": {"values": [5]},
+        "num_kernels": {"values": [16]},
+        "encoder": {"values": [null]}, 
+        "encoder_depth": {"values": [null]},
+        "loss": {"values": ["ce_dice", "ce_dice_hausdorff"]}
+    }
+}
+
+
