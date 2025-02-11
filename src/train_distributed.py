@@ -225,8 +225,9 @@ def train(rank: int, world_size: int, config, args) -> None:
                                        sampler=DistributedSampler(validation_dataset), 
                                        shuffle=False)
 
-    print(f"train_dataloader length = {len(train_dataloader)}")
-    print(f"validation_dataloader length = {len(validation_dataloader)}")
+    
+    print(f"\n\n[GPU{rank}] train_dataloader length = {len(train_dataloader)}")
+    print(f"[GPU{rank}] validation_dataloader length = {len(validation_dataloader)}\n\n")
 
     #####################################################################################
     # LOSS FUNCTION AND OPTIMISERS
