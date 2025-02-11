@@ -3,7 +3,7 @@
     "name": "unet_3",
     "metric": {"goal": "minimize", "name": "Val Loss"},
     "parameters": {
-        "lr": {"values": [1e-4, 1e-3]},
+        "lr": {"values": [1e-3]},
         "batch_size": {"values": [3]},
         "num_epochs": {"values": [40]},
         "transforms": {"values": [true]},
