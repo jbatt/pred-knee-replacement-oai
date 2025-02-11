@@ -220,11 +220,13 @@ def train(rank: int, world_size: int, config, args) -> None:
                                   shuffle=False)
                                   
     validation_dataloader = DataLoader(validation_dataset, 
-                                       batch_size=4, 
+                                       batch_size=6, 
                                        #num_workers = 1, 
                                        sampler=DistributedSampler(validation_dataset), 
                                        shuffle=False)
 
+    print(f"train_dataloader length = {len(train_dataloader)}")
+    print(f"validation_dataloader length = {len(validation_dataloader)}")
 
     #####################################################################################
     # LOSS FUNCTION AND OPTIMISERS
@@ -315,9 +317,10 @@ def train(rank: int, world_size: int, config, args) -> None:
     torch.save(model.state_dict(), model_path)
 
     # Cleanup - destroy process group to exit DDP training
-    destroy_process_group()
     if rank == 0:
         wandb.finish()
+
+    destroy_process_group()
 
 
 
