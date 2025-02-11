@@ -106,6 +106,7 @@ def ddp_setup(local_rank: int, world_size: int)  -> None:
 
     # Initialise process group - 
     # nccl backend: nvidia collective communications library - optimised for Nvidia GPUs
+    print(f"Setting up distributed data parallel training for rank {local_rank} of {world_size}")
     init_process_group(backend='nccl', init_method='env://', rank=local_rank, world_size=world_size)
 
 
@@ -125,8 +126,8 @@ def train(rank: int, world_size: int, config, args) -> None:
     # CREATE MODEL AND PARALLELISE IF MULTIPLE GPUS AVAILABLE
     #####################################################################################
     # Check available device
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    print(f"device = {device}")
+    device_type = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    print(f"device = {device_type}")
 
     # Set up distributed data parallel training prcoesses 
     ddp_setup(rank, world_size)
@@ -134,9 +135,11 @@ def train(rank: int, world_size: int, config, args) -> None:
     # Set device for each process
     torch.cuda.set_device(rank)
     device = torch.device("cuda", rank)
+    print(f"Rank {rank} device: {device}")
 
     # Only initialize wandb normally on the master process (rank 0)
     if rank == 0:
+        print(f"Initialising wandb run for rank {rank}")
         run = wandb.init(project="oai-subset-knee-cart-seg", config=config)
     else:
         # Disable wandb logging for non-master processes
@@ -396,6 +399,6 @@ if __name__ == '__main__':
 
     # Launch WandB sweep using hyperparameter sweep config
     sweep_id = wandb.sweep(sweep=sweep_configuration, project="oai-subset-knee-cart-seg")
-    
+
     wandb.agent(sweep_id, function=lambda: main_train(args))
     
