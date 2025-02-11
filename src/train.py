@@ -326,6 +326,7 @@ def main_train(args) -> None:
     world_size = torch.cuda.device_count()
 
     # Set up distributed training
+    # TODO review documentation for mp.spawn and the join argument
     mp.spawn(train, args=(world_size, wandb.config, args), nprocs=world_size, join=True)
 
 
