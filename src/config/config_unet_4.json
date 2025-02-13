@@ -12,7 +12,7 @@
         "num_kernels": {"values": [16]},
         "encoder": {"values": [null]}, 
         "encoder_depth": {"values": [null]},
-        "loss": {"values": ["ce_dice", "ce_dice_hausdorff"]}
+        "loss": {"values": ["ce_dice_hausdorff"]}
     }
 }
 
