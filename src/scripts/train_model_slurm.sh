@@ -4,7 +4,7 @@
 #SBATCH --gres=gpu:3        # Request 3 GPUs as 3 GPUs per node
 
 #SBATCH --ntasks-per-node=1
-#SBATCH --cpus-per-task=4
+#SBATCH --cpus-per-task=8
 #SBATCH --mem-per-cpu=16G   # memory per cpu-core
 
 #SBATCH --time=48:00:00
