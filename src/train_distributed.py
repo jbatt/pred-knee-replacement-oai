@@ -1,4 +1,3 @@
-# TODO: log Hausdorff distance in wandb?
 # TODO: learning rate scheduler? 
 
 # Import libraries
@@ -107,8 +106,8 @@ def ddp_setup(local_rank: int, world_size: int)  -> None:
 
     # Initialise process group - 
     # nccl backend: nvidia collective communications library - optimised for Nvidia GPUs
+    print(f"\nSetting up distributed data parallel training for rank {local_rank} of {world_size}\n")
     init_process_group(backend='nccl', init_method='env://', rank=local_rank, world_size=world_size)
-
 
 
 #####################################################################################
@@ -126,8 +125,8 @@ def train(rank: int, world_size: int, config, args) -> None:
     # CREATE MODEL AND PARALLELISE IF MULTIPLE GPUS AVAILABLE
     #####################################################################################
     # Check available device
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    print(f"device = {device}")
+    device_type = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    print(f"device type = {device_type}")
 
     # Set up distributed data parallel training prcoesses 
     ddp_setup(rank, world_size)
@@ -135,9 +134,11 @@ def train(rank: int, world_size: int, config, args) -> None:
     # Set device for each process
     torch.cuda.set_device(rank)
     device = torch.device("cuda", rank)
+    print(f"Rank {rank} device: {device}")
 
     # Only initialize wandb normally on the master process (rank 0)
     if rank == 0:
+        print(f"Initialising wandb run for rank {rank}")
         run = wandb.init(project="oai-subset-knee-cart-seg", config=config)
     else:
         # Disable wandb logging for non-master processes
@@ -169,9 +170,12 @@ def train(rank: int, world_size: int, config, args) -> None:
     # Convert model batchnorm layers to sync batchnorm layers
     model = nn.SyncBatchNorm.convert_sync_batchnorm(model)
 
+    # Load model to device
+    print(f"\nLoading model to device: {device}\n")
     model = model.to(device)
 
     # Distribute model across multiple GPUs
+    print(f"\nDistributing model across GPU of rank: device_id = {rank}\n")
     model = DDP(model, device_ids=[rank])
 
     # # Load model to device
@@ -216,11 +220,14 @@ def train(rank: int, world_size: int, config, args) -> None:
                                   shuffle=False)
                                   
     validation_dataloader = DataLoader(validation_dataset, 
-                                       batch_size=4, 
+                                       batch_size=6, 
                                        #num_workers = 1, 
                                        sampler=DistributedSampler(validation_dataset), 
                                        shuffle=False)
 
+    
+    print(f"\n\n[GPU{rank}] train_dataloader length = {len(train_dataloader)}")
+    print(f"[GPU{rank}] validation_dataloader length = {len(validation_dataloader)}\n\n")
 
     #####################################################################################
     # LOSS FUNCTION AND OPTIMISERS
@@ -311,9 +318,10 @@ def train(rank: int, world_size: int, config, args) -> None:
     torch.save(model.state_dict(), model_path)
 
     # Cleanup - destroy process group to exit DDP training
-    destroy_process_group()
     if rank == 0:
         wandb.finish()
+
+    destroy_process_group()
 
 
 
@@ -331,9 +339,10 @@ def main_train(args) -> None:
 
 
 
+
+
+
 if __name__ == '__main__':
-
-
 
     ###############################################################################################
     # PARSE COMMAND LINE ARGUMENTS
@@ -396,7 +405,6 @@ if __name__ == '__main__':
 
     # Launch WandB sweep using hyperparameter sweep config
     sweep_id = wandb.sweep(sweep=sweep_configuration, project="oai-subset-knee-cart-seg")
-
 
     wandb.agent(sweep_id, function=lambda: main_train(args))
     
