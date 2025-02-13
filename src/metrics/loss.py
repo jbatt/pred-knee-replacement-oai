@@ -133,7 +133,7 @@ def hausdorff_loss(pred_mask_batch, gt_mask_batch):
         float: Cross-Entropy, Dice loss and Hausdorff Loss summed
     """
 
-    hausdorff_loss_fn = HausdorffDTLoss(softmax=True, reduction="none")
+    hausdorff_loss_fn = HausdorffDTLoss(softmax=True, reduction="none", include_background=True)
 
     hausdorff_loss = hausdorff_loss_fn(pred_mask_batch, gt_mask_batch)
     
