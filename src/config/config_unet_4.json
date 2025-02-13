@@ -1,10 +1,10 @@
 {
     "method": "grid",
-    "name": "unet_3",
+    "name": "unet_4",
     "metric": {"goal": "minimize", "name": "Val Loss"},
     "parameters": {
         "lr": {"values": [1e-3]},
-        "batch_size": {"values": [3]},
+        "batch_size": {"values": [2]},
         "num_epochs": {"values": [60]},
         "transforms": {"values": [true]},
         "in_channels": {"values": [1]},
