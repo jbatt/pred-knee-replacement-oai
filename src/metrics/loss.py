@@ -121,6 +121,26 @@ def ce_dice_loss_multi_batch(pred_mask_batch_logits, gt_mask_batch):
     return ce + dice
 
 
+def hausdorff_loss(pred_mask_batch, gt_mask_batch):
+    
+    """Returns batch Hausdorff loss.
+
+    Args:
+        pred_mask_batch_logits (torch.Tensor): Predicted multi-class mask batch (logit values)
+        gt_mask_batch (torch.Tensor): Ground truth mask batch (binary values)
+        
+    Returns:
+        float: Cross-Entropy, Dice loss and Hausdorff Loss summed
+    """
+
+    hausdorff_loss_fn = HausdorffDTLoss(pred_mask_batch, gt_mask_batch, softmax=True, reduction="none")
+
+    hausdorff_loss = hausdorff_loss_fn(pred_mask_batch, gt_mask_batch)
+    
+    return hausdorff_loss
+
+
+
 
 def ce_dice_hausdorff_loss(pred_mask_batch, gt_mask_batch):
 
@@ -138,9 +158,11 @@ def ce_dice_hausdorff_loss(pred_mask_batch, gt_mask_batch):
     """
     ce_dice = ce_dice_loss_multi_batch(pred_mask_batch, gt_mask_batch)
 
-    hausdorff = HausdorffDTLoss(pred_mask_batch, gt_mask_batch, softmax=True, reduction="none")
+    hausdorff = hausdorff_loss(pred_mask_batch, gt_mask_batch)
 
     return ce_dice + hausdorff
+
+
 
 
 def create_loss(input_loss_arg):
