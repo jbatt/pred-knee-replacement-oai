@@ -10,9 +10,13 @@ import h5py
 import sys
 # TODO - replicate logic in pytorch data loader and save output to nnUNet-accepted format
 
-sys.path.append("..")
+# Include src directory in path to import custom modules
+if '../src' not in sys.path:
+    sys.path.append('../src')
 
 print(f"sys.path = {sys.path}")
+
+
 
 from utils.utils import crop_im, crop_mask, clip_and_norm
 
