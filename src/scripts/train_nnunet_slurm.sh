@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=train_seg_model
+#SBATCH --job-name=train_nnunet
 #SBATCH --partition=gpu     # Request the GPU partition
 #SBATCH --gres=gpu:3        # Request 3 GPUs as 3 GPUs per node
 
@@ -17,5 +17,5 @@ module load cuda
 
 
 # Run the training script with the selected input file
-python nnUNetv2_plan_and_preprocess -d 014 --verify_dataset_integrity
+python nnUNetv2_plan_and_preprocess -d 14 --verify_dataset_integrity
 
