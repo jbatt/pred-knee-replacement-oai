@@ -7,7 +7,7 @@ import glob
 import pydicom
 import shutil
 import h5py
-from utils.utils import crop_im, crop_mask, clip_and_norm
+from src.utils.utils import crop_im, crop_mask, clip_and_norm
 
 # TODO - replicate logic in pytorch data loader and save output to nnUNet-accepted format
 
