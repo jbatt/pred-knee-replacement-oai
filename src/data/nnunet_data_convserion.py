@@ -202,7 +202,7 @@ def generate_nnunet_dataset(raw_data_path, nnunet_raw_path, nnunet_dataset_name=
         save_numpy_to_nifti(mask, label_dest_filepath)
 
         print(f"{image_filepath} converted to nifti to location {image_dest_filepath}")
-        print(f"{label_filepath} converted to nifti to location {label_dest_filepath}")
+        print(f"{label_filepath} converted to nifti to location {label_dest_filepath}\n\n")
 
 
 
