@@ -4,6 +4,32 @@ import nibabel as nib
 from pathlib import Path
 import SimpleITK as sitk
 import glob
+import pydicom
+import shutil
+
+def convert_to_nifti(input_file, output_file=None):
+    try:
+        data = pydicom.dcmread(input_file, force=True)
+
+        # Extract pixel data
+        pixel_data = data.pixel_array
+
+        # Create NIfTI image
+        nifti_image = nib.Nifti1Image(pixel_data, np.eye(4))
+
+        if output_file is None:
+            output_file = os.path.splitext(input_file)[0] + ".nii.gz"
+        
+        # Save NIfTI image
+        nib.save(nifti_image, output_file)
+
+        return output_file
+    
+    except Exception as e:
+        print(f"Error converting file {input_file}: {e}")
+        return None
+
+
 
 
 def convert_to_nii_gz(input_file, output_file=None):
@@ -76,8 +102,10 @@ def generate_nnunet_dataset(raw_data_path, nnunet_raw_path, nnunet_dataset_name=
         label_dest_filepath = os.path.join(labelsTr, dest_filename)
 
         # Convert image and label files to nii.gz format
-        convert_to_nii_gz(input_file=image_file, output_file=image_dest_filepath)
-        convert_to_nii_gz(input_file=label_file, output_file=label_dest_filepath)
+        # convert_to_nii_gz(input_file=image_file, output_file=image_dest_filepath)
+        # convert_to_nii_gz(input_file=label_file, output_file=label_dest_filepath)
+        shutil.copy(image_dest_filepath, image_dest_filepath)
+        shutil.copy(label_dest_filepath, label_dest_filepath)
 
         
         # # Check if file is a training image
