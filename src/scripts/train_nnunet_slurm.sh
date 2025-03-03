@@ -17,5 +17,5 @@ module load cuda
 
 
 # Run the training script with the selected input file
-python nnUNetv2_plan_and_preprocess -d 14 --verify_dataset_integrity
+nnUNetv2_plan_and_preprocess -d 14 --verify_dataset_integrity
 
