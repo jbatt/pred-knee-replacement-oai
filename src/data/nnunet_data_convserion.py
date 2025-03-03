@@ -67,11 +67,14 @@ def generate_nnunet_dataset(raw_data_path, nnunet_raw_path, nnunet_dataset_name=
 
     # Loop through files, check if file name contains "train", "test" and put them in the corresponding nnUnet directory
     for i, image_file, label_file in enumerate(zip(image_files, label_files)):
- 
+        
+        # Define filename prefix
         dest_filename = f"OAI_{i:03d}_0000"
+        # Define image and label filenames
         image_dest_filepath = os.path.join(imagesTr, dest_filename)
         label_dest_filepath = os.path.join(labelsTr, dest_filename)
 
+        # Convert image and label files to nii.gz format
         convert_to_nii_gz(input_file=image_file, output_file=image_dest_filepath)
         convert_to_nii_gz(input_file=label_file, output_file=label_dest_filepath)
 
