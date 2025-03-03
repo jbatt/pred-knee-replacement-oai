@@ -6,6 +6,11 @@ import SimpleITK as sitk
 import glob
 import pydicom
 import shutil
+import h5py
+from utils.utils import crop_im, crop_mask, clip_and_norm
+
+# TODO - replicate logic in pytorch data loader and save output to nnUNet-accepted format
+
 
 def convert_to_nifti(input_file, output_file=None):
     try:
@@ -53,6 +58,26 @@ def convert_to_nii_gz(input_file, output_file=None):
 
 
 
+def save_numpy_to_nifti(numpy_array: np.array, output_filepath, affine=None):
+    """
+    Save a numpy array as a NIfTI file
+
+    Args:
+        numpy_array: Numpy array containing image data
+        output_file: Path where to save the NIfTI (.nii or .nii.gz)
+        affine (optional): defaults to identity if None
+    """
+
+    if affine is None:
+        affine = np.eye(4)
+
+    nifti_image = nib.Nifti1Image(numpy_array, affine)
+
+    nib.save(nifti_image, output_filepath)
+
+    return output_filepath
+
+
 
     # TODO: Implement your data conversion logic here
     # 4. Update dataset.json with correct numbers
@@ -93,8 +118,10 @@ def generate_nnunet_dataset(raw_data_path, nnunet_raw_path, nnunet_dataset_name=
     # Loop through files, combine image and label files and convert to nii.gz format
     print("Converting images...")
 
-    for i, (image_file, label_file) in enumerate(zip(image_files, label_files)):
+    for i, (image_filepath, label_filepath) in enumerate(zip(image_files, label_files)):
         print(f"Converting image {i+1} of {len(image_files)}")
+        
+        
         # Define filename prefix
         dest_filename = f"OAI_{i:03d}_0000"
         # Define image and label filenames
@@ -104,8 +131,80 @@ def generate_nnunet_dataset(raw_data_path, nnunet_raw_path, nnunet_dataset_name=
         # Convert image and label files to nii.gz format
         # convert_to_nii_gz(input_file=image_file, output_file=image_dest_filepath)
         # convert_to_nii_gz(input_file=label_file, output_file=label_dest_filepath)
-        shutil.copy(image_file, imagesTr)
-        shutil.copy(label_file, labelsTr)
+        # shutil.copy(image_file, imagesTr)
+        # shutil.copy(label_file, labelsTr)
+
+
+
+
+        # Open the image file and load it to a numpy array
+        with h5py.File(image_filepath,'r') as hf:
+            image = np.array(hf['data'])
+        
+        # Open the mask file and load it to a numpy array
+        with h5py.File(label_filepath,'r') as hf:
+            mask = np.array(hf['data'])
+
+        # Define medial meniscus mask
+        menisc_med_mask = mask[...,-1]
+
+        # Define lateral meniscus mask
+        # Below captures single train example with lateral meniscus mask at wrong index
+        if os.path.splitext(image_dest_filepath)[0] == 'train_026_V01':
+            menisc_lat_mask = mask[...,2]
+        else:
+            menisc_lat_mask = mask[...,-2]
+
+        # Combine lateral and medial meniscus masks
+        minisc_mask = np.add(menisc_med_mask, menisc_lat_mask)
+        
+        # Combine medial and lateral tibial masks
+        tibial_mask = np.add(mask[:,:,:,1], mask[:,:,:,2])
+
+        # Clip miniscus and tibial masks at 1 in case the two overlap
+        minisc_mask = np.clip(minisc_mask, 0, 1)
+        tibial_mask = np.clip(tibial_mask, 0, 1)
+
+        # Initialise final masks dimensions using existing masks, but switch 4 class to 6
+        # Adjust mask dimension from 6 classes to 4 classes
+        num_classes = 4
+        mask_all = np.zeros(num_classes) # Initalise mask using previosuly defined dimensions
+
+        # Fill in each layer of multiclass mask with each classes seg mask
+        mask_all[:,:,:,1] = mask[:,:,:,0]
+        mask_all[:,:,:,2] = tibial_mask 
+        mask_all[:,:,:,3] = mask[:,:,:,2]
+        mask_all[:,:,:,4] = minisc_mask
+
+
+        # Define background mask for the train data
+        # Identify positions where every other classes are zero 
+        all_classes_zero_mask = np.all(mask_all == 0, axis=3)
+
+        # Set background masks to be intergers (so background equal to 1 where all other sare zero)
+        background_mask = all_classes_zero_mask.astype(int)
+        
+        # Set appropriate multiclass mask slice to backgrond mask
+        mask_all[:,:,:,0] = background_mask
+
+        # Change dimension order to match prediction output dimensions for loss function
+        mask = mask_all.transpose(3,0,1,2)
+
+
+         # Crop images and masks
+        image = crop_im(image, dim1_lower=40, dim1_upper=312, dim2_lower=42, dim2_upper=314)
+        mask = crop_mask(mask, dim1_lower=40, dim1_upper=312, dim2_lower=42, dim2_upper=314)
+
+        # Normalise image
+        image = clip_and_norm(image, 0.005)
+
+        save_numpy_to_nifti(image, image_dest_filepath)
+        save_numpy_to_nifti(mask, label_dest_filepath)
+
+        print(f"{image_filepath} converted to nifti to location {image_dest_filepath}")
+        print(f"{label_filepath} converted to nifti to location {label_dest_filepath}")
+
+
 
         
         # # Check if file is a training image
@@ -131,6 +230,11 @@ def generate_nnunet_dataset(raw_data_path, nnunet_raw_path, nnunet_dataset_name=
         # else:
         #     print(f"Unknown file: {file}")
     
+
+
+
+
+
 
     # Create dataset.json template
     # dataset_dict = {
