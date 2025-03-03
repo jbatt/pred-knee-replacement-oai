@@ -14,7 +14,7 @@ sys.path.append('../')
 
 print(f"sys.path = {sys.path}")
 
-from utils.utils import crop_im, crop_mask, clip_and_norm
+from ..utils.utils import crop_im, crop_mask, clip_and_norm
 
 def convert_to_nifti(input_file, output_file=None):
     try:
