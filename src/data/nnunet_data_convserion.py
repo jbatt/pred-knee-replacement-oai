@@ -1,5 +1,4 @@
 import os
-import shutil
 import numpy as np
 import nibabel as nib
 from pathlib import Path
@@ -30,10 +29,6 @@ def convert_to_nii_gz(input_file, output_file=None):
 
 
     # TODO: Implement your data conversion logic here
-    
-    # 1. Convert images to nifti if needed
-    # 2. Rename files according to nnU-Net conventions
-    # 3. Copy files to appropriate directories
     # 4. Update dataset.json with correct numbers
 
 def generate_nnunet_dataset(raw_data_path, nnunet_raw_path, nnunet_dataset_name="Dataset014_OAISubset"):
@@ -65,7 +60,7 @@ def generate_nnunet_dataset(raw_data_path, nnunet_raw_path, nnunet_dataset_name=
     image_files = sorted(glob.glob(os.path.join(raw_data_path, "*.im")))
     label_files = sorted(glob.glob(os.path.join(raw_data_path, "*.seg")))
 
-    # Loop through files, check if file name contains "train", "test" and put them in the corresponding nnUnet directory
+    # Loop through files, combine image and label files and convert to nii.gz format
     for i, image_file, label_file in enumerate(zip(image_files, label_files)):
         
         # Define filename prefix
@@ -98,6 +93,7 @@ def generate_nnunet_dataset(raw_data_path, nnunet_raw_path, nnunet_dataset_name=
         
 
         # TODO: convert test image as well
+
         # else:
         #     print(f"Unknown file: {file}")
     
