@@ -282,10 +282,11 @@ def main():
     # Set your paths here
     raw_data_path = "/mnt/scratch/scjb/data/oai_subset/train"
     nnunet_raw_path = "/mnt/scratch/scjb/nnUNet_raw"
-    
+    dataset_id = "Dataset014_OAISubset"
+
     # Prepare the dataset
     if args.generate_data == 1:
-        generate_nnunet_dataset(raw_data_path, nnunet_raw_path)
+        generate_nnunet_dataset(raw_data_path, nnunet_raw_path, nnunet_dataset_name=dataset_id)
 
 
     if args.generate_json == 1:
@@ -304,7 +305,7 @@ def main():
             "file_ending": ".nii"
         }
 
-        with open(os.path.join(nnunet_raw_path, "dataset.json"), "w") as f:
+        with open(os.path.join(nnunet_raw_path, dataset_id, "dataset.json"), "w") as f:
             json.dump(dataset_json, f)
 
 
