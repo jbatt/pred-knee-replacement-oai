@@ -274,8 +274,8 @@ def generate_nnunet_dataset(raw_data_path, nnunet_raw_path, nnunet_dataset_name=
 def main():
 
     parser = argparse.ArgumentParser(description='Convert OAI dataset to nnU-Net format')
-    parser.add_argument('--generate-data', type=str, help='Whether or not to generate the dataset')
-    parser.add_argument('--generate-json', type=str, help='Whether or not to generate the dataset.json file')
+    parser.add_argument('--generate-data', type=int, help='Whether or not to generate the dataset')
+    parser.add_argument('--generate-json', type=int, help='Whether or not to generate the dataset.json file')
     
     args = parser.parse_args()
 
@@ -304,7 +304,7 @@ def main():
             "file_ending": ".nii"
         }
 
-        with open(os.path.join(raw_data_path, "dataset.json"), "w") as f:
+        with open(os.path.join(nnunet_raw_path, "dataset.json"), "w") as f:
             json.dump(dataset_json, f)
 
 
