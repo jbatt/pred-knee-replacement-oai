@@ -104,8 +104,8 @@ def generate_nnunet_dataset(raw_data_path, nnunet_raw_path, nnunet_dataset_name=
         # Convert image and label files to nii.gz format
         # convert_to_nii_gz(input_file=image_file, output_file=image_dest_filepath)
         # convert_to_nii_gz(input_file=label_file, output_file=label_dest_filepath)
-        shutil.copy(image_dest_filepath, image_dest_filepath)
-        shutil.copy(label_dest_filepath, label_dest_filepath)
+        shutil.copy(image_dest_filepath, imagesTr)
+        shutil.copy(label_dest_filepath, labelsTr)
 
         
         # # Check if file is a training image
