@@ -49,6 +49,7 @@ def generate_nnunet_dataset(raw_data_path, nnunet_raw_path, nnunet_dataset_name=
     imagesTs = os.path.join(task_dir, "imagesTs")
     
     # Create directories if they don't exist
+    print("Making directories...")
     os.makedirs(imagesTr, exist_ok=True)
     os.makedirs(labelsTr, exist_ok=True)
     os.makedirs(imagesTs, exist_ok=True)
@@ -59,10 +60,13 @@ def generate_nnunet_dataset(raw_data_path, nnunet_raw_path, nnunet_dataset_name=
     # List image and label files and sort them
     image_files = sorted(glob.glob(os.path.join(raw_data_path, "*.im")))
     label_files = sorted(glob.glob(os.path.join(raw_data_path, "*.seg")))
+    print(f"Number of images to be converted: {len(image_files)}")
+    print(f"Number of images to be converted: {len(label_files)}")
 
     # Loop through files, combine image and label files and convert to nii.gz format
+    print("Converting images...")
     for i, image_file, label_file in enumerate(zip(image_files, label_files)):
-        
+        print(f"Converting image {i+1} of {len(image_files)}")
         # Define filename prefix
         dest_filename = f"OAI_{i:03d}_0000"
         # Define image and label filenames
@@ -120,11 +124,12 @@ def generate_nnunet_dataset(raw_data_path, nnunet_raw_path, nnunet_dataset_name=
 
 def main():
     # Set your paths here
-    raw_data_path = "/mnt/scratch/scjb/data/oai_subset"
+    raw_data_path = "/mnt/scratch/scjb/data/oai_subset/train"
     nnunet_raw_path = "/mnt/scratch/scjb/nnUNet_raw"
     
     # Prepare the dataset
     generate_nnunet_dataset(raw_data_path, nnunet_raw_path)
+    print("Done!")
 
 if __name__ == "__main__":
     main()
