@@ -132,10 +132,11 @@ def generate_nnunet_dataset(raw_data_path, nnunet_raw_path, nnunet_dataset_name=
         
         
         # Define filename prefix
-        dest_filename = f"OAI_{i:03d}_0000"
+        image_dest_filename = f"OAI_{i:03d}_0000"
+        label_dest_filename = f"OAI_{i:03d}"
         # Define image and label filenames
-        image_dest_filepath = os.path.join(imagesTr, dest_filename)
-        label_dest_filepath = os.path.join(labelsTr, dest_filename)
+        image_dest_filepath = os.path.join(imagesTr, image_dest_filename)
+        label_dest_filepath = os.path.join(labelsTr, label_dest_filename)
 
         # Convert image and label files to nii.gz format
         # convert_to_nii_gz(input_file=image_file, output_file=image_dest_filepath)
@@ -246,28 +247,6 @@ def generate_nnunet_dataset(raw_data_path, nnunet_raw_path, nnunet_dataset_name=
     
 
 
-
-
-
-
-    # Create dataset.json template
-    # dataset_dict = {
-    #     "name": "Knee Replacement",
-    #     "description": "Knee replacement prediction dataset",
-    #     "tensorImageSize": "3D",
-    #     "reference": "",
-    #     "licence": "",
-    #     "release": "0.0",
-    #     "modality": {
-    #         "0": "CT",
-    #     },
-    #     "labels": {
-    #         "0": "background",
-    #         "1": "knee",
-    #     },
-    #     "numTraining": 0,  # Update this with actual number
-    #     "numTest": 0,      # Update this with actual number
-    # }
 
 
 
