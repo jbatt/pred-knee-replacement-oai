@@ -177,7 +177,7 @@ def generate_nnunet_dataset(raw_data_path, nnunet_raw_path, nnunet_dataset_name=
         # Initialise final masks dimensions using existing masks, but switch 4 class to 6
         # Adjust mask dimension from 6 classes to 4 classes
         mask_dims = mask.shape[:-1]
-        num_classes = 4
+        num_classes = 5
         mask_dims += (num_classes,)
         mask_dims
         mask_all = np.zeros(mask_dims) # Initalise mask using previosuly defined dimensions
