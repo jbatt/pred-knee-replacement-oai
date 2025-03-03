@@ -8,7 +8,8 @@ import pydicom
 import shutil
 import h5py
 import sys
-# TODO - replicate logic in pytorch data loader and save output to nnUNet-accepted format
+import json
+import argparse
 
 # Include src directory in path to import custom modules
 if '../src' not in sys.path:
@@ -269,13 +270,44 @@ def generate_nnunet_dataset(raw_data_path, nnunet_raw_path, nnunet_dataset_name=
     # }
 
 
+
 def main():
+
+    parser = argparse.ArgumentParser(description='Convert OAI dataset to nnU-Net format')
+    parser.add_argument('--generate-data', type=str, help='Whether or not to generate the dataset')
+    parser.add_argument('--generate-json', type=str, help='Whether or not to generate the dataset.json file')
+    
+    args = parser.parse_args()
+
     # Set your paths here
     raw_data_path = "/mnt/scratch/scjb/data/oai_subset/train"
     nnunet_raw_path = "/mnt/scratch/scjb/nnUNet_raw"
     
     # Prepare the dataset
-    generate_nnunet_dataset(raw_data_path, nnunet_raw_path)
+    if args.generate_data == 1:
+        generate_nnunet_dataset(raw_data_path, nnunet_raw_path)
+
+
+    if args.generate_json == 1:
+        dataset_json = { 
+            "channel_names": {  # formerly modalities
+                "0": "DESS", 
+            }, 
+            "labels": {  # THIS IS DIFFERENT NOW!
+                "background": 0,
+                "FC": 1,
+                "TC": 2,
+                "PC": 3,
+                "M": 4
+            }, 
+            "numTraining": 120, 
+            "file_ending": ".nii"
+        }
+
+        with open(os.path.join(raw_data_path, "dataset.json"), "w") as f:
+            json.dump(dataset_json, f)
+
+
     print("Done!")
 
 if __name__ == "__main__":
