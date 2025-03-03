@@ -172,11 +172,16 @@ def generate_nnunet_dataset(raw_data_path, nnunet_raw_path, nnunet_dataset_name=
         # Clip miniscus and tibial masks at 1 in case the two overlap
         minisc_mask = np.clip(minisc_mask, 0, 1)
         tibial_mask = np.clip(tibial_mask, 0, 1)
-
+        
+        
         # Initialise final masks dimensions using existing masks, but switch 4 class to 6
         # Adjust mask dimension from 6 classes to 4 classes
+        mask_dims = mask.shape[:-1]
         num_classes = 4
-        mask_all = np.zeros(num_classes) # Initalise mask using previosuly defined dimensions
+        mask_dims += (num_classes,)
+        mask_dims
+        mask_all = np.zeros(mask_dims) # Initalise mask using previosuly defined dimensions
+
 
         # Fill in each layer of multiclass mask with each classes seg mask
         mask_all[:,:,:,1] = mask[:,:,:,0]
