@@ -205,8 +205,8 @@ def generate_nnunet_dataset(raw_data_path, nnunet_raw_path, nnunet_dataset_name=
         mask = mask_all.transpose(3,0,1,2)
 
 
-        # Convert mask from one hot encoding to single channel
-        mask = np.argmax(mask, axis=0)
+        # Convert mask from one hot encoding to single channel and convert to uint8 type
+        mask = np.argmax(mask, axis=0).astype(np.uint8)
 
          # Crop images and masks
         image = crop_im(image, dim1_lower=40, dim1_upper=312, dim2_lower=42, dim2_upper=314)
