@@ -280,7 +280,7 @@ def main():
                 "M": 4
             }, 
             "numTraining": 120, 
-            "file_ending": ".nii"
+            "file_ending": ".nii.gz"
         }
 
         with open(os.path.join(nnunet_raw_path, dataset_id, "dataset.json"), "w") as f:
