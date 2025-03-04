@@ -132,8 +132,9 @@ def generate_nnunet_dataset(raw_data_path, nnunet_raw_path, nnunet_dataset_name=
         
         
         # Define filename prefix
-        image_dest_filename = f"OAI_{i:03d}_0000"
-        label_dest_filename = f"OAI_{i:03d}"
+        image_dest_filename = f"OAI_{i:03d}_0000.nii.gz"
+        label_dest_filename = f"OAI_{i:03d}.nii.gz"
+
         # Define image and label filenames
         image_dest_filepath = os.path.join(imagesTr, image_dest_filename)
         label_dest_filepath = os.path.join(labelsTr, label_dest_filename)
@@ -143,8 +144,6 @@ def generate_nnunet_dataset(raw_data_path, nnunet_raw_path, nnunet_dataset_name=
         # convert_to_nii_gz(input_file=label_file, output_file=label_dest_filepath)
         # shutil.copy(image_file, imagesTr)
         # shutil.copy(label_file, labelsTr)
-
-
 
 
         # Open the image file and load it to a numpy array
@@ -270,10 +269,10 @@ def main():
 
     if args.generate_json == 1:
         dataset_json = { 
-            "channel_names": {  # formerly modalities
+            "channel_names": {
                 "0": "DESS", 
             }, 
-            "labels": {  # THIS IS DIFFERENT NOW!
+            "labels": {  
                 "background": 0,
                 "FC": 1,
                 "TC": 2,
