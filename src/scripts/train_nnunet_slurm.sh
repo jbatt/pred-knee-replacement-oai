@@ -28,5 +28,5 @@ export CUDA_VISIBLE_DEVICES=0
 
 # Train the 3d full res model for each fold
 for FOLD in 0 1 2 3 4; do
-    nnUNetv2_train 014 3d_fullres $FOLD --npz
+    nnUNetv2_train 014 3d_fullres $FOLD --npz -num_gpus 1 -device 'cuda'
 done
