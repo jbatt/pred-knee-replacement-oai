@@ -53,11 +53,15 @@ def crop_im(image, dim1_lower, dim1_upper, dim2_lower, dim2_upper):
 
 
 # This function will crop the mask to a pre-chosen size.
-def crop_mask(image, dim1_lower, dim1_upper, dim2_lower, dim2_upper):
+def crop_mask(image, dim1_lower, dim1_upper, dim2_lower, dim2_upper, onehot=True):
     # dim1_lower, dim1_upper = 120, 320
     # dim2_lower, dim2_upper = 70, 326
 
-    cropped = image[:, dim1_lower:dim1_upper, dim2_lower:dim2_upper, :]
+    if onehot:
+        cropped = image[:, dim1_lower:dim1_upper, dim2_lower:dim2_upper, :]
+    else:
+        cropped = image[dim1_lower:dim1_upper, dim2_lower:dim2_upper, :]
+
 
     return cropped
 
@@ -90,3 +94,6 @@ class EarlyStopper:
                 self.activated_count += 1
                 return True
         return False
+
+
+
