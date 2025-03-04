@@ -210,7 +210,7 @@ def generate_nnunet_dataset(raw_data_path, nnunet_raw_path, nnunet_dataset_name=
 
          # Crop images and masks
         image = crop_im(image, dim1_lower=40, dim1_upper=312, dim2_lower=42, dim2_upper=314)
-        mask = crop_mask(mask, dim1_lower=40, dim1_upper=312, dim2_lower=42, dim2_upper=314)
+        mask = crop_mask(mask, dim1_lower=40, dim1_upper=312, dim2_lower=42, dim2_upper=314, onehot=False)
 
         # Normalise image
         image = clip_and_norm(image, 0.005)
