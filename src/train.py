@@ -161,6 +161,7 @@ def train(rank: int, world_size: int, config, args) -> None:
                         encoder=wandb.config.encoder, # None/null used in config file if not relevant for model
                         encoder_depth=wandb.config.encoder_depth, # None/null used if not relevant for model
                         img_size=wandb.config.img_size,
+                        img_crop=wandb.config.img_crop,
                         feature_size=wandb.config.feature_size
     )
 
@@ -206,8 +207,8 @@ def train(rank: int, world_size: int, config, args) -> None:
     # Define PyTorch datasets and dataloader
 
     # Define datasets
-    train_dataset = KneeSegDataset3DMulticlass(train_paths, data_dir, num_classes=NUM_CLASSES, transform=transform)
-    validation_dataset = KneeSegDataset3DMulticlass(val_paths, data_dir, num_classes=NUM_CLASSES, split='valid')
+    train_dataset = KneeSegDataset3DMulticlass(train_paths, data_dir, num_classes=NUM_CLASSES, img_crop=wandb.config.img_crop, transform=transform)
+    validation_dataset = KneeSegDataset3DMulticlass(val_paths, data_dir, num_classes=NUM_CLASSES, img_crop=wandb.config.img_crop, split='valid')
 
     # Define dataloaders
     # DistirbutedSampler - batch chunked over all gpus evently 
