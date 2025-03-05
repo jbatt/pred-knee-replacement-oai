@@ -110,6 +110,7 @@ def ddp_setup(local_rank: int, world_size: int)  -> None:
     init_process_group(backend='nccl', init_method='env://', rank=local_rank, world_size=world_size)
 
 
+# TODO: flag to include background?
 
 #####################################################################################
 # START TRAINING RUN
@@ -159,6 +160,8 @@ def train(rank: int, world_size: int, config, args) -> None:
                         num_kernels= wandb.config.num_kernels, 
                         encoder=wandb.config.encoder, # None/null used in config file if not relevant for model
                         encoder_depth=wandb.config.encoder_depth # None/null used if not relevant for model
+                        img_size=wand.config.img_size,
+                        feature_size=wandb.config.feature_size
     )
 
     # Use multiple gpu in parallel if available
