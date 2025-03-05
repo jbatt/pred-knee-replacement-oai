@@ -12,8 +12,9 @@ dependencies:
     - h5py
     - wandb
     - pip
-    - simpleitk
-    - nibabel
+    - conda-forge::simpleitk
+    - conda-forge::nibabel
+    - seaborn
     - pip:
         - monai
         - segmentation-models-pytorch-3d
