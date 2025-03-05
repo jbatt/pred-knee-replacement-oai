@@ -3,7 +3,7 @@
 #SBATCH --partition=gpu     # Request the GPU partition
 #SBATCH --gres=gpu:3        # Request 3 GPUs as 3 GPUs per node
 
-#SBATCH --ntasks-per-node=1 # Number of tasks per node - advice is to experiment with this value
+#SBATCH --ntasks-per-node=3 # Number of tasks per node - advice is to experiment with this value
 #SBATCH --cpus-per-task=8
 #SBATCH --mem-per-cpu=16G   # memory per cpu-core
 
