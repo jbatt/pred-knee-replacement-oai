@@ -5,9 +5,10 @@
 #SBATCH --cpus-per-task=1        # Use 1 CPU core
 #SBATCH --mem=16G                 # Request 16GB of memory
 #SBATCH --time=48:00:00          # Time limit hrs:min:sec
-
+#SBATCH --mail-user=scjb@leeds.ac.uk # Email address for notifications
+#SBATCH --mail-type=BEGIN,END
 
 # Run the visualization script
-python visualize.py
+python visualization/visualize.py
 
 # End of script
