@@ -159,8 +159,8 @@ def train(rank: int, world_size: int, config, args) -> None:
                         out_channels=wandb.config.out_channels, 
                         num_kernels= wandb.config.num_kernels, 
                         encoder=wandb.config.encoder, # None/null used in config file if not relevant for model
-                        encoder_depth=wandb.config.encoder_depth # None/null used if not relevant for model
-                        img_size=wand.config.img_size,
+                        encoder_depth=wandb.config.encoder_depth, # None/null used if not relevant for model
+                        img_size=wandb.config.img_size,
                         feature_size=wandb.config.feature_size
     )
 
