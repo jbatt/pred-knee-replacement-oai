@@ -48,7 +48,7 @@ def plot_all_3d_masks_multiclass(mask_paths,
         title = f"{mask_path}: Predicted Segmentation Mask"
         
         # Define the filename for the plot
-        filename = f"{mask_path}_predicted_mask.png"
+        filename = f"{os.path.splitext(os.path.basename(mask_path))[0]}_predicted_mask.png"
         
         # Visualise the predicted mask in 3D
         plot_3d_mask_multiclass(mask, title, results_path, filename, tissue_labels)
@@ -61,7 +61,7 @@ def plot_all_3d_masks_multiclass(mask_paths,
 
 
 if __name__ == "__main__":
-    
+
     # Create list of paths to the predicted masks from processed data folder
     pred_masks_dir = "/mnt/scratch/scjb/data/processed/pred_masks"
     figures_dir = "/mnt/scratch/scjb/results/figures"
