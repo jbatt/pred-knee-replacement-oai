@@ -24,6 +24,9 @@ def plot_3d_mask_multiclass(mask,
     ax.set_title(title)
     plt.legend(tissue_labels)
     plt.savefig(os.path.join(results_path, filename), bbox_inches="tight", dpi=500)
+
+    print(f"Saved figure to {os.path.join(results_path, filename)}")
+    
     plt.show()
 
 
@@ -38,6 +41,8 @@ def plot_all_3d_masks_multiclass(mask_paths,
     # Loop through all the predicted masks
     for i, mask_path in enumerate(mask_paths):
         
+        print(f"Visualising mask {i+1}/{len(mask_paths)}")
+
         # Load mask using mask_path
         mask = np.load(mask_path)
 
