@@ -13,7 +13,8 @@ class SwinUNETRModel(nn.Module):
         drop_rate: float = 0.0,
         attn_drop_rate: float = 0.0,
         dropout_path_rate: float = 0.0,
-        use_checkpoint: bool = False
+        use_checkpoint: bool = True,
+        num_heads: tuple = (2, 4, 8, 16),
     ):
         """
         Initialize SwinUNETR model.
@@ -38,7 +39,8 @@ class SwinUNETRModel(nn.Module):
             drop_rate=drop_rate,
             attn_drop_rate=attn_drop_rate,
             dropout_path_rate=dropout_path_rate,
-            use_checkpoint=use_checkpoint
+            use_checkpoint=use_checkpoint,
+            num_heads=num_heads
         )
     
     def forward(self, x: torch.Tensor) -> torch.Tensor:
