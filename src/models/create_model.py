@@ -26,7 +26,11 @@ def create_model(
     
     elif input_model_arg == "swin_unetr":
         print(f"Creating swin_unetr model...")
-        model = SwinUNETR(img_size=img_size, in_channels=in_channels, out_channels=out_channels, feature_size=feature_size, use_checkpoint=True)
+        model = SwinUNETR(img_size=img_size, 
+                          in_channels=in_channels, 
+                          out_channels=out_channels, 
+                          feature_size=feature_size,
+                          use_checkpoint=True)
         print(f"Model created:\n{model}")
 
     return model
