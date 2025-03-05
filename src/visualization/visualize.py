@@ -67,9 +67,13 @@ if __name__ == "__main__":
     figures_dir = "/mnt/scratch/scjb/results/figures"
 
     mask_paths = os.listdir(pred_masks_dir)
+    print("Number of predicted masks:", len(mask_paths))
+    print("Example mask path:", mask_paths[0])
 
     # Filter for numpy files
     mask_paths = [os.path.join(pred_masks_dir, mask_path) for mask_path in mask_paths if mask_path.endswith(".npy")]
+    print("Number of predicted masks after filtering:", len(mask_paths))
+    print("Example mask path after filtering:", mask_paths[0])
 
     # Visualise all the predicted masks in 3D
     plot_all_3d_masks_multiclass(mask_paths, figures_dir)
