@@ -10,13 +10,14 @@ from utils.utils import crop_im, crop_mask, clip_and_norm
 
 # Multiclass knee cartilage MRI volumes and segmentation masks
 class KneeSegDataset3DMulticlass(Dataset):
-    def __init__(self, file_paths, data_dir, num_classes, split='train', transform=None, transform_chance=0.5):
+    def __init__(self, file_paths, data_dir, num_classes, img_crop, split='train', transform=None, transform_chance=0.5):
         self.file_paths = file_paths
         self.data_dir = data_dir
         self.split = split
         self.transform = transform
         self.transform_chance = transform_chance
         self.num_classes = num_classes
+        self.img_crop = img_crop
 
     # Return length of dataset
     def __len__(self):
@@ -135,8 +136,19 @@ class KneeSegDataset3DMulticlass(Dataset):
             mask = mask_all.transpose(3,0,1,2)
         
         # Crop images and masks
-        image = crop_im(image, dim1_lower=24, dim1_upper=312, dim2_lower=26, dim2_upper=314)
-        mask = crop_mask(mask, dim1_lower=24, dim1_upper=312, dim2_lower=26, dim2_upper=314)
+        # image = crop_im(image, dim1_lower=24, dim1_upper=312, dim2_lower=26, dim2_upper=314)
+        image = crop_im(image, 
+                        dim1_lower=self.img_crop[0][0], 
+                        dim1_upper=self.img_crop[0][1], 
+                        dim2_lower=self.img_crop[1][0], 
+                        dim2_upper=self.img_crop[1][1])
+        
+        # mask = crop_mask(mask, dim1_lower=24, dim1_upper=312, dim2_lower=26, dim2_upper=314)
+        mask = crop_mask(mask, 
+                         dim1_lower=self.img_crop[0][0], 
+                         dim1_upper=self.img_crop[0][1], 
+                         dim2_lower=self.img_crop[1][0], 
+                         dim2_upper=self.img_crop[1][1])
 
         # Normalise image
         image = clip_and_norm(image, 0.005)
