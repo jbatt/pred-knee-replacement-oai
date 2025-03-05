@@ -14,7 +14,7 @@
         "encoder": {"values": [null]}, 
         "encoder_depth": {"values": [null]},
         "img_size": {"values": [[256,256,160]]},
-        "img_crop": {"values": [[25,281], [25,281], [0,160]]},
+        "img_crop": {"values": [[[25,281], [25,281], [0,160]]]},
         "loss": {"values": ["ce_dice"]}
     }
 }  
