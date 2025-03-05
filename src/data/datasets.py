@@ -10,7 +10,7 @@ from utils.utils import crop_im, crop_mask, clip_and_norm
 
 # Multiclass knee cartilage MRI volumes and segmentation masks
 class KneeSegDataset3DMulticlass(Dataset):
-    def __init__(self, file_paths, data_dir, num_classes, img_crop=[[25,271],[25,271],[0,160]], split='train', transform=None, transform_chance=0.5):
+    def __init__(self, file_paths, data_dir, num_classes, img_crop=[[25,281],[25,281],[0,160]], split='train', transform=None, transform_chance=0.5):
         self.file_paths = file_paths
         self.data_dir = data_dir
         self.split = split
