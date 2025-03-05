@@ -10,7 +10,7 @@
         "in_channels": {"values": [1]},
         "out_channels": {"values": [5]},
         "num_kernels": {"values": [null]},
-        "feature_size": {"values": [24]},
+        "feature_size": {"values": [16]},
         "encoder": {"values": [null]}, 
         "encoder_depth": {"values": [null]},
         "img_size": {"values": [[256,256,160]]},
