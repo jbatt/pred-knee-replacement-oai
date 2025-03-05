@@ -1,0 +1,13 @@
+#!/bin/bash
+#SBATCH --job-name=visualize      # Job name
+#SBATCH --nodes=1                 # Run on one node
+#SBATCH --ntasks=1               # Run a single task
+#SBATCH --cpus-per-task=1        # Use 1 CPU core
+#SBATCH --mem=16G                 # Request 16GB of memory
+#SBATCH --time=48:00:00          # Time limit hrs:min:sec
+
+
+# Run the visualization script
+python visualize.py
+
+# End of script
