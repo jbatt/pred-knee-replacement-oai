@@ -36,23 +36,23 @@ def plot_3d_mask_multiclass(mask_all,
 
     print("Setting up colors mask")
     print(f"Mask colors shape: {mask_colors.shape}")
-    colors = np.empty(mask_all.shape, dtype=object)
-    colors[mask_colors[0,:,:,:] == 1] = "red"
-    colors[mask_colors[1,:,:,:] == 1] = "blue"
-    colors[mask_colors[2,:,:,:] == 1] = "green"
-    colors[mask_colors[3,:,:,:] == 1] = "yellow"
+    face_colors = np.empty(mask_all.shape, dtype=object)
+    face_colors[mask_colors[0,:,:,:] == 1] = "red"
+    face_colors[mask_colors[1,:,:,:] == 1] = "blue"
+    face_colors[mask_colors[2,:,:,:] == 1] = "green"
+    face_colors[mask_colors[3,:,:,:] == 1] = "yellow"
 
-    print("Number of red voxels:", np.sum(colors == "red"))
-    print("Number of blue voxels:", np.sum(colors == "blue"))
-    print("Number of green voxels:", np.sum(colors == "green"))
-    print("Number of yellow voxels:", np.sum(colors == "yellow"))
+    print("Number of red voxels:", np.sum(face_colors == "red"))
+    print("Number of blue voxels:", np.sum(face_colors == "blue"))
+    print("Number of green voxels:", np.sum(face_colors == "green"))
+    print("Number of yellow voxels:", np.sum(face_colors == "yellow"))
 
     # Create voxel plot
+    edge_colors = face_colors.copy()
 
-    ax.voxels(mask_all, facecolors=colors, edgecolors=colors)
+    ax.voxels(mask_all, facecolors=face_colors, edgecolors=edge_colors)
 
     ax.set_title(title)
-    # plt.legend(tissue_labels)
 
     # Create legend with all plot colors
     red_patch = mpatches.Patch(color='red', label='Femoral cartilage')
@@ -60,6 +60,8 @@ def plot_3d_mask_multiclass(mask_all,
     green_patch = mpatches.Patch(color='green', label='Patellar cartilage')
     yellow_patch = mpatches.Patch(color='yellow', label='Meniscus')
     plt.legend(handles=[red_patch, blue_patch, green_patch, yellow_patch])
+
+    # Set plot title
 
     plt.savefig(os.path.join(results_dir, filename), bbox_inches="tight", dpi=500)
 
