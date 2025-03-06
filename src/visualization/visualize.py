@@ -37,7 +37,7 @@ def plot_3d_mask_multiclass(mask_all,
 
     print("Setting up colors mask")
     print(f"Mask colors shape: {mask_colors.shape}")
-    colors = np.zeros_like(mask_all)
+    colors = np.empty(mask_all.shape, dtype=object)
     colors[mask_colors[0,:,:,:] == 1] = "red"
     colors[mask_colors[1,:,:,:] == 1] = "blue"
     colors[mask_colors[2,:,:,:] == 1] = "green"
