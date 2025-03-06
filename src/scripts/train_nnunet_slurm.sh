@@ -16,13 +16,16 @@
 module load cuda
 
 
+# Activate conda environment
+module load conda
+conda activate pred-knee-replacement-oai
+
 # Run the training script with the selected input file
 
 # Initial planning and preprocessing
 # nnUNetv2_plan_and_preprocess -d 014 --verify_dataset_integrity
 
 # nnUnet model training
-
 
 # Train the 3d full res model for each fold
 for FOLD in 0 1 2 3 4; do
