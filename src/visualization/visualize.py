@@ -49,7 +49,7 @@ def plot_3d_mask_multiclass(mask_all,
 
     # Create voxel plot
 
-    ax.voxels(mask_all, facecolors=colors)
+    ax.voxels(mask_all, facecolors=colors, edgecolors=colors)
 
     ax.set_title(title)
     # plt.legend(tissue_labels)
