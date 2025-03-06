@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+import matplotlib.patches as mpatches
 import os
 import numpy as np
 
@@ -28,10 +29,8 @@ def plot_3d_mask_multiclass(mask_all,
     # Add subplot to figure
     ax = fig.add_subplot(111, projection='3d')
 
-
-    # For each class in the predicted mask, visualise the mask in 3D using a different colour
-    # for i in range(mask.shape[0]):
-    #     ax.voxels(mask[i,:,:,:], edgecolor='k', facecolors=)
+    # Reorder the mask to match ax.voxels() function so the filled[0,0,0] corresponds to the bottom left corner of the plot
+    mask_all = np.transpose(mask_all, (1, 0, 2))
 
     # Build up the colors mask using the indvidual segmentation masks
 
@@ -48,10 +47,20 @@ def plot_3d_mask_multiclass(mask_all,
     print("Number of green voxels:", np.sum(colors == "green"))
     print("Number of yellow voxels:", np.sum(colors == "yellow"))
 
-    ax.voxels(mask_all, edgecolor='k', facecolors=colors)
+    # Create voxel plot
+
+    ax.voxels(mask_all, facecolors=colors)
 
     ax.set_title(title)
-    plt.legend(tissue_labels)
+    # plt.legend(tissue_labels)
+
+    # Create legend with all plot colors
+    red_patch = mpatches.Patch(color='red', label='Femoral cartilage')
+    blue_patch = mpatches.Patch(color='blue', label='Tibial cartilage')
+    green_patch = mpatches.Patch(color='green', label='Patellar cartilage')
+    yellow_patch = mpatches.Patch(color='yellow', label='Meniscus')
+    plt.legend(handles=[red_patch, blue_patch, green_patch, yellow_patch])
+
     plt.savefig(os.path.join(results_dir, filename), bbox_inches="tight", dpi=500)
 
     print(f"Saved figure to {os.path.join(results_dir, filename)}")
