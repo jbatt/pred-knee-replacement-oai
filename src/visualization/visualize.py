@@ -35,21 +35,33 @@ def plot_3d_mask_multiclass(mask_all,
     # Build up the colors mask using the indvidual segmentation masks
 
     print("Setting up colors mask")
+
     print(f"Mask colors shape: {mask_colors.shape}")
-    face_colors = np.empty(mask_all.shape, dtype=object)
-    face_colors[mask_colors[0,:,:,:] == 1] = "red"
-    face_colors[mask_colors[1,:,:,:] == 1] = "blue"
-    face_colors[mask_colors[2,:,:,:] == 1] = "green"
-    face_colors[mask_colors[3,:,:,:] == 1] = "yellow"
 
-    print("Number of red voxels:", np.sum(face_colors == "red"))
-    print("Number of blue voxels:", np.sum(face_colors == "blue"))
-    print("Number of green voxels:", np.sum(face_colors == "green"))
-    print("Number of yellow voxels:", np.sum(face_colors == "yellow"))
+    face_colors = np.zeros(mask_all.shape + (4,), dtype=float)  # RGBA array
+    edge_colors = np.zeros(mask_all.shape + (4,), dtype=float)  # RGBA array
 
-    # Create voxel plot
+    # Define colors as RGBA tuples
+    red = [1, 0, 0, 1]     # Red
+    blue = [0, 0, 1, 1]    # Blue
+    green = [0, 1, 0, 1]   # Green
+    yellow = [1, 1, 0, 1]  # Yellow
+
+    # Assign colors to voxels
+    face_colors[mask_colors[0,:,:,:] == 1] = red
+    face_colors[mask_colors[1,:,:,:] == 1] = blue
+    face_colors[mask_colors[2,:,:,:] == 1] = green
+    face_colors[mask_colors[3,:,:,:] == 1] = yellow
+
+    print("Number of red voxels:", np.sum(face_colors == red))
+    print("Number of blue voxels:", np.sum(face_colors == blue))
+    print("Number of green voxels:", np.sum(face_colors == green))
+    print("Number of yellow voxels:", np.sum(face_colors == yellow))
+
+    # Use the same colors for edges
     edge_colors = face_colors.copy()
 
+    # Create voxel plot
     ax.voxels(mask_all, facecolors=face_colors, edgecolors=edge_colors)
 
     ax.set_title(title)
