@@ -26,8 +26,8 @@ def plot_3d_mask_multiclass(mask,
     plt.savefig(os.path.join(results_path, filename), bbox_inches="tight", dpi=500)
 
     print(f"Saved figure to {os.path.join(results_path, filename)}")
-    
-    plt.show()
+
+    # plt.show()
 
 
 
@@ -36,7 +36,8 @@ def plot_3d_mask_multiclass(mask,
 # Loop through all the paths to the predicted segmentation masks, load the masks and visualise them in 3D
 def plot_all_3d_masks_multiclass(mask_paths, 
                                 results_path,
-                                tissue_labels = ["Femoral cart.", "Tibial cart.", "Patellar cart.", "Meniscus"]) -> None:
+                                tissue_labels = ["Femoral cart.", "Tibial cart.", "Patellar cart.", "Meniscus"],
+                                remove_background=True) -> None:
     
     # Loop through all the predicted masks
     for i, mask_path in enumerate(mask_paths):
@@ -48,6 +49,13 @@ def plot_all_3d_masks_multiclass(mask_paths,
 
         # Remove dimension of one from mask
         mask = np.squeeze(mask)
+
+        # Remove background from mask
+        if remove_background:
+            print(f"Mask shape: {mask.shape}")
+            print("Removing background mask")
+            mask = mask[1:,:,:,:]
+            print(f"Mask shape after removing background: {mask.shape}")
 
         # Define the title for the plot
         title = f"{mask_path}: Predicted Segmentation Mask"
@@ -73,7 +81,7 @@ if __name__ == "__main__":
 
     mask_paths = os.listdir(pred_masks_dir)
     print("Number of predicted masks:", len(mask_paths))
-    print("Example mask path:", mask_paths[0])
+    print(f"Masks to be plotted: {mask_paths}")
 
     # Filter for numpy files
     mask_paths = [os.path.join(pred_masks_dir, mask_path) for mask_path in mask_paths if mask_path.endswith(".npy")]
