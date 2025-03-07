@@ -37,4 +37,4 @@ conda activate pred-knee-replacement-oai
 # Run nnunet as task array on slurm
 # Use task array id to select fold
 FOLD=$((SLURM_ARRAY_TASK_ID - 1))
-nnUNetv2_train 014 3d_fullres $FOLD --npz -device 'cuda'
+nnUNetv2_train 014 3d_fullres $FOLD --npz 
