@@ -163,7 +163,7 @@ if __name__ == "__main__":
     # pred_masks_dir = "/mnt/scratch/scjb/data/processed/pred_masks"
     # figures_dir = "/mnt/scratch/scjb/results/figures"
 
-    mask_paths = os.listdir(args.pred_masks_dir)
+    mask_paths = os.listdir(pred_masks_dir)
     print("Number of predicted masks:", len(mask_paths))
     print(f"Masks to be plotted: {mask_paths}")
 
