@@ -6,6 +6,8 @@ import numpy as np
 # TODO: Add docstrings to all functions
 # TODO: Add a project directory argument to functions?
 # TODO: Store plots in folder with date and time of creation?
+# TODO: Include a function to plot the original image and the predicted mask side by side
+# TODO: Include model name in the plot title and saved results directory
 
 
 # Visualise the predicted mask in 3D using a different colour for each class
@@ -38,7 +40,7 @@ def plot_3d_mask_multiclass(mask_all,
     # Reorder the mask to match ax.voxels() function so the filled[0,0,0] corresponds to the bottom left corner of the plot
     mask_all = np.transpose(mask_all, (1, 0, 2))
     # Also transpose the mask_colors to match the mask_all
-    mask_colors = np.transpose(mask_colors, (1, 0, 2, 3))
+    mask_colors = np.transpose(mask_colors, (0, 2, 1, 3))
 
     print(f"Mask all shape after transposing: {mask_all.shape}")
     print(f"Mask colors shape after transposing: {mask_colors.shape}")
