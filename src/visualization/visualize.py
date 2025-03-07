@@ -168,7 +168,7 @@ if __name__ == "__main__":
     print(f"Masks to be plotted: {mask_paths}")
 
     # Filter for numpy files
-    mask_paths = [os.path.join(args.predicted_masks_dir, mask_path) for mask_path in mask_paths if mask_path.endswith(".npy")]
+    mask_paths = [os.path.join(pred_masks_dir, mask_path) for mask_path in mask_paths if mask_path.endswith(".npy")]
     print("Number of predicted masks after filtering:", len(mask_paths))
     print("Mask paths after filtering:", mask_paths)
 
