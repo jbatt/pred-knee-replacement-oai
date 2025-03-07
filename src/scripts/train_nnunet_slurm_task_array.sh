@@ -17,6 +17,8 @@
 # Load necessary modules
 module load cuda
 
+export CPATH=$CUDA_HOME/include:$CPATH
+export LD_LIBRARY_PATH=$CUDA_HOME/lib64:$LD_LIBRARY_PATH
 
 # Activate conda environment
 module load miniforge
