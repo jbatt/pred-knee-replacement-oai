@@ -2,12 +2,11 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 import os
 import numpy as np
+import argparse
+import datetime
 
 # TODO: Add docstrings to all functions
-# TODO: Add a project directory argument to functions?
-# TODO: Store plots in folder with date and time of creation?
 # TODO: Include a function to plot the original image and the predicted mask side by side
-# TODO: Include model name in the plot title and saved results directory
 
 
 # Visualise the predicted mask in 3D using a different colour for each class
@@ -38,9 +37,9 @@ def plot_3d_mask_multiclass(mask_all,
     print(f"Mask colors shape: {mask_colors.shape}")
 
     # Reorder the mask to match ax.voxels() function so the filled[0,0,0] corresponds to the bottom left corner of the plot
-    mask_all = np.transpose(mask_all, (1, 0, 2))
+    mask_all = np.transpose(mask_all, (0, 2, 1))
     # Also transpose the mask_colors to match the mask_all
-    mask_colors = np.transpose(mask_colors, (0, 2, 1, 3))
+    mask_colors = np.transpose(mask_colors, (0, 1, 3, 2))
 
     print(f"Mask all shape after transposing: {mask_all.shape}")
     print(f"Mask colors shape after transposing: {mask_colors.shape}")
@@ -140,16 +139,33 @@ def plot_all_3d_masks_multiclass(mask_paths,
 
 if __name__ == "__main__":
 
-    # Create list of paths to the predicted masks from processed data folder
-    pred_masks_dir = "/mnt/scratch/scjb/data/processed/pred_masks"
-    figures_dir = "/mnt/scratch/scjb/results/figures"
 
-    mask_paths = os.listdir(pred_masks_dir)
+    # Argument parser to take in project name, the model name, the predicted masks dir and the output figures dir
+    parser = argparse.ArgumentParser(description="Visualise the predicted masks in 3D")
+    parser.add_argument("--project_name", type=str, help="Name of the project")
+    parser.add_argument("--model_name", type=str, help="Name of the model")
+    parser.add_argument("--pred_masks_dir", type=str, help="Path to the predicted masks")
+    parser.add_argument("--figures_dir", type=str, help="Top level figures dir to save the figures", default="/mnt/scratch/scjb/results/figures")
+
+    args = parser.parse_args()
+
+    # Log start date and time and use as the name of output figures directory
+    start_time = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    
+    # Create figures directory
+    figures_dir = os.path.join(args.figures_dir, args.project_name, args.model_name, start_time)
+    os.makedirs(figures_dir, exist_ok=True)
+
+    # Create list of paths to the predicted masks from processed data folder
+    # pred_masks_dir = "/mnt/scratch/scjb/data/processed/pred_masks"
+    # figures_dir = "/mnt/scratch/scjb/results/figures"
+
+    mask_paths = os.listdir(args.predicted_masks_dir)
     print("Number of predicted masks:", len(mask_paths))
     print(f"Masks to be plotted: {mask_paths}")
 
     # Filter for numpy files
-    mask_paths = [os.path.join(pred_masks_dir, mask_path) for mask_path in mask_paths if mask_path.endswith(".npy")]
+    mask_paths = [os.path.join(args.predicted_masks_dir, mask_path) for mask_path in mask_paths if mask_path.endswith(".npy")]
     print("Number of predicted masks after filtering:", len(mask_paths))
     print("Mask paths after filtering:", mask_paths)
 
