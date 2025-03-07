@@ -139,13 +139,12 @@ def plot_all_3d_masks_multiclass(mask_paths,
 
 if __name__ == "__main__":
 
-
     # Argument parser to take in project name, the model name, the predicted masks dir and the output figures dir
     parser = argparse.ArgumentParser(description="Visualise the predicted masks in 3D")
-    parser.add_argument("--project_name", type=str, help="Name of the project")
+    parser.add_argument("--project_name", type=str, help="Name of the project", default="oai_subset_knee_cart_seg")
     parser.add_argument("--model_name", type=str, help="Name of the model")
-    parser.add_argument("--pred_masks_dir", type=str, help="Path to the predicted masks")
-    parser.add_argument("--figures_dir", type=str, help="Top level figures dir to save the figures", default="/mnt/scratch/scjb/results/figures")
+    parser.add_argument("--pred_masks_dir", type=str, help="Path to the predicted masks", default="/mnt/scratch/scjb/data/processed/pred_masks")
+    parser.add_argument("--results_dir", type=str, help="Top level figures dir to save the figures", default="/mnt/scratch/scjb/results")
 
     args = parser.parse_args()
 
@@ -153,14 +152,16 @@ if __name__ == "__main__":
     start_time = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     
     # Create figures directory
-    figures_dir = os.path.join(args.figures_dir, args.project_name, args.model_name, start_time)
+    figures_dir = os.path.join(args.results_dir, args.project_name, "figures", args.model_name, start_time)
     os.makedirs(figures_dir, exist_ok=True)
+
+    pred_masks_dir = os.path.join(args.pred_masks_dir, args.project_name, args.model_name)
 
     # Create list of paths to the predicted masks from processed data folder
     # pred_masks_dir = "/mnt/scratch/scjb/data/processed/pred_masks"
     # figures_dir = "/mnt/scratch/scjb/results/figures"
 
-    mask_paths = os.listdir(args.predicted_masks_dir)
+    mask_paths = os.listdir(args.pred_masks_dir)
     print("Number of predicted masks:", len(mask_paths))
     print(f"Masks to be plotted: {mask_paths}")
 
