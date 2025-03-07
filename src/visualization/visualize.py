@@ -143,7 +143,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Visualise the predicted masks in 3D")
     parser.add_argument("--project_name", type=str, help="Name of the project", default="oai_subset_knee_cart_seg")
     parser.add_argument("--model_name", type=str, help="Name of the model")
-    parser.add_argument("--pred_masks_dir", type=str, help="Path to the predicted masks", default="/mnt/scratch/scjb/data/processed/pred_masks")
+    parser.add_argument("--pred_masks_dir", type=str, help="Path to the predicted masks", default="/mnt/scratch/scjb/data/processed")
     parser.add_argument("--results_dir", type=str, help="Top level figures dir to save the figures", default="/mnt/scratch/scjb/results")
 
     args = parser.parse_args()
@@ -156,7 +156,7 @@ if __name__ == "__main__":
     os.makedirs(figures_dir, exist_ok=True)
     print(f"Figures directory created: {figures_dir}")
 
-    pred_masks_dir = os.path.join(args.pred_masks_dir, args.project_name, args.model_name)
+    pred_masks_dir = os.path.join(args.pred_masks_dir, args.project_name, "pred_masks", args.model_name)
     print(f"Predicted masks directory: {pred_masks_dir}")
 
     # Create list of paths to the predicted masks from processed data folder
