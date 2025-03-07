@@ -154,8 +154,10 @@ if __name__ == "__main__":
     # Create figures directory
     figures_dir = os.path.join(args.results_dir, args.project_name, "figures", args.model_name, start_time)
     os.makedirs(figures_dir, exist_ok=True)
+    print(f"Figures directory created: {figures_dir}")
 
     pred_masks_dir = os.path.join(args.pred_masks_dir, args.project_name, args.model_name)
+    print(f"Predicted masks directory: {pred_masks_dir}")
 
     # Create list of paths to the predicted masks from processed data folder
     # pred_masks_dir = "/mnt/scratch/scjb/data/processed/pred_masks"
