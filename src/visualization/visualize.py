@@ -3,6 +3,9 @@ import matplotlib.patches as mpatches
 import os
 import numpy as np
 
+# TODO: Add docstrings to all functions
+# TODO: Add a project directory argument to functions?
+# TODO: Store plots in folder with date and time of creation?
 
 
 # Visualise the predicted mask in 3D using a different colour for each class
@@ -12,7 +15,7 @@ def plot_3d_mask_multiclass(mask_all,
                             results_dir,
                             filename,
                             tissue_labels = ["Femoral cart.", "Tibial cart.", "Patellar cart.", "Meniscus"]) -> None:
-    """_summary_
+    """Visualise the predicted mask in 3D using a different colour for each class
 
     Args:
         mask_all (np.array): the mask with all classes present
@@ -29,11 +32,18 @@ def plot_3d_mask_multiclass(mask_all,
     # Add subplot to figure
     ax = fig.add_subplot(111, projection='3d')
 
+    print(f"Mask all shape: {mask_all.shape}")
+    print(f"Mask colors shape: {mask_colors.shape}")
+
     # Reorder the mask to match ax.voxels() function so the filled[0,0,0] corresponds to the bottom left corner of the plot
     mask_all = np.transpose(mask_all, (1, 0, 2))
+    # Also transpose the mask_colors to match the mask_all
+    mask_colors = np.transpose(mask_colors, (1, 0, 2, 3))
+
+    print(f"Mask all shape after transposing: {mask_all.shape}")
+    print(f"Mask colors shape after transposing: {mask_colors.shape}")
 
     # Build up the colors mask using the indvidual segmentation masks
-
     print("Setting up colors mask")
 
     print(f"Mask colors shape: {mask_colors.shape}")
