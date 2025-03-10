@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=train_nnunet
+#SBATCH --job-name=train_nnunet_2d
 #SBATCH --partition=gpu     # Request the GPU partition
 #SBATCH --gres=gpu:1        # Request 3 GPUs as 3 GPUs per node
 
