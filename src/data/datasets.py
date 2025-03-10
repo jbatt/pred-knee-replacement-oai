@@ -116,10 +116,10 @@ class KneeSegDataset3DMulticlass(Dataset):
 
 
             # Fill in each layer of multiclass mask with each classes seg mask
-            mask_all[:,:,:,1] = mask[:,:,:,0]
-            mask_all[:,:,:,2] = tibial_mask 
-            mask_all[:,:,:,3] = mask[:,:,:,2]
-            mask_all[:,:,:,4] = minisc_mask
+            mask_all[:,:,:,1] = mask[:,:,:,0] # Femoral cartilage
+            mask_all[:,:,:,2] = tibial_mask # Tibial cartilage
+            mask_all[:,:,:,3] = mask[:,:,:,3] # Patellar cartilage
+            mask_all[:,:,:,4] = minisc_mask # Meniscus
             
             # Define background mask for the train data
 
