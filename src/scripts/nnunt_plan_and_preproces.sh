@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=train_nnunet
+#SBATCH --job-name=nnunet_plan_preprocess
 #SBATCH --partition=gpu     # Request the GPU partition
 #SBATCH --gres=gpu:1        # Request 3 GPUs as 3 GPUs per node
 
@@ -11,8 +11,6 @@
 
 #SBATCH --mail-user=scjb@leeds.ac.uk # Email address for notifications
 #SBATCH --mail-type=BEGIN,END
-
-#SBATCH --array=1-5 # Run as task array
 
 # Load necessary modules
 module load cuda
