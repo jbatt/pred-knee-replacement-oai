@@ -123,6 +123,9 @@ def generate_nnunet_dataset(raw_data_path, nnunet_raw_path, nnunet_dataset_name=
     print(f"Number of images to be converted: {len(image_files)}")
     print(f"Number of images to be converted: {len(label_files)}")
 
+    print(f"Image files: {image_files}")
+    print(f"Label files: {label_files}")
+
 
     # Loop through files, combine image and label files and convert to nii.gz format
     print("Converting images...")
