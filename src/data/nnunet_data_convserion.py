@@ -149,10 +149,11 @@ def generate_nnunet_dataset(raw_data_path, nnunet_raw_path, nnunet_dataset_name=
         # Open the image file and load it to a numpy array
         with h5py.File(image_filepath,'r') as hf:
             image = np.array(hf['data'])
-        
+            print(f"Image shape: {image.shape}")
         # Open the mask file and load it to a numpy array
         with h5py.File(label_filepath,'r') as hf:
             mask = np.array(hf['data'])
+            print(f"Mask shape: {mask.shape}")
 
         # Define medial meniscus mask
         menisc_med_mask = mask[...,-1]
@@ -185,10 +186,10 @@ def generate_nnunet_dataset(raw_data_path, nnunet_raw_path, nnunet_dataset_name=
 
 
         # Fill in each layer of multiclass mask with each classes seg mask
-        mask_all[:,:,:,1] = mask[:,:,:,0]
-        mask_all[:,:,:,2] = tibial_mask 
-        mask_all[:,:,:,3] = mask[:,:,:,2]
-        mask_all[:,:,:,4] = minisc_mask
+        mask_all[:,:,:,1] = mask[:,:,:,0] # Femoral 
+        mask_all[:,:,:,2] = tibial_mask # Tibial
+        mask_all[:,:,:,3] = mask[:,:,:,3] # Patellar
+        mask_all[:,:,:,4] = minisc_mask # Meniscus
 
 
         # Define background mask for the train data
