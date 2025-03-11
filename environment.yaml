@@ -19,3 +19,4 @@ dependencies:
     - pip:
         - monai
         - segmentation-models-pytorch-3d
+        - kaleido
