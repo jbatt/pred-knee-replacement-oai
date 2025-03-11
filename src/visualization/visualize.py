@@ -162,7 +162,7 @@ def plot_3d_mask_multiclass_plotly(mask, results_figures_dir, filename) -> None:
         value=volume_data.flatten(),  # Flattened segmentation mask values
         isomin=-0.5,
         isomax=4.5,
-        opacity=1,  # Adjust opacity for better visibility
+        # opacity=1,  # Adjust opacity for better visibility
         surface_count=5,  # Number of contour surfaces
         colorscale=colorscale,  # Color mapping
         opacityscale=opacityscale,
