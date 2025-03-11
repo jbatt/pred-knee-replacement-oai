@@ -4,6 +4,7 @@ import os
 import numpy as np
 import argparse
 import datetime
+import plotly.graph_objects as go
 
 # TODO: Add docstrings to all functions
 # TODO: Include a function to plot the original image and the predicted mask side by side
@@ -93,6 +94,59 @@ def plot_3d_mask_multiclass(mask_all,
 
 
 
+def plot_3d_mask_multiclass_plotly(mask, results_figures_dir, filename) -> None:
+
+    segmentation = segmentation.squeeze()
+    print(f"Segmentation mask shape: {segmentation.shape}")
+
+    # Convert segmentation mask from one hot encoding to single channel with classes as different values
+    segmentation_single = np.argmax(segmentation, axis=0)
+
+    # Define a discrete color scale for 5 classes
+    discrete_colorscale = [
+        [0.00, "rgba(0, 0, 0, 0)"],  # Background (Transparent)
+        [0.20, "blue"],              # Class 1
+        [0.40, "red"],               # Class 2
+        [0.60, "green"],             # Class 3
+        [0.80, "yellow"],            # Class 4
+        [1.00, "purple"],            # Class 5 (optional extra)
+    ]
+
+
+    # # Generate a synthetic 3D segmentation mask (Replace with your actual data)
+    # segmentation = np.zeros((50, 50, 50))
+    # segmentation[10:40, 10:40, 10:40] = 1  # Example: A cube in the center
+
+    # Create 3D coordinate grid
+    x, y, z = np.mgrid[:segmentation_single.shape[0], :segmentation_single.shape[1], :segmentation_single.shape[2]]
+
+    # Convert segmentation data to 1s and 0s (binary mask)
+    volume_data = segmentation_single.astype(np.uint8)
+
+    # Create a volume rendering
+    fig = go.Figure(data=go.Volume(
+        x=x.flatten(),  # X coordinates
+        y=y.flatten(),  # Y coordinates
+        z=z.flatten(),  # Z coordinates
+        value=volume_data.flatten(),  # Flattened segmentation mask values
+        isomin=0.5,  # Threshold to visualize the segmented region
+        isomax=4,  # Max value for the mask
+        opacity=1,  # Adjust opacity for better visibility
+        surface_count=5,  # Number of contour surfaces
+        colorscale=discrete_colorscale  # Color mapping
+    ))
+
+    # Show the figure
+    fig.write_image(os.path.join(results_figures_dir, f"{filename}.html"))
+    fig.write_html(os.path.join(results_figures_dir, f"{filename}.html"))
+
+    
+
+
+
+
+
+
 # Loop through all the paths to the predicted segmentation masks, load the masks and visualise them in 3D
 def plot_all_3d_masks_multiclass(mask_paths, 
                                 results_path,
@@ -125,12 +179,12 @@ def plot_all_3d_masks_multiclass(mask_paths,
         title = f"{mask_path}: Predicted Segmentation Mask"
         
         # Define the filename for the plot
-        filename = f"{os.path.splitext(os.path.basename(mask_path))[0]}_predicted_mask.png"
+        filename = f"{os.path.splitext(os.path.basename(mask_path))[0]}_predicted_mask"
         
         # Visualise the predicted mask in 3D
-        plot_3d_mask_multiclass(mask_all, mask, title, results_path, filename, tissue_labels)
+        # plot_3d_mask_multiclass(mask_all, mask, title, results_path, filename, tissue_labels)
     
-
+        plot_3d_mask_multiclass_plotly(mask, results_path, filename)
 
 
 
@@ -173,4 +227,4 @@ if __name__ == "__main__":
     print("Mask paths after filtering:", mask_paths)
 
     # Visualise all the predicted masks in 3D
-    plot_all_3d_masks_multiclass(mask_paths, figures_dir)
+    plot_all_3d_masks_multiclass(mask_paths, figures_dir, remove_background=False)
