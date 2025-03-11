@@ -173,6 +173,17 @@ def plot_3d_mask_multiclass_plotly(mask, results_figures_dir, filename) -> None:
         )
     ))
 
+    # Reverse the z-axis in the plot
+    fig.update_layout(
+        scene=dict(
+            zaxis=dict(autorange='reversed'),
+            xaxis_title='X',
+            yaxis_title='Y',
+            zaxis_title='Z'
+        ),
+        title='Predicted 3D Segmentation Map'
+)
+
     # Show the figure
     fig.write_image(os.path.join(results_figures_dir, f"{filename}_plotly.png"))
     fig.write_html(os.path.join(results_figures_dir, f"{filename}_plotly.html"))
