@@ -15,6 +15,7 @@ dependencies:
     - conda-forge::simpleitk
     - conda-forge::nibabel
     - seaborn
+    - plotly
     - pip:
         - monai
         - segmentation-models-pytorch-3d
