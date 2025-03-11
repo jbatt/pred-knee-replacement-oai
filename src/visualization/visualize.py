@@ -133,7 +133,7 @@ def plot_3d_mask_multiclass_plotly(mask, results_figures_dir, filename) -> None:
         isomax=4,  # Max value for the mask
         opacity=1,  # Adjust opacity for better visibility
         surface_count=5,  # Number of contour surfaces
-        colorscale=discrete_colorscale  # Color mapping
+        colorscale= 'Accent'  # Color mapping
     ))
 
     # Show the figure
