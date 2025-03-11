@@ -105,10 +105,10 @@ def plot_3d_mask_multiclass_plotly(mask, results_figures_dir, filename) -> None:
     # Define a discrete color scale for 5 classes
     discrete_colorscale = [
         [0.00, "rgba(0, 0, 0, 0)"],  # Background (Transparent)
-        [0.20, "blue"],              # Class 1
-        [0.40, "red"],               # Class 2
-        [0.60, "green"],             # Class 3
-        [0.80, "yellow"],            # Class 4
+        [0.01, "blue"],              # Class 1
+        [0.25, "red"],               # Class 2
+        [0.50, "green"],             # Class 3
+        [0.75, "yellow"],            # Class 4
         [1.00, "purple"],            # Class 5 (optional extra)
     ]
 
@@ -129,7 +129,7 @@ def plot_3d_mask_multiclass_plotly(mask, results_figures_dir, filename) -> None:
         y=y.flatten(),  # Y coordinates
         z=z.flatten(),  # Z coordinates
         value=volume_data.flatten(),  # Flattened segmentation mask values
-        isomin=0.5,  # Threshold to visualize the segmented region
+        isomin=0.1,  # Threshold to visualize the segmented region
         isomax=4,  # Max value for the mask
         opacity=1,  # Adjust opacity for better visibility
         surface_count=5,  # Number of contour surfaces
