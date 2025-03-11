@@ -102,15 +102,46 @@ def plot_3d_mask_multiclass_plotly(mask, results_figures_dir, filename) -> None:
     # Convert segmentation mask from one hot encoding to single channel with classes as different values
     segmentation_single = np.argmax(mask, axis=0)
 
-    # Define a discrete color scale for 5 classes
-    discrete_colorscale = [
-        [0.00, "rgba(0, 0, 0, 0)"],  # Background (Transparent)
-        [0.01, "blue"],              # Class 1
-        [0.25, "red"],               # Class 2
-        [0.50, "green"],             # Class 3
-        [0.75, "yellow"],            # Class 4
-        [1.00, "purple"],            # Class 5 (optional extra)
+    colorscale = [
+        [0.0, 'purple'],
+        [0.2, 'purple'],
+        [0.2, 'green'],
+        [0.4, 'green'],
+        [0.4, 'blue'],
+        [0.6, 'blue'],
+        [0.6, 'yellow'],
+        [0.8, 'yellow'],
+        [0.8, 'red'],
+        [1.0, 'red']
     ]
+
+    
+    # Define an opacityscale to hide the background.
+    # Normalized values for each class boundary (based on isomin and isomax) are:
+    # 0: ~0.1, 1: ~0.3, 2: ~0.5, 3: ~0.7, 4: ~0.9.
+    # Here we set the opacity for the background region ([0.0, 0.2]) to 0.
+    opacityscale = [
+        [0.0, 0.0],
+        [0.2, 0.0],
+        [0.2, 0.8],
+        [0.4, 0.8],
+        [0.4, 0.8],
+        [0.6, 0.8],
+        [0.6, 0.8],
+        [0.8, 0.8],
+        [0.8, 0.8],
+        [1.0, 0.8]
+    ]
+
+    # # Define a discrete color scale for 5 classes
+    # discrete_colorscale = [
+    #     [0.00, "rgba(0, 0, 0, 0)"],  # Background (Transparent)
+    #     [0.01, "blue"],              # Class 1
+    #     [0.25, "red"],               # Class 2
+    #     [0.50, "green"],             # Class 3
+    #     [0.75, "yellow"],            # Class 4
+    #     [1.00, "purple"],            # Class 5 (optional extra)
+    # ]
 
 
     # # Generate a synthetic 3D segmentation mask (Replace with your actual data)
@@ -129,11 +160,17 @@ def plot_3d_mask_multiclass_plotly(mask, results_figures_dir, filename) -> None:
         y=y.flatten(),  # Y coordinates
         z=x.flatten(),  # Z coordinates
         value=volume_data.flatten(),  # Flattened segmentation mask values
-        isomin=0.05,  # Threshold to visualize the segmented region
-        isomax=4,  # Max value for the mask
+        isomin=-0.5,
+        isomax=4.5,
         opacity=1,  # Adjust opacity for better visibility
         surface_count=5,  # Number of contour surfaces
-        colorscale= 'Accent'  # Color mapping
+        colorscale=colorscale,  # Color mapping
+        opacityscale=opacityscale,
+        colorbar=dict(
+            tickmode='array',
+            tickvals=[0, 1, 2, 3, 4],
+            ticktext=['Background', 'Femoral Cart.', 'Tibiial Cart.', 'Patellar Cart.', 'Meniscus']
+        )
     ))
 
     # Show the figure
