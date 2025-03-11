@@ -125,11 +125,11 @@ def plot_3d_mask_multiclass_plotly(mask, results_figures_dir, filename) -> None:
 
     # Create a volume rendering
     fig = go.Figure(data=go.Volume(
-        x=x.flatten(),  # X coordinates
+        x=z.flatten(),  # X coordinates
         y=y.flatten(),  # Y coordinates
-        z=z.flatten(),  # Z coordinates
+        z=x.flatten(),  # Z coordinates
         value=volume_data.flatten(),  # Flattened segmentation mask values
-        isomin=0.1,  # Threshold to visualize the segmented region
+        isomin=0.05,  # Threshold to visualize the segmented region
         isomax=4,  # Max value for the mask
         opacity=1,  # Adjust opacity for better visibility
         surface_count=5,  # Number of contour surfaces
