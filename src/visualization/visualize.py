@@ -96,11 +96,11 @@ def plot_3d_mask_multiclass(mask_all,
 
 def plot_3d_mask_multiclass_plotly(mask, results_figures_dir, filename) -> None:
 
-    segmentation = segmentation.squeeze()
-    print(f"Segmentation mask shape: {segmentation.shape}")
+    mask = mask.squeeze()
+    print(f"Segmentation mask shape: {mask.shape}")
 
     # Convert segmentation mask from one hot encoding to single channel with classes as different values
-    segmentation_single = np.argmax(segmentation, axis=0)
+    segmentation_single = np.argmax(mask, axis=0)
 
     # Define a discrete color scale for 5 classes
     discrete_colorscale = [
