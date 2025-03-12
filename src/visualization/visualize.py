@@ -97,8 +97,7 @@ def plot_3d_mask_multiclass(mask_all,
 def plot_3d_mask_multiclass_plotly(mask, results_figures_dir, filename) -> None:
 
     # TODO: change plot background from grey
-    # TODO: Get orientation right
-    # TODO: Add title, colorbar and labels for each class
+    # TODO: Add title, correct colorbar and labels for each class
     # TODO: Add comparison to the ground truth mask
 
     mask = mask.squeeze()
@@ -129,14 +128,14 @@ def plot_3d_mask_multiclass_plotly(mask, results_figures_dir, filename) -> None:
     opacityscale = [
         [0.0, 0.0],
         [0.2, 0.0],
-        [0.2, 0.8],
-        [0.4, 0.8],
-        [0.4, 0.8],
-        [0.6, 0.8],
-        [0.6, 0.8],
-        [0.8, 0.8],
-        [0.8, 0.8],
-        [1.0, 0.8]
+        [0.2, 1.0],
+        [0.4, 1.0],
+        [0.4, 1.0],
+        [0.6, 1.0],
+        [0.6, 1.0],
+        [0.8, 1.0],
+        [0.8, 1.0],
+        [1.0, 1.0]
     ]
 
     # # Define a discrete color scale for 5 classes
@@ -205,7 +204,7 @@ def plot_3d_mask_multiclass_plotly(mask, results_figures_dir, filename) -> None:
 def plot_all_3d_masks_multiclass(mask_paths, 
                                 results_path,
                                 tissue_labels = ["Femoral cart.", "Tibial cart.", "Patellar cart.", "Meniscus"],
-                                remove_background=True) -> None:
+                                remove_background=False) -> None:
     
     # Loop through all the predicted masks
     for i, mask_path in enumerate(mask_paths):
@@ -235,6 +234,10 @@ def plot_all_3d_masks_multiclass(mask_paths,
         # Define the filename for the plot
         filename = f"{os.path.splitext(os.path.basename(mask_path))[0]}_predicted_mask"
         
+
+
+        # DEICE ON INDIVIDUAL PLOTTING FUNCTIONS HERE
+
         # Visualise the predicted mask in 3D
         # plot_3d_mask_multiclass(mask_all, mask, title, results_path, filename, tissue_labels)
     
