@@ -109,6 +109,9 @@ def plot_3d_mask_multiclass_plotly(mask, results_figures_dir, filename) -> None:
     # Convert segmentation mask from one hot encoding to single channel with classes as different values
     segmentation_single = np.argmax(mask, axis=0)
 
+    # Print the unique values in the segmentation mask
+    print(f"Unique values in the segmentation mask: {np.unique(segmentation_single)}")
+
     # TODO: fix color - patellar cartilage and tibial cartilage ar both blue
     colorscale = [
         [0.0, 'purple'],
@@ -196,7 +199,7 @@ def plot_3d_mask_multiclass_plotly(mask, results_figures_dir, filename) -> None:
     # Show the figure
     fig.write_image(os.path.join(results_figures_dir, f"{filename}_plotly.png"))
     fig.write_html(os.path.join(results_figures_dir, f"{filename}_plotly.html"))
-    
+
     print(f"Saved figure to {os.path.join(results_figures_dir, filename)}")
 
     
