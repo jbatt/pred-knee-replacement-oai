@@ -96,12 +96,18 @@ def plot_3d_mask_multiclass(mask_all,
 
 def plot_3d_mask_multiclass_plotly(mask, results_figures_dir, filename) -> None:
 
+    # TODO: change plot background from grey
+    # TODO: Get orientation right
+    # TODO: Add title, colorbar and labels for each class
+    # TODO: Add comparison to the ground truth mask
+
     mask = mask.squeeze()
     print(f"Segmentation mask shape: {mask.shape}")
 
     # Convert segmentation mask from one hot encoding to single channel with classes as different values
     segmentation_single = np.argmax(mask, axis=0)
 
+    # TODO: fix color - patellar cartilage and tibial cartilage ar both blue
     colorscale = [
         [0.0, 'purple'],
         [0.2, 'purple'],
@@ -119,7 +125,7 @@ def plot_3d_mask_multiclass_plotly(mask, results_figures_dir, filename) -> None:
     # Define an opacityscale to hide the background.
     # Normalized values for each class boundary (based on isomin and isomax) are:
     # 0: ~0.1, 1: ~0.3, 2: ~0.5, 3: ~0.7, 4: ~0.9.
-    # Here we set the opacity for the background region ([0.0, 0.2]) to 0.
+    # Set the opacity for the background region ([0.0, 0.2]) to 0.
     opacityscale = [
         [0.0, 0.0],
         [0.2, 0.0],
@@ -160,11 +166,11 @@ def plot_3d_mask_multiclass_plotly(mask, results_figures_dir, filename) -> None:
         y=y.flatten(),  # Y coordinates
         z=x.flatten(),  # Z coordinates
         value=volume_data.flatten(),  # Flattened segmentation mask values
-        isomin=-0.5,
-        isomax=4.5,
+        isomin=-0.5, 
+        isomax=4.5, # -0.5-0.5, 0.5-1.5, 1.5-2.5, 2.5-3.5, 3.5-4.5
         # opacity=1,  # Adjust opacity for better visibility
         surface_count=5,  # Number of contour surfaces
-        colorscale=colorscale,  # Color mapping
+        colorscale="Phase",  # Color mapping
         opacityscale=opacityscale,
         colorbar=dict(
             tickmode='array',
