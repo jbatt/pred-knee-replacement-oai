@@ -104,8 +104,6 @@ def plot_3d_mask_multiclass_plotly(mask, results_figures_dir, filename) -> None:
     mask = mask.squeeze()
     print(f"Mask shape after squeezing: {mask.shape}")
 
-    print(f"Segmentation mask shape: {mask.shape}")
-
     # Convert segmentation mask from one hot encoding to single channel with classes as different values
     segmentation_single = np.argmax(mask, axis=0)
 
@@ -113,19 +111,32 @@ def plot_3d_mask_multiclass_plotly(mask, results_figures_dir, filename) -> None:
     print(f"Unique values in the segmentation mask: {np.unique(segmentation_single)}")
 
     # TODO: fix color - patellar cartilage and tibial cartilage ar both blue
+
+    # colorscale = [
+    #     [0.0, 'purple'],
+    #     [0.2, 'purple'],
+    #     [0.2, 'green'],
+    #     [0.4, 'green'],
+    #     [0.4, 'blue'],
+    #     [0.6, 'blue'],
+    #     [0.6, 'yellow'],
+    #     [0.8, 'yellow'],
+    #     [0.8, 'red'],
+    #     [1.0, 'red']
+    # ]
+
     colorscale = [
         [0.0, 'purple'],
-        [0.2, 'purple'],
-        [0.2, 'green'],
-        [0.4, 'green'],
-        [0.4, 'blue'],
-        [0.6, 'blue'],
-        [0.6, 'yellow'],
-        [0.8, 'yellow'],
-        [0.8, 'red'],
+        [0.19, 'purple'],
+        [0.21, 'green'],
+        [0.39, 'green'],
+        [0.41, 'blue'],
+        [0.59, 'blue'],
+        [0.61, 'yellow'],
+        [0.79, 'yellow'],
+        [0.81, 'red'],
         [1.0, 'red']
     ]
-
     
     # Define an opacityscale to hide the background.
     # Normalized values for each class boundary (based on isomin and isomax) are:
@@ -175,7 +186,7 @@ def plot_3d_mask_multiclass_plotly(mask, results_figures_dir, filename) -> None:
         isomax=4.5, # -0.5-0.5, 0.5-1.5, 1.5-2.5, 2.5-3.5, 3.5-4.5
         # opacity=1,  # Adjust opacity for better visibility
         surface_count=5,  # Number of contour surfaces
-        colorscale="Phase",  # Color mapping
+        colorscale=colorscale,  # Color mapping
         opacityscale=opacityscale,
         colorbar=dict(
             tickmode='array',
