@@ -100,7 +100,10 @@ def plot_3d_mask_multiclass_plotly(mask, results_figures_dir, filename) -> None:
     # TODO: Add title, correct colorbar and labels for each class
     # TODO: Add comparison to the ground truth mask
 
+    print(f"Mask shape: {mask.shape}")
     mask = mask.squeeze()
+    print(f"Mask shape after squeezing: {mask.shape}")
+
     print(f"Segmentation mask shape: {mask.shape}")
 
     # Convert segmentation mask from one hot encoding to single channel with classes as different values
@@ -156,7 +159,7 @@ def plot_3d_mask_multiclass_plotly(mask, results_figures_dir, filename) -> None:
     # Create 3D coordinate grid
     x, y, z = np.mgrid[:segmentation_single.shape[0], :segmentation_single.shape[1], :segmentation_single.shape[2]]
 
-    # Convert segmentation data to 1s and 0s (binary mask)
+    # Convert segmentation data int8 type to save memory
     volume_data = segmentation_single.astype(np.uint8)
 
     # Create a volume rendering
@@ -182,6 +185,7 @@ def plot_3d_mask_multiclass_plotly(mask, results_figures_dir, filename) -> None:
     fig.update_layout(
         scene=dict(
             zaxis=dict(autorange='reversed'),
+            yaxis=dict(autorange='reversed'),
             xaxis_title='X',
             yaxis_title='Y',
             zaxis_title='Z'
@@ -192,6 +196,8 @@ def plot_3d_mask_multiclass_plotly(mask, results_figures_dir, filename) -> None:
     # Show the figure
     fig.write_image(os.path.join(results_figures_dir, f"{filename}_plotly.png"))
     fig.write_html(os.path.join(results_figures_dir, f"{filename}_plotly.html"))
+    
+    print(f"Saved figure to {os.path.join(results_figures_dir, filename)}")
 
     
 
@@ -204,12 +210,13 @@ def plot_3d_mask_multiclass_plotly(mask, results_figures_dir, filename) -> None:
 def plot_all_3d_masks_multiclass(mask_paths, 
                                 results_path,
                                 tissue_labels = ["Femoral cart.", "Tibial cart.", "Patellar cart.", "Meniscus"],
-                                remove_background=False) -> None:
+                                remove_background=True) -> None:
     
     # Loop through all the predicted masks
     for i, mask_path in enumerate(mask_paths):
         
         print(f"Visualising mask {i+1}/{len(mask_paths)}")
+        print(f"Mask path: {mask_path}")
 
         # Load mask using mask_path
         mask = np.load(mask_path)
@@ -236,7 +243,7 @@ def plot_all_3d_masks_multiclass(mask_paths,
         
 
 
-        # DEICE ON INDIVIDUAL PLOTTING FUNCTIONS HERE
+        # DECIDE ON INDIVIDUAL PLOTTING FUNCTIONS HERE
 
         # Visualise the predicted mask in 3D
         # plot_3d_mask_multiclass(mask_all, mask, title, results_path, filename, tissue_labels)
