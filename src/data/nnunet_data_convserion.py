@@ -242,7 +242,8 @@ def generate_nnunet_dataset(data_path,
         # CONVERT TESTING DATA
         #########################################################################
     if test:
-
+        print("Converting test images...")
+        
         test_image_files = sorted(glob.glob(os.path.join(test_data_path, "*.im")))
 
         for i, test_image_filepath in enumerate(test_image_files):
@@ -276,7 +277,7 @@ def main():
     args = parser.parse_args()
 
     print(f"Args: {args}")
-    
+
     # Set your paths here
     raw_data_path = "/mnt/scratch/scjb/data/oai_subset/"
     nnunet_raw_path = "/mnt/scratch/scjb/nnUNet_raw"
@@ -284,7 +285,7 @@ def main():
 
     # Prepare the dataset
     if args.generate_data == 1:
-        generate_nnunet_dataset(raw_data_path, nnunet_raw_path, train=args.train, test=args.test, nnunet_dataset_name=dataset_id)
+        generate_nnunet_dataset(raw_data_path, nnunet_raw_path, nnunet_dataset_name=dataset_id, train=args.train, test=args.test)
 
 
     if args.generate_json == 1:
