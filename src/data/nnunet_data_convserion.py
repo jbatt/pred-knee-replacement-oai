@@ -131,8 +131,6 @@ def generate_nnunet_dataset(data_path,
     train_image_files = sorted(glob.glob(os.path.join(train_data_path, "*.im")))
     label_files = sorted(glob.glob(os.path.join(train_data_path, "*.seg")))
 
-    print(f"Number of images to be converted: {len(train_image_files)}")
-    print(f"Number of images to be converted: {len(label_files)}")
 
     # print(f"Image files: {image_files}")
     # print(f"Label files: {label_files}")
@@ -277,6 +275,8 @@ def main():
     
     args = parser.parse_args()
 
+    print(f"Args: {args}")
+    
     # Set your paths here
     raw_data_path = "/mnt/scratch/scjb/data/oai_subset/"
     nnunet_raw_path = "/mnt/scratch/scjb/nnUNet_raw"
