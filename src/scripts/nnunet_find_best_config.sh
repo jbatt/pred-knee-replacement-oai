@@ -23,4 +23,4 @@ module load miniforge
 conda activate pred-knee-replacement-oai
 
 # Initial planning and preprocessing
-nnUNetv2_find_best_configuration 014 -c ["2d", "3d_fullres"] 
+nnUNetv2_find_best_configuration 014 -p plans -c ['2d', '3d_fullres'] 
