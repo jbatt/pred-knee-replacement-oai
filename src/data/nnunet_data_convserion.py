@@ -95,8 +95,7 @@ def generate_nnunet_dataset(data_path,
                             nnunet_raw_path, 
                             nnunet_dataset_name="Dataset014_OAISubset", 
                             train=False, 
-                            test=False, 
-                            test_data_path=None) -> None:
+                            test=False) -> None:
     """
     Prepare dataset for nnU-Net by organizing files in the required structure.
     
