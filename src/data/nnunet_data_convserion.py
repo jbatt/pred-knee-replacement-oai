@@ -272,8 +272,8 @@ def main():
     parser = argparse.ArgumentParser(description='Convert OAI dataset to nnU-Net format')
     parser.add_argument('--generate-data', type=int, help='Whether or not to generate the dataset')
     parser.add_argument('--generate-json', type=int, help='Whether or not to generate the dataset.json file')
-    parser.add_argument('--train', help='Whether or not to convert training data', action='store_false') # Default is True
-    parser.add_argument('--test', help='Whether or not to convert test data', action='store_false') # Default is False
+    parser.add_argument('--train', help='Whether or not to convert training data', action='store_true') # Default is False
+    parser.add_argument('--test', help='Whether or not to convert test data', action='store_true') # Default is False
     
     args = parser.parse_args()
 
@@ -284,7 +284,7 @@ def main():
 
     # Prepare the dataset
     if args.generate_data == 1:
-        generate_nnunet_dataset(raw_data_path, nnunet_raw_path, args.train, args.test, nnunet_dataset_name=dataset_id)
+        generate_nnunet_dataset(raw_data_path, nnunet_raw_path, train=args.train, test=args.test, nnunet_dataset_name=dataset_id)
 
 
     if args.generate_json == 1:
