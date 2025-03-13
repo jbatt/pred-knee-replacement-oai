@@ -9,7 +9,7 @@
 #SBATCH --mail-type=BEGIN,END
 
 # Run the visualization script
-python data/nnunet_data_convserion.py --generate-data 1 --generate-json 1
+python data/nnunet_data_convserion.py --generate-data 1 --generate-json 1 --train False --test True 
 
 
 # End of script
