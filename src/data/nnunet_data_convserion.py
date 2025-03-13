@@ -243,9 +243,11 @@ def generate_nnunet_dataset(data_path,
         #########################################################################
     if test:
         print("Converting test images...")
-        
+
         test_image_files = sorted(glob.glob(os.path.join(test_data_path, "*.im")))
 
+        print(f"Test images: {test_image_files}")
+        
         for i, test_image_filepath in enumerate(test_image_files):
             
             print(f"Converting image {i+1} of {len(test_image_files)}")
