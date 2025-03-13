@@ -151,12 +151,12 @@ def generate_nnunet_dataset(data_path,
             # Define filename prefix
             image_dest_filename = f"OAI_{i:03d}_0000.nii.gz"
             label_dest_filename = f"OAI_{i:03d}.nii.gz"
-            test_dest_filename = f"OAI_{i:03d}_0000.nii.gz"
+            
 
             # Define image and label filenames
             image_dest_filepath = os.path.join(imagesTr, image_dest_filename)
             label_dest_filepath = os.path.join(labelsTr, label_dest_filename)
-            test_dest_filename = os.path.join(imagesTs, test_dest_filename)
+            
 
 
             # Open the image file and load it to a numpy array
@@ -247,12 +247,15 @@ def generate_nnunet_dataset(data_path,
         test_image_files = sorted(glob.glob(os.path.join(test_data_path, "*.im")))
 
         print(f"Test images: {test_image_files}")
-        
+
         for i, test_image_filepath in enumerate(test_image_files):
             
             print(f"Converting image {i+1} of {len(test_image_files)}")
             print(f"Image file being converted: {test_image_filepath}")
-
+            
+            test_dest_filename = f"OAI_{i:03d}_0000.nii.gz"
+            test_dest_filename = os.path.join(imagesTs, test_dest_filename)
+            
             with h5py.File(test_image_filepath,'r') as hf:
                 image = np.array(hf['data'])
                 print(f"Image shape: {image.shape}")
