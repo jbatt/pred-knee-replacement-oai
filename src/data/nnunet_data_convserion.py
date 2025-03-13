@@ -275,7 +275,6 @@ def main():
     parser.add_argument('--generate-json', type=int, help='Whether or not to generate the dataset.json file')
     parser.add_argument('--train', type=int, help='Whether or not to convert training data', action='store_false') # Default is True
     parser.add_argument('--test', type=int, help='Whether or not to convert test data', action='store_true') # Default is False
-    parser.add_argument('--test-output-path', type=str, help='Path to test data')
     
     args = parser.parse_args()
 
