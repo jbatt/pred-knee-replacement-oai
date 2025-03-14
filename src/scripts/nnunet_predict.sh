@@ -22,9 +22,7 @@ export LD_LIBRARY_PATH=$CUDA_HOME/lib64:$LD_LIBRARY_PATH
 module load miniforge
 conda activate pred-knee-replacement-oai
 
-# Run the training script with the selected input file
-
-# Initial planning and preprocessing
+# Run prediction, ensembling and postprocessing
 
 nnUNetv2_predict -d Dataset014_OAISubset -i /mnt/scratch/scjb/nnUNet_raw/Dataset014_OAISubset/imagesTs -o /mnt/scratch/scjb/data/processed/oai_subset_knee_cart_seg/pred_masks/nnunet/2d -f  0 1 2 3 4 -tr nnUNetTrainer -c 2d -p nnUNetPlans --save_probabilities
 nnUNetv2_predict -d Dataset014_OAISubset -i /mnt/scratch/scjb/nnUNet_raw/Dataset014_OAISubset/imagesTs -o /mnt/scratch/scjb/data/processed/oai_subset_knee_cart_seg/pred_masks/nnunet/3d_fullres -f  0 1 2 3 4 -tr nnUNetTrainer -c 3d_fullres -p nnUNetPlans --save_probabilities
