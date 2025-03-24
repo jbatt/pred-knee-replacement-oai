@@ -28,12 +28,15 @@ def main(args):
     print(f"Run start time: {run_start_time}")
 
     # Create output directory
-    pred_masks_dir = "/mnt/scratch/scjb/data/processed/oai_subset_knee_cart_seg/pred_masks"
-    pred_masks_dir = os.path.join(pred_masks_dir, args.model, run_start_time)
-    
-    # Create output directory
-    pred_masks_dir = Path(pred_masks_dir)
-    pred_masks_dir.mkdir(parents=True, exist_ok=True)
+    if args.model == 'nnunet':
+        pred_masks_dir = "/mnt/scratch/scjb/data/processed/oai_subset_knee_cart_seg/pred_masks/nnunet/postprocesing"
+    else:
+        pred_masks_dir = "/mnt/scratch/scjb/data/processed/oai_subset_knee_cart_seg/pred_masks"
+        pred_masks_dir = os.path.join(pred_masks_dir, args.model, run_start_time)
+        
+        # Create output directory
+        pred_masks_dir = Path(pred_masks_dir)
+        pred_masks_dir.mkdir(parents=True, exist_ok=True)
 
 
     # If the model is not nnunet, create the model, load the weights and run inference
@@ -95,7 +98,7 @@ def main(args):
                 np.save(os.path.join(pred_masks_dir, test_img_paths[idx]), pred_binary_mask)
 
 
-    # Create list of predicted segentation masks
+    # Create list of predicted segentation masks - nnunet outputs .nii.gz whereas other models output .npy
     if args.model != 'nnunet':
         pred_masks = [os.path.join(pred_masks_dir, i) for i in os.listdir(pred_masks_dir) if i.endswith('.npy')]
     else:
