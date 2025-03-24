@@ -170,7 +170,7 @@ if __name__ == '__main__':
     parser.add_argument('--config', type=str, required=False, help='Path to config file')
     parser.add_argument('--model', type=str, required=True, help='Model architecture')
     parser.add_argument('--model_weights', type=str, required=False, help='Model weights')
-    parser.add_argument('--data_dir', type=str, required=True, default="/mnt/scratch/scjb/data/oai_subset/", help='Path to test data')
+    parser.add_argument('--data_dir', type=str, required=False, default="/mnt/scratch/scjb/data/oai_subset/", help='Path to test data')
 
     args = parser.parse_args()
 
