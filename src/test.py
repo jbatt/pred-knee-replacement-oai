@@ -122,7 +122,7 @@ def main(args):
 
     # Loop through each predicted mask and save as nifti file
     for mask in pred_masks:
-    
+        pass
 
         # # Load mask
         # mask = np.load(mask)
@@ -171,6 +171,7 @@ def main(args):
 
     # # Save evaluation metrics as csv
     # eval_metrics.to_csv(os.path.join(pred_masks_dir, 'eval_metrics.csv'))
+
 
 if __name__ == '__main__':
     main()
