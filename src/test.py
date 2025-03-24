@@ -23,16 +23,6 @@ import json
 
 def main(args):
 
-    # %% Read in json config file as command line argument using argparse
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--config', type=str, required=False, help='Path to config file')
-    parser.add_argument('--model', type=str, required=True, help='Model architecture')
-    parser.add_argument('--model_weights', type=str, required=False, help='Model weights')
-    parser.add_argument('--data_dir', type=str, required=True, default="/mnt/scratch/scjb/data/oai_subset/", help='Path to test data')
-
-    args = parser.parse_args()
-    
-
     # %% Save run start time for output directory
     run_start_time = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     print(f"Run start time: {run_start_time}")
@@ -174,5 +164,14 @@ def main(args):
 
 
 if __name__ == '__main__':
-    main()
 # %%
+ # %% Read in json config file as command line argument using argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--config', type=str, required=False, help='Path to config file')
+    parser.add_argument('--model', type=str, required=True, help='Model architecture')
+    parser.add_argument('--model_weights', type=str, required=False, help='Model weights')
+    parser.add_argument('--data_dir', type=str, required=True, default="/mnt/scratch/scjb/data/oai_subset/", help='Path to test data')
+
+    args = parser.parse_args()
+
+    main(args)
