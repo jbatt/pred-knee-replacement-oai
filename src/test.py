@@ -73,7 +73,7 @@ def main(args):
         print(f'Number of test images: {len(test_img_paths)}')
         print(f'Test images: {test_img_paths}')
 
-        test_dataset = KneeSegDataset3DMulticlass(data_dir=args.data_dir, split='test', config.img_crop)    
+        test_dataset = KneeSegDataset3DMulticlass(data_dir=args.data_dir, split='test', img_crop=config.img_crop)    
         test_loader = DataLoader(test_dataset, batch_size=1, shuffle=False)
 
         # Process each image
