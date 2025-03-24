@@ -30,6 +30,9 @@ def main(args):
     # Create output directory
     pred_masks_dir = "/mnt/scratch/scjb/data/processed/oai_subset_knee_cart_seg/pred_masks"
     pred_masks_dir = os.path.join(pred_masks_dir, args.model, run_start_time)
+    
+    # Create output directory
+    pred_masks_dir = Path(pred_masks_dir)
     pred_masks_dir.mkdir(parents=True, exist_ok=True)
 
 
