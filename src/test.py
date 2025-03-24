@@ -25,60 +25,57 @@ def main(args):
 
     # %% Read in json config file as command line argument using argparse
     parser = argparse.ArgumentParser()
-    parser.add_argument('--config', type=str, required=True, help='Path to config file')
+    parser.add_argument('--config', type=str, required=False, help='Path to config file')
     parser.add_argument('--model', type=str, required=True, help='Model architecture')
-    parser.add_argument('--model_weights', type=str, required=True, help='Model weights')
+    parser.add_argument('--model_weights', type=str, required=False, help='Model weights')
     parser.add_argument('--data_dir', type=str, required=True, default="/mnt/scratch/scjb/data/oai_subset/", help='Path to test data')
 
     args = parser.parse_args()
     
-    # %% Read config json file into config variable
-    with open(args.config, 'r') as f:
-        config = json.load(f)
 
     # %% Save run start time for output directory
     run_start_time = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     print(f"Run start time: {run_start_time}")
 
-    # %% Create model using wandb config hyperparams
-    model = create_model(input_model_arg=args.model, 
-                        in_channels =config.in_channels, 
-                        out_channels=config.out_channels, 
-                        num_kernels= config.num_kernels, 
-                        encoder=config.encoder, # None/null used in config file if not relevant for model
-                        encoder_depth=config.encoder_depth, # None/null used if not relevant for model
-                        img_size=config.img_size,
-                        img_crop=config.img_crop,
-                        feature_size=config.feature_size
-    )
-
-    model.load_state_dict(torch.load(args.model_weights))
-    
     # Create output directory
     pred_masks_dir = "/mnt/scratch/scjb/data/processed/oai_subset_knee_cart_seg/pred_masks"
     pred_masks_dir = os.path.join(pred_masks_dir, args.model_name, run_start_time)
     pred_masks_dir.mkdir(parents=True, exist_ok=True)
-    
-
-    # Set model to evaluation mode and move to device
-    model.eval()
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    model = model.to(device)
-    
-    # Create dataset and dataloader
-    test_img_paths = np.array([os.path.basename(i).split('.')[0] for i in glob.glob(f'{os.path.join(args.data_dir, "test")}, *.npy')])
-    print(f'Number of test images: {len(test_img_paths)}')
-    print(f'Test images: {test_img_paths}')
 
 
-
-
-    test_dataset = KneeSegDataset3DMulticlass(data_dir=args.data_dir, split='test', config.img_crop)    
-    test_loader = DataLoader(test_dataset, batch_size=1, shuffle=False)
-    
-
+    # If the model is not nnunet, create the model, load the weights and run inference
     if args.model != 'nnunet':
+        # %% Read config json file into config variable
+        with open(args.config, 'r') as f:
+            config = json.load(f)
         
+        # %% Create model using wandb config hyperparams
+        model = create_model(input_model_arg=args.model, 
+                            in_channels =config.in_channels, 
+                            out_channels=config.out_channels, 
+                            num_kernels= config.num_kernels, 
+                            encoder=config.encoder, # None/null used in config file if not relevant for model
+                            encoder_depth=config.encoder_depth, # None/null used if not relevant for model
+                            img_size=config.img_size,
+                            img_crop=config.img_crop,
+                            feature_size=config.feature_size
+        )
+
+        model.load_state_dict(torch.load(args.model_weights))
+    
+        # Set model to evaluation mode and move to device
+        model.eval()
+        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        model = model.to(device)
+        
+        # Create dataset and dataloader
+        test_img_paths = np.array([os.path.basename(i).split('.')[0] for i in glob.glob(f'{os.path.join(args.data_dir, "test")}, *.npy')])
+        print(f'Number of test images: {len(test_img_paths)}')
+        print(f'Test images: {test_img_paths}')
+
+        test_dataset = KneeSegDataset3DMulticlass(data_dir=args.data_dir, split='test', config.img_crop)    
+        test_loader = DataLoader(test_dataset, batch_size=1, shuffle=False)
+
         # Process each image
         with torch.no_grad():
 
