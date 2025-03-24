@@ -31,7 +31,7 @@ def main(args):
     if args.model == 'nnunet':
         pred_masks_dir = "/mnt/scratch/scjb/data/processed/oai_subset_knee_cart_seg/pred_masks/nnunet/postprocesing/"
         test_img_dir = "/mnt/scratch/scjb/nnUNet_raw/Dataset014_OAISubset/imagesTs/"
-        test_img_paths = np.array([i[:7] for i in glob.glob(f'{test_img_dir}/*.nii.gz')])
+        test_img_paths = np.array([os.path.basename(i)[:7] for i in glob.glob(f'{test_img_dir}/*.nii.gz')])
 
         print(f'Number of test images: {len(test_img_paths)}')
         print(f'Test images: {test_img_paths}')
