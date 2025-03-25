@@ -14,9 +14,9 @@ import glob
 import pandas as pd
 import monai
 from data.datasets import KneeSegDataset3DMulticlass
-import matplotlib.pyplot as plt
-
+import h5py
 import json
+from utils.utils import crop_mask
 
 
 # TODO: tidy up create model function
@@ -31,9 +31,11 @@ def main(args):
     # Create output directory
     if args.model == 'nnunet':
         pred_masks_dir = "/mnt/scratch/scjb/data/processed/oai_subset_knee_cart_seg/pred_masks/nnunet/postprocesing/"
-        test_img_dir = "/mnt/scratch/scjb/nnUNet_raw/Dataset014_OAISubset/imagesTs/"
-        test_img_paths = [i for i in glob.glob(f'{test_img_dir}/*.nii.gz')]
-        test_img_paths = sorted(test_img_paths)
+        
+        # TODO: Update test images to be the original test ground truths 
+        # test_img_dir = "/mnt/scratch/scjb/nnUNet_raw/Dataset014_OAISubset/imagesTs/"
+        # test_img_paths = [i for i in glob.glob(f'{test_img_dir}/*.nii.gz')]
+        # test_img_paths = sorted(test_img_paths)
 
     else:
         pred_masks_dir = "/mnt/scratch/scjb/data/processed/oai_subset_knee_cart_seg/pred_masks"
@@ -48,13 +50,13 @@ def main(args):
         pred_masks_dir = Path(pred_masks_dir)
         pred_masks_dir.mkdir(parents=True, exist_ok=True)
 
-        print(f"args.data_dir: {args.data_dir}")
-        test_img_dir = os.path.join(args.data_dir, 'test')
-        test_img_paths = [i for i in glob.glob(f'{test_img_dir}/*.im')]
-        test_img_paths = sorted(test_img_paths)
+    print(f"args.data_dir: {args.data_dir}")
+    test_gt_dir = os.path.join(args.data_dir, 'test_gt')
+    test_gt_paths = [i for i in glob.glob(f'{test_gt_dir}/*.npy')]
+    test_gt_paths = sorted(test_gt_paths)
 
-    print(f'Number of test images: {len(test_img_paths)}')
-    print(f'Test images: {test_img_paths}')
+    print(f'Number of test images: {len(test_gt_paths)}')
+    print(f'Test images: {test_gt_paths}')
 
 
     # If the model is not nnunet, create the model, load the weights and run inference
@@ -109,7 +111,7 @@ def main(args):
                 pred_binary_mask = (pred>0.5).astype(int)
 
                 # save predicted mask
-                np.save(os.path.join(pred_masks_dir, test_img_paths[idx]), pred_binary_mask)
+                np.save(os.path.join(pred_masks_dir, test_gt_paths[idx]), pred_binary_mask)
 
 
     # Create list of predicted segentation masks - nnunet outputs .nii.gz whereas other models output .npy
@@ -142,12 +144,15 @@ def main(args):
     # Get list of base filenames for each mask
 
     # Loop through each predicted mask and save as nifti file
-    for gt_im_path, pred_mask_path in zip(test_img_paths, pred_mask_paths):
-    
+    for gt_im_path, pred_mask_path in zip(test_gt_paths, pred_mask_paths):
+        
+        print(f"Current groud truth: {gt_im_path}")
+        print(f"Current predicted mask: {pred_mask_path}\n\n")
+
         # Load mask
         if args.model == "nnunet":
             y_pred = nib.load(pred_mask_path).get_fdata()
-            y = nib.load(gt_im_path).get_fdata()
+            # y = nib.load(gt_im_path).get_fdata()
         
         else:
             y_pred = np.load(pred_mask_path)
@@ -155,20 +160,37 @@ def main(args):
             y_pred_nii = nib.Nifti1Image(mask, np.eye(4))
             nib.save(y_pred_nii, os.path.join(pred_masks_dir, f"{os.path.basename(pred_mask_path).split('.')[0]}.nii.gz"))
 
-            y = np.load(gt_im_path)
+        y = np.load(gt_im_path)
 
-        print(f"Mask shape: {y_pred.shape}\nMask type: {type(y_pred)}\nMask values: {np.unique(y_pred)}")
-        print(f"Image shape: {y.shape}\Image type: {type(y)}")
+        # Move classes dimension to be firt dimension
+        y = np.transpose(y, (3,0,1,2))
+        
+        # Crop ground truth to match predicted
+        y = crop_mask(y, dim1_lower=40, dim1_upper=312, dim2_lower=42, dim2_upper=314, onehot=True)
 
+        # Add background channel to ground truth - y
+        # Add background to mask - if everything in a position is zero, it's a background voxel
+        y_all_classes_zero = np.all(y == 0, axis=0)
 
+        # Set background masks to be intergers
+        y_bg_mask = y_all_classes_zero.astype(int)
+
+        # Add dimension of ones to enable concatenation
+        y_bg_mask = np.expand_dims(y_bg_mask, axis=0)
+
+        # Concatenate background to 4-class mask (background first, then 4 tissue types)
+        y = np.concatenate([y_bg_mask, y], axis=0)
+        
+        print(f"y_pred shape: {y_pred.shape}\ny_pred type: {type(y_pred)}\ny_pred values: {np.unique(y_pred)}")
+        print(f"y shape: {y.shape}\ny type: {type(y)}\ny values: {np.unique(y)}")
+        
         
         # Dice Score
         # dice = dice_score(mask, y)
         # print(f"Dice score: {dice}")
         # Save to dice score list
 
-
-        dice = monai.metrics.DiceHelper(include_background=False, num_classes=5)(torch.tensor(y_pred), torch.tensor(y))
+        dice = monai.metrics.DiceHelper(include_background=True)(torch.tensor(y_pred), torch.tensor(y))
         print(f"Dice scores: {dice}")
 
 
