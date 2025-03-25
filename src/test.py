@@ -14,6 +14,7 @@ import glob
 import pandas as pd
 import monai
 from data.datasets import KneeSegDataset3DMulticlass
+import matplotlib.pyplot as plt
 
 import json
 
@@ -166,7 +167,8 @@ def main(args):
         # print(f"Dice score: {dice}")
         # Save to dice score list
 
-        dice = monai.metrics.DiceHelper(include_background=False, num_classes=4)(y_pred, y)
+
+        dice = monai.metrics.DiceHelper(include_background=False, num_classes=5)(torch.tensor(y_pred), torch.tensor(y))
         print(f"Dice scores: {dice}")
 
 
