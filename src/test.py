@@ -141,23 +141,23 @@ def main(args):
     # Get list of base filenames for each mask
 
     # Loop through each predicted mask and save as nifti file
-    for im_path, mask_path in zip(test_img_paths, pred_mask_paths):
+    for gt_im_path, pred_mask_path in zip(test_img_paths, pred_mask_paths):
     
         # Load mask
         if args.model == "nnunet":
-            mask = nib.load(mask_path).get_fdata()
-            im = nib.load(im_path).get_fdata()
+            y_pred = nib.load(pred_mask_path).get_fdata()
+            y = nib.load(gt_im_path).get_fdata()
         
         else:
-            mask = np.load(mask_path)
+            y_pred = np.load(pred_mask_path)
             # Save mask as nifti file as useful for plotting later
-            mask_nii = nib.Nifti1Image(mask, np.eye(4))
-            nib.save(mask_nii, os.path.join(pred_masks_dir, f"{os.path.basename(mask_path).split('.')[0]}.nii.gz"))
+            y_pred_nii = nib.Nifti1Image(mask, np.eye(4))
+            nib.save(y_pred_nii, os.path.join(pred_masks_dir, f"{os.path.basename(pred_mask_path).split('.')[0]}.nii.gz"))
 
-            im = np.load(im_path)
+            y = np.load(gt_im_path)
 
-        print(f"Mask shape: {mask.shape}\nMask type: {type(mask)}\nMask values: {np.unique(mask)}")
-        print(f"Image shape: {im.shape}\Image type: {type(im)}")
+        print(f"Mask shape: {y_pred.shape}\nMask type: {type(y_pred)}\nMask values: {np.unique(y_pred)}")
+        print(f"Image shape: {y.shape}\Image type: {type(y)}")
 
 
         
@@ -165,6 +165,10 @@ def main(args):
         # dice = dice_score(mask, y)
         # print(f"Dice score: {dice}")
         # Save to dice score list
+
+        dice = monai.metrics.DiceHelper(include_background=False, num_classes=4)(y_pred, y)
+        print(f"Dice scores: {dice}")
+
 
         # Hausdorff distance
         # hausdorff = hausdorff_distance(mask, y)
