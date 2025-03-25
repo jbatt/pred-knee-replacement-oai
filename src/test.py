@@ -113,15 +113,15 @@ def main(args):
 
     # Create list of predicted segentation masks - nnunet outputs .nii.gz whereas other models output .npy
     if args.model != 'nnunet':
-        pred_masks = [os.path.join(pred_masks_dir, i) for i in os.listdir(pred_masks_dir) if i.endswith('.npy')]
-        pred_masks = sorted(pred_masks)
+        pred_mask_paths = [os.path.join(pred_masks_dir, i) for i in os.listdir(pred_masks_dir) if i.endswith('.npy')]
+        pred_mask_paths = sorted(pred_mask_paths)
         
     else:
-        pred_masks = [os.path.join(pred_masks_dir, i) for i in os.listdir(pred_masks_dir) if i.endswith('.nii.gz')]
-        pred_masks = sorted(pred_masks)
+        pred_mask_paths = [os.path.join(pred_masks_dir, i) for i in os.listdir(pred_masks_dir) if i.endswith('.nii.gz')]
+        pred_mask_paths = sorted(pred_mask_paths)
 
-    print(f"Number of predicted masks: {len(pred_masks)}")
-    print(f"Predicted masks: {pred_masks}")
+    print(f"Number of predicted masks: {len(pred_mask_paths)}")
+    print(f"Predicted masks: {pred_mask_paths}")
 
 
     # pred_masks_paths = np.array([os.path.basename(i) for i in glob.glob(f'{pred_masks_dir}/*.npy')])
@@ -141,19 +141,23 @@ def main(args):
     # Get list of base filenames for each mask
 
     # Loop through each predicted mask and save as nifti file
-    for im_path, mask_path in zip(test_img_paths, pred_masks):
+    for im_path, mask_path in zip(test_img_paths, pred_mask_paths):
     
         # Load mask
-        mask = np.load(mask)
-        print(f"Mask shape: {mask.shape}")
+        if args.model == "nnunet":
+            mask = nib.load(mask_path).get_fdata()
+            im = nib.load(im_path).get_fdata()
+        
+        else:
+            mask = np.load(mask_path)
+            # Save mask as nifti file as useful for plotting later
+            mask_nii = nib.Nifti1Image(mask, np.eye(4))
+            nib.save(mask_nii, os.path.join(pred_masks_dir, f"{os.path.basename(mask_path).split('.')[0]}.nii.gz"))
 
-        # # Save mask as nifti file
-        mask_nii = nib.Nifti1Image(mask, np.eye(4))
-        nib.save(mask_nii, os.path.join(pred_masks_dir, f"{os.path.basename(mask_path).split('.')[0]}.nii.gz"))
+            im = np.load(im_path)
 
-        # Load image 
-        im = np.load(im_path)
-        print(f"Image shape: {im.shape}")
+        print(f"Mask shape: {mask.shape}\nMask type: {type(mask)}")
+        print(f"Image shape: {im.shape}\Image type: {type(im)}")
 
         
         # Dice Score
