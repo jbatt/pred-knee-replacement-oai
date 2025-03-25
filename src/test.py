@@ -146,6 +146,7 @@ def main(args):
     # Loop through each predicted mask and save as nifti file
     for gt_im_path, pred_mask_path in zip(test_gt_paths, pred_mask_paths):
         
+        print(f"\n------------------------------------\n")
         print(f"Current groud truth: {gt_im_path}")
         print(f"Current predicted mask: {pred_mask_path}\n\n")
 
@@ -185,22 +186,22 @@ def main(args):
         
         # Add batch of 1 to y and y_pred for monai dice calc
         y = torch.unsqueeze(torch.tensor(y), dim=0)
+        
+        y_pred = torch.unsqueeze(torch.tensor(y_pred), dim=0)
         y_pred = torch.unsqueeze(torch.tensor(y_pred), dim=0)
 
         # Convert y_pred to onehot encoding
-        y_pred = monai.utils.one_hot(y_pred, num_classes=5)
+        y_pred = monai.networks.utils.one_hot(y_pred, num_classes=5)
 
         print(f"y_pred shape: {y_pred.shape}\ny_pred type: {type(y_pred)}\ny_pred values: {np.unique(y_pred)}")
         print(f"y shape: {y.shape}\ny type: {type(y)}\ny values: {np.unique(y)}")
         
         
         # Dice Score
-        # dice = dice_score(mask, y)
-        # print(f"Dice score: {dice}")
         # Save to dice score list
 
         dice = monai.metrics.DiceHelper(include_background=True)(torch.tensor(y_pred), torch.tensor(y))
-        print(f"Dice scores: {dice}")
+        print(f"\n\nDice score for {gt_im_path}: {dice}\n\n")
 
         # Test comment
 
