@@ -197,24 +197,33 @@ def main(args):
         print(f"y shape: {y.shape}\ny type: {type(y)}\ny values: {np.unique(y)}")
         
         
+        y = torch.tensor(y)
+        y_pred = torch.tensor(y_pred)
+
         # Dice Score
         # Save to dice score list
 
-        dice = monai.metrics.DiceHelper(include_background=True)(torch.tensor(y_pred), torch.tensor(y))
-        print(f"\n\nDice score for {gt_im_path}: {dice}\n\n")
+        dice = monai.metrics.DiceHelper(include_background=False)(y_pred, y)
+        print(f"\n\nDice score for {gt_im_path}: {dice}")
 
-        # Test comment
+        dice_scores.append(dice[0].squeeze().tolist())
+        print(f"dice scores: {dice_scores}")
 
         # Hausdorff distance
         # hausdorff = hausdorff_distance(mask, y)
         # print(f"Hausdorff distance: {hausdorff}")
         # Save to hausdorff distance list
-
+        hd = monai.metrics.compute_hausdorff_distance(y_pred, y, include_background=False)
+        print(f"Hausdorff distance for {gt_im_path}: {hd}")
+        hausdorff_distances.append(hd.squeeze().tolist())
 
         # Average symmetric surface distance
         # assd = average_symmetric_surface_distance(mask, y)
         # print(f"Average symmetric surface distance: {assd}")
         # Save to assd list
+        # Use monai library function
+
+
 
         # Volmeetric Overlap Error
         # voe = volumetric_overlap_error(mask, y)
