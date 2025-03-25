@@ -145,12 +145,17 @@ def main(args):
     
         # Load mask
         mask = np.load(mask)
+        print(f"Mask shape: {mask.shape}")
 
         # # Save mask as nifti file
         mask_nii = nib.Nifti1Image(mask, np.eye(4))
         nib.save(mask_nii, os.path.join(pred_masks_dir, f"{os.path.basename(mask_path).split('.')[0]}.nii.gz"))
 
+        # Load image 
+        im = np.load(im_path)
+        print(f"Image shape: {im.shape}")
 
+        
         # Dice Score
         # dice = dice_score(mask, y)
         # print(f"Dice score: {dice}")
