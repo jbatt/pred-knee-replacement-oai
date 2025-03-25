@@ -187,6 +187,9 @@ def main(args):
         y = torch.unsqueeze(torch.tensor(y), dim=0)
         y_pred = torch.unsqueeze(torch.tensor(y_pred), dim=0)
 
+        # Convert y_pred to onehot encoding
+        y_pred = monai.utils.one_hot(y_pred, num_classes=5)
+
         print(f"y_pred shape: {y_pred.shape}\ny_pred type: {type(y_pred)}\ny_pred values: {np.unique(y_pred)}")
         print(f"y shape: {y.shape}\ny type: {type(y)}\ny values: {np.unique(y)}")
         
