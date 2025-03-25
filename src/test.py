@@ -168,6 +168,8 @@ def main(args):
         # Crop ground truth to match predicted
         y = crop_mask(y, dim1_lower=40, dim1_upper=312, dim2_lower=42, dim2_upper=314, onehot=True)
 
+
+
         # Add background channel to ground truth - y
         # Add background to mask - if everything in a position is zero, it's a background voxel
         y_all_classes_zero = np.all(y == 0, axis=0)
@@ -181,6 +183,10 @@ def main(args):
         # Concatenate background to 4-class mask (background first, then 4 tissue types)
         y = np.concatenate([y_bg_mask, y], axis=0)
         
+        # Add batch of 1 to y and y_pred for monai dice calc
+        y = torch.unsqueeze(torch.tensor(y), dim=0)
+        y_pred = torch.unsqueeze(torch.tensor(y_pred), dim=0)
+
         print(f"y_pred shape: {y_pred.shape}\ny_pred type: {type(y_pred)}\ny_pred values: {np.unique(y_pred)}")
         print(f"y shape: {y.shape}\ny type: {type(y)}\ny values: {np.unique(y)}")
         
