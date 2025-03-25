@@ -12,7 +12,7 @@ from models.create_model import create_model
 import datetime
 import glob
 import pandas as pd
-
+import monai
 from data.datasets import KneeSegDataset3DMulticlass
 
 import json
@@ -156,15 +156,15 @@ def main(args):
 
             im = np.load(im_path)
 
-        print(f"Mask shape: {mask.shape}\nMask type: {type(mask)}")
+        print(f"Mask shape: {mask.shape}\nMask type: {type(mask)}\nMask values: {np.unique(mask)}")
         print(f"Image shape: {im.shape}\Image type: {type(im)}")
+
 
         
         # Dice Score
         # dice = dice_score(mask, y)
         # print(f"Dice score: {dice}")
         # Save to dice score list
-
 
         # Hausdorff distance
         # hausdorff = hausdorff_distance(mask, y)
