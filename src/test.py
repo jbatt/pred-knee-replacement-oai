@@ -14,7 +14,6 @@ import glob
 import pandas as pd
 import monai
 from data.datasets import KneeSegDataset3DMulticlass
-import h5py
 import json
 from utils.utils import crop_mask
 
@@ -27,7 +26,11 @@ def main(args):
     # %% Save run start time for output directory
     run_start_time = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     print(f"Run start time: {run_start_time}")
-
+    
+    res_dir = "/users/scjb/pred-knee-replacement-oai/results/eval_metrics"
+    res_dir = Path(os.path.join(res_dir, args.model, run_start_time))
+    res_dir.mkdir(parents=True, exist_ok=True)
+    
     # Create output directory
     if args.model == 'nnunet':
         pred_masks_dir = "/mnt/scratch/scjb/data/processed/oai_subset_knee_cart_seg/pred_masks/nnunet/postprocesing/"
@@ -49,6 +52,8 @@ def main(args):
         # Create output directory
         pred_masks_dir = Path(pred_masks_dir)
         pred_masks_dir.mkdir(parents=True, exist_ok=True)
+
+
 
     print(f"args.data_dir: {args.data_dir}")
     test_gt_dir = os.path.join(args.data_dir, 'test_gt')
@@ -145,7 +150,8 @@ def main(args):
 
     # Loop through each predicted mask and save as nifti file
     for gt_im_path, pred_mask_path in zip(test_gt_paths, pred_mask_paths):
-        
+    
+
         print(f"\n------------------------------------\n")
         print(f"Current groud truth: {gt_im_path}")
         print(f"Current predicted mask: {pred_mask_path}\n\n")
@@ -206,7 +212,9 @@ def main(args):
         dice = monai.metrics.DiceHelper(include_background=False)(y_pred, y)
         print(f"\n\nDice score for {gt_im_path}: {dice}")
 
-        dice_scores.append(dice[0].squeeze().tolist())
+        dice = dice[0].squeeze().tolist()
+        dice.append(os.path.basename(gt_im_path))
+        dice_scores.append(dice)
         print(f"dice scores: {dice_scores}")
 
         # Hausdorff distance
@@ -214,8 +222,10 @@ def main(args):
         # print(f"Hausdorff distance: {hausdorff}")
         # Save to hausdorff distance list
         hd = monai.metrics.compute_hausdorff_distance(y_pred, y, include_background=False)
+        hd = hd.squeeze().tolist()
+        hd.append(os.path.basename(gt_im_path))
         print(f"Hausdorff distance for {gt_im_path}: {hd}")
-        hausdorff_distances.append(hd.squeeze().tolist())
+        hausdorff_distances.append(hd)
 
         # Average symmetric surface distance
         # assd = average_symmetric_surface_distance(mask, y)
@@ -239,14 +249,10 @@ def main(args):
 
     # Combine evaluation metrics into a pandas dataframe 
 
-    # eval_metrics = pd.DataFrame({'dice': dice_scores, 
-    #                              'hausdorff': hausdorff_distances, 
-    #                              'assd': assd, 
-    #                              'voe': voe, 
-    #                              'te': te})
+    df_dice = pd.DataFrame(dice_scores, columns=["fem cart.", "tibial cart.", "patellar cart.", "meniscus", "img"])
 
     # # Save evaluation metrics as csv
-    # eval_metrics.to_csv(os.path.join(pred_masks_dir, 'eval_metrics.csv'))
+    df_dice.to_csv(os.path.join(res_dir, f'dice_{args.model}_{run_start_time}.csv'))
 
 
 if __name__ == '__main__':
