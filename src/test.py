@@ -31,26 +31,33 @@ def main(args):
     if args.model == 'nnunet':
         pred_masks_dir = "/mnt/scratch/scjb/data/processed/oai_subset_knee_cart_seg/pred_masks/nnunet/postprocesing/"
         test_img_dir = "/mnt/scratch/scjb/nnUNet_raw/Dataset014_OAISubset/imagesTs/"
-        test_img_paths = np.array([os.path.basename(i)[:7] for i in glob.glob(f'{test_img_dir}/*.nii.gz')])
+        test_img_paths = [i for i in glob.glob(f'{test_img_dir}/*.nii.gz')]
+        test_img_paths = sorted(test_img_paths)
 
-        print(f'Number of test images: {len(test_img_paths)}')
-        print(f'Test images: {test_img_paths}')
     else:
         pred_masks_dir = "/mnt/scratch/scjb/data/processed/oai_subset_knee_cart_seg/pred_masks"
-        pred_masks_dir = os.path.join(pred_masks_dir, args.model, run_start_time)
-        
+
+        # If running inference create new folder for the new predicted masks
+        if args.inference:
+            pred_masks_dir = os.path.join(pred_masks_dir, args.model, run_start_time)
+        else:
+            pred_masks_dir = os.path.join(pred_masks_dir, args.model)
+
         # Create output directory
         pred_masks_dir = Path(pred_masks_dir)
         pred_masks_dir.mkdir(parents=True, exist_ok=True)
 
+        print(f"args.data_dir: {args.data_dir}")
         test_img_dir = os.path.join(args.data_dir, 'test')
-        test_img_paths = np.array([os.path.basename(i).split('.')[0] for i in glob.glob(f'{test_img_dir}, *.npy')])
-        print(f'Number of test images: {len(test_img_paths)}')
-        print(f'Test images: {test_img_paths}')
+        test_img_paths = [i for i in glob.glob(f'{test_img_dir}/*.im')]
+        test_img_paths = sorted(test_img_paths)
+
+    print(f'Number of test images: {len(test_img_paths)}')
+    print(f'Test images: {test_img_paths}')
 
 
     # If the model is not nnunet, create the model, load the weights and run inference
-    if args.model != 'nnunet':
+    if args.inference:
         # %% Read config json file into config variable
         with open(args.config, 'r') as f:
             config = json.load(f)
@@ -75,8 +82,6 @@ def main(args):
         model = model.to(device)
         
         # Create dataset and dataloader
-
-
         test_dataset = KneeSegDataset3DMulticlass(data_dir=args.data_dir, split='test', img_crop=config.img_crop)    
         test_loader = DataLoader(test_dataset, batch_size=1, shuffle=False)
 
@@ -109,13 +114,22 @@ def main(args):
     # Create list of predicted segentation masks - nnunet outputs .nii.gz whereas other models output .npy
     if args.model != 'nnunet':
         pred_masks = [os.path.join(pred_masks_dir, i) for i in os.listdir(pred_masks_dir) if i.endswith('.npy')]
+        pred_masks = sorted(pred_masks)
+        
     else:
         pred_masks = [os.path.join(pred_masks_dir, i) for i in os.listdir(pred_masks_dir) if i.endswith('.nii.gz')]
+        pred_masks = sorted(pred_masks)
 
     print(f"Number of predicted masks: {len(pred_masks)}")
     print(f"Predicted masks: {pred_masks}")
 
 
+    # pred_masks_paths = np.array([os.path.basename(i) for i in glob.glob(f'{pred_masks_dir}/*.npy')])
+    # pred_masks_paths = sorted(pred_masks_paths)
+    
+    # print(f"Number of predicted masks {len(pred_masks_paths)}")
+    # print(f"Predicted masks: {pred_masks_paths}")
+    
 
     # Initialise lists to store evaluation metrics
     dice_scores = []
@@ -125,18 +139,16 @@ def main(args):
     te = []
 
     # Get list of base filenames for each mask
-    mask_base_filenames = [os.path.basename(i).split('.')[0] for i in pred_masks]
 
     # Loop through each predicted mask and save as nifti file
-    for mask in pred_masks:
-        pass
-
-        # # Load mask
-        # mask = np.load(mask)
+    for im_path, mask_path in zip(test_img_paths, pred_masks):
+    
+        # Load mask
+        mask = np.load(mask)
 
         # # Save mask as nifti file
-        # mask = nib.Nifti1Image(mask, np.eye(4))
-        # nib.save(mask, os.path.join(pred_masks_dir, f"{os.path.basename(mask).split('.')[0]}.nii.gz"))
+        mask_nii = nib.Nifti1Image(mask, np.eye(4))
+        nib.save(mask_nii, os.path.join(pred_masks_dir, f"{os.path.basename(mask_path).split('.')[0]}.nii.gz"))
 
 
         # Dice Score
@@ -188,6 +200,7 @@ if __name__ == '__main__':
     parser.add_argument('--model', type=str, required=True, help='Model architecture')
     parser.add_argument('--model_weights', type=str, required=False, help='Model weights')
     parser.add_argument('--data_dir', type=str, required=False, default="/mnt/scratch/scjb/data/oai_subset/", help='Path to test data')
+    parser.add_argument('--inference', action=argparse.BooleanOptionalAction, help='Whether or not to run inference')
 
     args = parser.parse_args()
 
