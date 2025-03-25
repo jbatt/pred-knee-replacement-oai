@@ -193,6 +193,7 @@ def main(args):
         dice = monai.metrics.DiceHelper(include_background=True)(torch.tensor(y_pred), torch.tensor(y))
         print(f"Dice scores: {dice}")
 
+        # Test comment
 
         # Hausdorff distance
         # hausdorff = hausdorff_distance(mask, y)
