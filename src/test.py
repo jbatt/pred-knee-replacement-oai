@@ -142,9 +142,10 @@ def main(args):
     # Initialise lists to store evaluation metrics
     dice_scores = []
     hausdorff_distances = []
-    assd = []
-    voe = []
-    te = []
+    assds = []
+    voes = []
+    cvs = []
+    thickness_errors = []
 
     # Get list of base filenames for each mask
 
@@ -205,42 +206,42 @@ def main(args):
         y_pred = torch.tensor(y_pred)
 
         # Dice Score
-        # Save to dice score list
-
+        # Calculate Dice score for each tissue
         dice = monai.metrics.DiceHelper(include_background=False)(y_pred, y)
         print(f"\n\nDice score for {gt_im_path}: {dice}")
-
+        # Remove dim of 1 and conert to list
         dice = dice[0].squeeze().tolist()
+        # Append file name to list (first column of output df)
         dice.append(os.path.basename(gt_im_path))
+        # Append Dice score for each tissue
         dice_scores.append(dice)
         print(f"dice scores: {dice_scores}")
 
         # Hausdorff distance
-        # hausdorff = hausdorff_distance(mask, y)
-        # print(f"Hausdorff distance: {hausdorff}")
-        # Save to hausdorff distance list
         hd = monai.metrics.compute_hausdorff_distance(y_pred, y, include_background=False)
         hd = hd.squeeze().tolist()
         hd.append(os.path.basename(gt_im_path))
         print(f"Hausdorff distance for {gt_im_path}: {hd}")
         hausdorff_distances.append(hd)
 
-        # Average symmetric surface distance
-        # assd = average_symmetric_surface_distance(mask, y)
-
+        # Average symmetric surface distance (ASSD)
         assd = monai.metrics.compute_average_surface_distance(y_pred, y, symmetric=True, include_background=False, spacing=[0.36,0.36,0.7])
+        assd = assd.squeeze().tolist()
+        assds.append(os.path.basename(gt_im_path))
+        print(f"Average symmetric surface distance ofr {gt_im_path}: {assd}")
+        assds.append(assd)
+
+        # Volmetric Overlap Error (VOE)
+        iou = monai.metrics.comput_iou(y_pred, y, include_background=False)
+        print(f"IOU shape: {iou}")
+        voe = 1 - iou
+        voe = voe.squeeze().tolist()
+        voes.append(os.path.basename(gt_im_path))
+        print(f"Volumetric overlap error {gt_im_path}: {voe}")
+        voes.append(voe)
+
+        # Coefficient of variation
         
-        print(f"Average symmetric surface distance: {assd}")
-        print(f"ASSD shape: {assd.shape}")
-        # Save to assd list
-        # Use monai library function
-
-
-
-        # Volmeetric Overlap Error
-        # voe = volumetric_overlap_error(mask, y)
-        # print(f"Volumetric Overlap Error: {voe}")
-        # Save to voe list
 
         # Thickness error
         # te = thickness_error(mask, y)
