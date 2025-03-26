@@ -180,16 +180,14 @@ def main(args):
         # Add background channel to ground truth - y
         # Add background to mask - if everything in a position is zero, it's a background voxel
         y_all_classes_zero = np.all(y == 0, axis=0)
-
         # Set background masks to be intergers
         y_bg_mask = y_all_classes_zero.astype(int)
-
         # Add dimension of ones to enable concatenation
         y_bg_mask = np.expand_dims(y_bg_mask, axis=0)
-
         # Concatenate background to 4-class mask (background first, then 4 tissue types)
         y = np.concatenate([y_bg_mask, y], axis=0)
         
+
         # Add batch of 1 to y and y_pred for monai dice calc
         y = torch.unsqueeze(torch.tensor(y), dim=0)
         
@@ -229,7 +227,11 @@ def main(args):
 
         # Average symmetric surface distance
         # assd = average_symmetric_surface_distance(mask, y)
-        # print(f"Average symmetric surface distance: {assd}")
+
+        assd = monai.metrics.compute_average_surface_distance(y_pred, y, symmetric=True, include_background=False, spacing=[0.36,0.36,0.7])
+        
+        print(f"Average symmetric surface distance: {assd}")
+        print(f"ASSD shape: {assd.shape}")
         # Save to assd list
         # Use monai library function
 
@@ -249,7 +251,11 @@ def main(args):
 
     # Combine evaluation metrics into a pandas dataframe 
 
-    df_dice = pd.DataFrame(dice_scores, columns=["fem cart.", "tibial cart.", "patellar cart.", "meniscus", "img"])
+    df_dice = pd.DataFrame(dice_scores, columns=["fem cart.", 
+                                                 "tibial cart.", 
+                                                 "patellar cart.", 
+                                                 "meniscus", 
+                                                 "img"])
 
     # # Save evaluation metrics as csv
     df_dice.to_csv(os.path.join(res_dir, f'dice_{args.model}_{run_start_time}.csv'))
