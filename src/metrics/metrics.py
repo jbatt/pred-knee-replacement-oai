@@ -258,9 +258,7 @@ def calculate_thickness(segmentation):
 
             segmentation_skeleton[i,...] = morphology.skeletonize(current_volume).astype(np.uint8)
         
-        
-        ax3.imshow(segmentation_skeleton[0,:,:,50])
-            
+                    
         print(f"Segmentation skeleton shape: {segmentation_skeleton.shape}")
         print(f"Segmentation skeleton values: {np.unique(segmentation_skeleton)}")
 
