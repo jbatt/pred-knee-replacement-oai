@@ -4,6 +4,8 @@ import sys
 import gc
 import numpy as np
 import monai
+from skimage import morphology
+import scipy.ndimage as ndi 
 
 
 # TODO: add ASSD metric loss function as hyperparameter
@@ -45,6 +47,8 @@ def dice_coefficient(pred_mask: torch.Tensor, gt_mask: torch.Tensor, debug=False
     dice = (2.0 * intersection) / size
 
     return dice.item()
+
+
 
 
 
@@ -214,4 +218,68 @@ def average_surface_distance(pred_mask, gt_mask, spacing=[0.36,0.36,0.7]):
 
 
 
+#########################################################################
+# THICKNESS
+#########################################################################
 
+def calculate_thickness(segmentation):
+    """Calculate the thickness of a 3D segmented region in an input mask
+    using the medial axis and distance transform of the segmentation mask"
+    
+    Args:
+        segmentation (np.array): a 2D, 3D or 4D (onehot encoded) array representing a segmented region
+    """
+
+    # If a 2 or 3 dimensional array calculate the distance transform and skeletonise using the standard methods
+    if len(segmentation.shape) in (2,3):
+
+        distance_transform = ndi.distance_transform_edt(segmentation)
+        segmentation_skeleton = morphology.skeletonize(segmentation, method="lee")
+        
+    # If a 4-dimensional array is passed, loop through the first dimension (e.g. class for onehot encoded mask)
+    if len(segmentation.shape) == 4:
+
+        print("Input sgementation mask is 4D - looping thorugh onehot encoded masks...")
+        
+        # Calculate the distance transform of the mask
+        distance_transform = np.zeros(segmentation.shape).astype(np.uint8)
+        for i in range(segmentation.shape[0]):
+            distance_transform[i,...] = ndi.distance_transform_edt(segmentation[i,...]).astype(np.uint8)
+            # print(f"Unique values in distance transform: {np.unique(distance_transform)}")
+        
+
+        # Calculate the skeletonised distance transform
+        segmentation_skeleton = np.zeros(segmentation.shape, dtype=np.uint8)
+        
+        for i in range(segmentation.shape[0]):    
+            current_volume = segmentation[i,...]
+            # print(f"Current volume shape: {current_volume.shape}")
+            # print(f"Current volume unqiue values: {np.unique(current_volume)}")
+
+            segmentation_skeleton[i,...] = morphology.skeletonize(current_volume).astype(np.uint8)
+        
+        
+        ax3.imshow(segmentation_skeleton[0,:,:,50])
+            
+        print(f"Segmentation skeleton shape: {segmentation_skeleton.shape}")
+        print(f"Segmentation skeleton values: {np.unique(segmentation_skeleton)}")
+
+    # Determine thickness as the distance transform of the skeletonised mask multiplied by 2
+    thickness = distance_transform * segmentation_skeleton * 2
+    print(f"Thickness shape: {thickness.shape}")
+    #print(f"Thickness\n: {thickness.astype(np.uint8)}")
+
+    # Extract non-zero values
+    print(f"Thickness values: {np.unique(thickness)}")
+    
+    shape_thickness_values = []
+
+    for i in range (segmentation.shape[0]): 
+        non_zero_thickness = list(thickness[i, ...][thickness[i, ...] != 0])
+        # print(non_zero_thickness)
+        shape_thickness_values.append(non_zero_thickness)
+
+    # print(shape_thickness_values)
+    mean_thickness = [np.mean(x) for x in shape_thickness_values]
+
+    return mean_thickness
