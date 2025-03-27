@@ -16,6 +16,8 @@ import monai
 from data.datasets import KneeSegDataset3DMulticlass
 import json
 from utils.utils import crop_mask
+from skimage import morphology
+from metrics import calculate_thickness
 
 
 # TODO: tidy up create model function
@@ -227,7 +229,7 @@ def main(args):
         # Average symmetric surface distance (ASSD)
         assd = monai.metrics.compute_average_surface_distance(y_pred, y, symmetric=True, include_background=False, spacing=[0.36,0.36,0.7])
         assd = assd.squeeze().tolist()
-        assds.append(os.path.basename(gt_im_path))
+        assd.append(os.path.basename(gt_im_path))
         print(f"Average symmetric surface distance ofr {gt_im_path}: {assd}")
         assds.append(assd)
 
@@ -241,12 +243,20 @@ def main(args):
         voes.append(voe)
 
         # Coefficient of variation
-        
+        # TODO: decide approach to calculate coefficent of variation
+
+
+
 
         # Thickness error
-        # te = thickness_error(mask, y)
-        # print(f"Thickness error: {te}")
-        # Save to te list
+        y_thickness = calculate_thickness(y)
+        y_pred_thickness = calculate_thickness(y_pred) 
+        thickness_error = y_pred_thickness - y_thickness
+        thickness_error.append(gt_im_path)
+
+        print(f"Thickness error for {gt_im_path}: {thickness_error}")
+        thickness_errors.apeend(thickness_error)
+
 
 
 
