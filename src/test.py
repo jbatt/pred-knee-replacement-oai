@@ -31,7 +31,6 @@ def main(args):
     
     res_dir = "/users/scjb/pred-knee-replacement-oai/results/eval_metrics"
     res_dir = Path(os.path.join(res_dir, args.model, run_start_time))
-    res_dir.mkdir(parents=True, exist_ok=True)
     
     # Create output directory
     if args.model == 'nnunet':
@@ -246,8 +245,6 @@ def main(args):
         # TODO: decide approach to calculate coefficent of variation
 
 
-
-
         # Thickness error
         y_thickness = calculate_thickness(y)
         y_pred_thickness = calculate_thickness(y_pred) 
@@ -267,9 +264,37 @@ def main(args):
                                                  "patellar cart.", 
                                                  "meniscus", 
                                                  "img"])
+    df_hd = pd.DataFrame(hausdorff_distances, columns=["fem cart.", 
+                                                 "tibial cart.", 
+                                                 "patellar cart.", 
+                                                 "meniscus", 
+                                                 "img"])
+    df_assd = pd.DataFrame(assds, columns=["fem cart.", 
+                                                 "tibial cart.", 
+                                                 "patellar cart.", 
+                                                 "meniscus", 
+                                                 "img"])
+    df_voe = pd.DataFrame(voes, columns=["fem cart.", 
+                                                 "tibial cart.", 
+                                                 "patellar cart.", 
+                                                 "meniscus", 
+                                                 "img"])
 
-    # # Save evaluation metrics as csv
+    df_te = pd.DataFrame(thickness_errors, columns=["fem cart.", 
+                                                 "tibial cart.", 
+                                                 "patellar cart.", 
+                                                 "meniscus", 
+                                                 "img"])
+    
+    # Make results directory
+    res_dir.mkdir(parents=True, exist_ok=True)
+
+    # Save evaluation metrics as csv
     df_dice.to_csv(os.path.join(res_dir, f'dice_{args.model}_{run_start_time}.csv'))
+    df_hd.to_csv(os.path.join(res_dir, f'hd_{args.model}_{run_start_time}.csv'))
+    df_assd.to_csv(os.path.join(res_dir, f'assd_{args.model}_{run_start_time}.csv'))
+    df_voe.to_csv(os.path.join(res_dir, f'voe_{args.model}_{run_start_time}.csv'))
+    df_voe.to_csv(os.path.join(res_dir, f'te_{args.model}_{run_start_time}.csv'))
 
 
 if __name__ == '__main__':
