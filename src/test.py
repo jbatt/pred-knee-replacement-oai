@@ -8,16 +8,17 @@ import numpy as np
 from torch.utils.data import DataLoader
 from pathlib import Path
 import argparse
-from models.create_model import create_model
 import datetime
 import glob
 import pandas as pd
 import monai
 from data.datasets import KneeSegDataset3DMulticlass
 import json
-from utils.utils import crop_mask
 from skimage import morphology
-from metrics import calculate_thickness
+
+from models.create_model import create_model
+from utils.utils import crop_mask
+from metrics.metrics import calculate_thickness
 
 
 # TODO: tidy up create model function
@@ -233,8 +234,8 @@ def main(args):
         assds.append(assd)
 
         # Volmetric Overlap Error (VOE)
-        iou = monai.metrics.comput_iou(y_pred, y, include_background=False)
-        print(f"IOU shape: {iou}")
+        iou = monai.metrics.compute_iou(y_pred, y, include_background=False)
+        print(f"IOU: {iou}")
         voe = 1 - iou
         voe = voe.squeeze().tolist()
         voes.append(os.path.basename(gt_im_path))
@@ -248,11 +249,12 @@ def main(args):
         # Thickness error
         y_thickness = calculate_thickness(y)
         y_pred_thickness = calculate_thickness(y_pred) 
-        thickness_error = y_pred_thickness - y_thickness
+        thickness_error = np.array(y_pred_thickness) - np.array(y_thickness)
+        thickness_error = thickness_error.tolist()
         thickness_error.append(gt_im_path)
 
         print(f"Thickness error for {gt_im_path}: {thickness_error}")
-        thickness_errors.apeend(thickness_error)
+        thickness_errors.append(thickness_error)
 
 
 
