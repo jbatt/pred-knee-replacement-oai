@@ -238,7 +238,7 @@ def main(args):
         print(f"IOU: {iou}")
         voe = 1 - iou
         voe = voe.squeeze().tolist()
-        voes.append(os.path.basename(gt_im_path))
+        voe.append(os.path.basename(gt_im_path))
         print(f"Volumetric overlap error {gt_im_path}: {voe}")
         voes.append(voe)
 
@@ -251,7 +251,7 @@ def main(args):
         y_pred_thickness = calculate_thickness(y_pred) 
         thickness_error = np.array(y_pred_thickness) - np.array(y_thickness)
         thickness_error = thickness_error.tolist()
-        thickness_error.append(gt_im_path)
+        thickness_error.append(os.path.basename(gt_im_path))
 
         print(f"Thickness error for {gt_im_path}: {thickness_error}")
         thickness_errors.append(thickness_error)
