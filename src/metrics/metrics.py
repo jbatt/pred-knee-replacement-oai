@@ -222,29 +222,38 @@ def average_surface_distance(pred_mask, gt_mask, spacing=[0.36,0.36,0.7]):
 # THICKNESS
 #########################################################################
 
-def calculate_thickness(segmentation):
+def calculate_thickness(segmentation: torch.tensor, spacing=[0.36,0.36,0.7], include_background=False):
     """Calculate the thickness of a 3D segmented region in an input mask
     using the medial axis and distance transform of the segmentation mask"
     
     Args:
-        segmentation (np.array): a 2D, 3D or 4D (onehot encoded) array representing a segmented region
-    """
+        segmentation (np.array): a 2D, 3D or 4D (onehot encoded) array representing a segmented region of shape (batch, num_classes, heigh, width, depth)
+        - expects batch size of 1 
+        spacing (list): list of voxel spacing in each dimension 
+    """    
+    # Remove batch size of 1
+    segmentation = segmentation.squeeze().detach().cpu().numpy()
+
+    if not include_background:
+        segmentation = segmentation[1:,...]
+
+    print(f"Segmentation is shape {segmentation.shape} after batch of 1 removal - computing thickness error over {len(segmentation.shape)} dimensions...")
 
     # If a 2 or 3 dimensional array calculate the distance transform and skeletonise using the standard methods
     if len(segmentation.shape) in (2,3):
 
-        distance_transform = ndi.distance_transform_edt(segmentation)
+        distance_transform = ndi.distance_transform_edt(segmentation, sampling=spacing)
         segmentation_skeleton = morphology.skeletonize(segmentation, method="lee")
         
     # If a 4-dimensional array is passed, loop through the first dimension (e.g. class for onehot encoded mask)
-    if len(segmentation.shape) == 4:
+    elif len(segmentation.shape) == 4:
 
-        print("Input sgementation mask is 4D - looping thorugh onehot encoded masks...")
+        print("Input sgementation mask is 4D - looping through onehot encoded masks...")
         
         # Calculate the distance transform of the mask
         distance_transform = np.zeros(segmentation.shape).astype(np.uint8)
         for i in range(segmentation.shape[0]):
-            distance_transform[i,...] = ndi.distance_transform_edt(segmentation[i,...]).astype(np.uint8)
+            distance_transform[i,...] = ndi.distance_transform_edt(segmentation[i,...], sampling=spacing).astype(np.uint8)
             # print(f"Unique values in distance transform: {np.unique(distance_transform)}")
         
 
@@ -261,6 +270,8 @@ def calculate_thickness(segmentation):
                     
         print(f"Segmentation skeleton shape: {segmentation_skeleton.shape}")
         print(f"Segmentation skeleton values: {np.unique(segmentation_skeleton)}")
+    else:
+        raise ValueError(f"Segmentation mask dimension is outside expected range: {segmentation.shape}")
 
     # Determine thickness as the distance transform of the skeletonised mask multiplied by 2
     thickness = distance_transform * segmentation_skeleton * 2
@@ -279,5 +290,6 @@ def calculate_thickness(segmentation):
 
     # print(shape_thickness_values)
     mean_thickness = [np.mean(x) for x in shape_thickness_values]
+    print(f"Mean thickness values: {mean_thickness}")
 
     return mean_thickness
