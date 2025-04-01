@@ -257,7 +257,6 @@ def main(args):
 
         # Thickness mean
         y_thickness_mean = calculate_mean_thickness(y)
-        y_thickness_mean = y_thickness_mean.tolist()
         y_thickness_mean.append(os.path.basename(gt_im_path))
 
         print(f"Thickness mean for {gt_im_path}: {y_thickness_mean}")
