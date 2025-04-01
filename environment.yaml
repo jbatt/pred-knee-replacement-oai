@@ -16,6 +16,7 @@ dependencies:
     - conda-forge::nibabel
     - seaborn
     - plotly
+    - scienceplots
     - pip:
         - monai
         - segmentation-models-pytorch-3d

@@ -77,7 +77,7 @@ def train_loop(
         # Perform model step
         optimizer.step()
         # Reset gradients to zero
-        optimizer.zero_grad()
+        optimizer.zero_grad(set_to_none=True)
         
         # Store batch size
         batch_size = len(y)

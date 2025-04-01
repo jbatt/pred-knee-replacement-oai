@@ -347,7 +347,7 @@ if __name__ == '__main__':
     # Which model to train
     # Whether training is being done locally or on a HPC environment (this changes the data directory)
     # TODO - Take in model as argument (U-Net, MA-Net etc.), check it conforms to a set list
-    # TODO - add dropout as hyperparameter - check how to do this in segmentation models library
+    # TODO - add dropout as hyperparameter? Check how to do this in segmentation models library
 
     parser = argparse.ArgumentParser(
         prog="train",

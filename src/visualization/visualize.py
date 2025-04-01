@@ -242,6 +242,11 @@ def plot_all_3d_masks_multiclass(mask_paths,
 
 
 
+# TODO Bland-Altman plots
+# def plot_bland_altman()
+# Thickness difference by thickness mean
+# Include Bland-Altman plots for thickness error
+# Include confidence interval for 1 SD
 
 def plot_bland_altman(model, run_start_time, results_dir="../results/"):
 
@@ -309,6 +314,8 @@ def plot_bland_altman(model, run_start_time, results_dir="../results/"):
 
 
 
+# TODO Correlation between segmentation metrics and pose measures (e.g. cartilage thickness error)
+# Othe pose measures: 
 
 
 if __name__ == "__main__":
@@ -337,6 +344,7 @@ if __name__ == "__main__":
     # Create list of paths to the predicted masks from processed data folder
     # pred_masks_dir = "/mnt/scratch/scjb/data/processed/pred_masks"
     # figures_dir = "/mnt/scratch/scjb/results/figures"
+
 
     mask_paths = os.listdir(pred_masks_dir)
     print("Number of predicted masks:", len(mask_paths))
