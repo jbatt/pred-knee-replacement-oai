@@ -5,6 +5,8 @@ import numpy as np
 import argparse
 import datetime
 import plotly.graph_objects as go
+import pandas as pd
+from pathlib import Path
 
 # TODO: Add docstrings to all functions
 # TODO: Include a function to plot the original image and the predicted mask side by side
@@ -112,19 +114,6 @@ def plot_3d_mask_multiclass_plotly(mask, results_figures_dir, filename) -> None:
 
     # TODO: fix color - patellar cartilage and tibial cartilage ar both blue
 
-    # colorscale = [
-    #     [0.0, 'purple'],
-    #     [0.2, 'purple'],
-    #     [0.2, 'green'],
-    #     [0.4, 'green'],
-    #     [0.4, 'blue'],
-    #     [0.6, 'blue'],
-    #     [0.6, 'yellow'],
-    #     [0.8, 'yellow'],
-    #     [0.8, 'red'],
-    #     [1.0, 'red']
-    # ]
-
     colorscale = [
         [0.0, 'purple'],
         [0.19, 'purple'],
@@ -154,17 +143,6 @@ def plot_3d_mask_multiclass_plotly(mask, results_figures_dir, filename) -> None:
         [0.8, 1.0],
         [1.0, 1.0]
     ]
-
-    # # Define a discrete color scale for 5 classes
-    # discrete_colorscale = [
-    #     [0.00, "rgba(0, 0, 0, 0)"],  # Background (Transparent)
-    #     [0.01, "blue"],              # Class 1
-    #     [0.25, "red"],               # Class 2
-    #     [0.50, "green"],             # Class 3
-    #     [0.75, "yellow"],            # Class 4
-    #     [1.00, "purple"],            # Class 5 (optional extra)
-    # ]
-
 
     # # Generate a synthetic 3D segmentation mask (Replace with your actual data)
     # segmentation = np.zeros((50, 50, 50))
@@ -218,8 +196,6 @@ def plot_3d_mask_multiclass_plotly(mask, results_figures_dir, filename) -> None:
 
 
 
-
-
 # Loop through all the paths to the predicted segmentation masks, load the masks and visualise them in 3D
 def plot_all_3d_masks_multiclass(mask_paths, 
                                 results_path,
@@ -267,6 +243,72 @@ def plot_all_3d_masks_multiclass(mask_paths,
 
 
 
+def plot_bland_altman(model, run_start_time, results_dir="../results/"):
+
+    eval_metrics_dir = os.path.join(results_dir, "eval_metrics", model, run_start_time)
+
+    df_te = pd.read_csv(os.path.join(eval_metrics_dir, f"te_{model}_{run_start_time}.csv"))
+    df_tm = pd.read_csv(os.path.join(eval_metrics_dir, f"tm_{model}_{run_start_time}.csv"))
+
+    print(df_te.head())
+
+    # Calculate mean thickness and thick error for each cartilage type
+    te_means = df_te[["fem cart.", "tibial cart.", "patellar cart."]].mean()
+    tm_means = df_tm[["fem cart.", "tibial cart.", "patellar cart."]].mean()
+    te_std = df_te[["fem cart.", "tibial cart.", "patellar cart."]].std()
+    tm_std = df_tm[["fem cart.", "tibial cart.", "patellar cart."]].std()
+
+
+    # plt.rcParams['text.usetex'] = True # TeX rendering
+
+    with plt.style.context(['science', 'no-latex']):
+        fig, axs = plt.subplots(nrows=1, ncols=3, figsize=(16,5), sharey=True)
+
+        axs[0].scatter(df_tm["fem cart."], df_te["fem cart."], color="black", zorder=2)
+        axs[0].grid(linestyle='dotted')
+        # axs[0].set_xlabel(r"$\mathrm{Thickness \ Mean}$", fontsize=16) 
+        axs[0].set_xlabel("Thickness Mean (mm)", fontsize=14) 
+        axs[0].set_ylabel("Thickness Error (mm)", fontsize=14) 
+        axs[0].set_title("Femoral Cartilage Cartilage", fontsize=16)
+        axs[0].axhline(te_means[0], xmin=0, xmax=1, color="grey", linestyle="dotted", lw=1.8, zorder=1)
+        axs[0].axhline(te_means[0] + te_std[0], xmin=0, xmax=1, color="grey", linestyle="--", lw=1.8, zorder=1)
+        axs[0].axhline(te_means[0] - te_std[0], xmin=0, xmax=1, color="grey", linestyle="--", lw=1.8, zorder=1)
+
+        axs[1].scatter(df_tm["tibial cart."], df_te["tibial cart."], color="black", zorder=2)
+        axs[1].grid(linestyle='dotted')
+        axs[1].set_xlabel("Thickness Mean (mm)", fontsize=14) 
+        axs[1].set_ylabel("Thickness Error (mm)", fontsize=14)
+        axs[1].set_title("Tibial Cartilage", fontsize=16)
+        axs[1].axhline(te_means[1], xmin=0, xmax=1, color="grey", linestyle="dotted", lw=1.8, zorder=1)
+        axs[1].axhline(te_means[1] + te_std[1], xmin=0, xmax=1, color="grey", linestyle="--", lw=1.8, zorder=1)
+        axs[1].axhline(te_means[1] - te_std[1], xmin=0, xmax=1, color="grey", linestyle="--", lw=1.8, zorder=1)
+
+        # axs[1].set_xlabel(r"$\mathrm{Thickness \  Mean$}", fontsize=16) 
+
+        axs[2].scatter(df_tm["patellar cart."], df_te["patellar cart."], color="black", zorder=2)
+        axs[2].grid(linestyle='dotted')
+        axs[2].set_xlabel("Thickness Mean (mm)", fontsize=14) 
+        axs[2].set_ylabel("Thickness Error (mm)", fontsize=14) 
+        axs[2].set_title("Patellar Cartilage", fontsize=16)
+        axs[2].axhline(te_means[2], xmin=0, xmax=1, color="grey", linestyle="dotted", lw=1.8, zorder=1)
+        axs[2].axhline(te_means[2] + te_std[2], xmin=0, xmax=1, color="grey", linestyle="--", lw=1.8, zorder=1)
+        axs[2].axhline(te_means[2] - te_std[2], xmin=0, xmax=1, color="grey", linestyle="--", lw=1.8, zorder=1)
+        # axs[2].set_xlabel(r"$\mathrm{Thickness \: Mean}$}", fontsize=16) 
+
+        plt.tight_layout()
+        
+        output_figure_dir = Path(os.path.join(results_dir, "figures", model, run_start_time)) # Make results directory
+
+        output_figure_dir.mkdir(parents=True, exist_ok=True)
+        plt.savefig(os.path.join(output_figure_dir, f"bland_altman_{model}_{run_start_time}"), bbox_inches="tight", dpi=500)
+
+
+
+
+
+
+
+
 
 
 if __name__ == "__main__":
@@ -275,6 +317,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Visualise the predicted masks in 3D")
     parser.add_argument("--project_name", type=str, help="Name of the project", default="oai_subset_knee_cart_seg")
     parser.add_argument("--model_name", type=str, help="Name of the model")
+    parser.add_argument("--run_start_time")
     parser.add_argument("--pred_masks_dir", type=str, help="Path to the predicted masks", default="/mnt/scratch/scjb/data/processed")
     parser.add_argument("--results_dir", type=str, help="Top level figures dir to save the figures", default="/mnt/scratch/scjb/results")
 
@@ -306,3 +349,6 @@ if __name__ == "__main__":
 
     # Visualise all the predicted masks in 3D
     plot_all_3d_masks_multiclass(mask_paths, figures_dir, remove_background=False)
+
+    # Bland Altman plots
+    plot_bland_altman(args.model_name, args.run_start_time, results_dir="../results/")
