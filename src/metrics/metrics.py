@@ -222,7 +222,7 @@ def average_surface_distance(pred_mask, gt_mask, spacing=[0.36,0.36,0.7]):
 # THICKNESS
 #########################################################################
 
-def calculate_thickness(segmentation: torch.tensor, spacing=[0.36,0.36,0.7], include_background=False):
+def calculate_mean_thickness(segmentation: torch.tensor, spacing=[0.36,0.36,0.7], include_background=False):
     """Calculate the thickness of a 3D segmented region in an input mask
     using the medial axis and distance transform of the segmentation mask"
     
