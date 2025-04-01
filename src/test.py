@@ -18,7 +18,7 @@ from skimage import morphology
 
 from models.create_model import create_model
 from utils.utils import crop_mask
-from metrics.metrics import calculate_thickness
+from metrics.metrics import calculate_mean_thickness
 
 
 # TODO: tidy up create model function
@@ -147,8 +147,9 @@ def main(args):
     assds = []
     voes = []
     cvs = []
+    y_thickness_means = []
     thickness_errors = []
-
+    
     # Get list of base filenames for each mask
 
     # Loop through each predicted mask and save as nifti file
@@ -247,14 +248,20 @@ def main(args):
 
 
         # Thickness error
-        y_thickness = calculate_thickness(y)
-        y_pred_thickness = calculate_thickness(y_pred) 
+        y_thickness = calculate_mean_thickness(y)
+        y_pred_thickness = calculate_mean_thickness(y_pred) 
         thickness_error = np.array(y_pred_thickness) - np.array(y_thickness)
         thickness_error = thickness_error.tolist()
         thickness_error.append(os.path.basename(gt_im_path))
 
-        print(f"Thickness error for {gt_im_path}: {thickness_error}")
-        thickness_errors.append(thickness_error)
+
+        # Thickness mean
+        y_thickness_mean = calculate_mean_thickness(y)
+        y_thickness_mean = y_thickness_mean.tolist()
+        y_thickness_mean.append(os.path.basename(gt_im_path))
+
+        print(f"Thickness mean for {gt_im_path}: {y_thickness_mean}")
+        y_thickness_means.append(y_thickness_mean)
 
 
 
@@ -287,6 +294,11 @@ def main(args):
                                                  "patellar cart.", 
                                                  "meniscus", 
                                                  "img"])
+    df_tm = pd.DataFrame(y_thickness_means, columns=["fem cart.", 
+                                                "tibial cart.", 
+                                                "patellar cart.", 
+                                                "meniscus", 
+                                                "img"])
     
     # Make results directory
     res_dir.mkdir(parents=True, exist_ok=True)
@@ -297,6 +309,7 @@ def main(args):
     df_assd.to_csv(os.path.join(res_dir, f'assd_{args.model}_{run_start_time}.csv'))
     df_voe.to_csv(os.path.join(res_dir, f'voe_{args.model}_{run_start_time}.csv'))
     df_voe.to_csv(os.path.join(res_dir, f'te_{args.model}_{run_start_time}.csv'))
+    df_tm.to_csv(os.path.join(res_dir, f'tm_{args.model}_{run_start_time}.csv'))
 
 
 if __name__ == '__main__':
