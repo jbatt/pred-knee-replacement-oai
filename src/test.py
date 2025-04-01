@@ -219,8 +219,8 @@ def main(args):
         dice_scores.append(dice)
         print(f"dice scores: {dice_scores}")
 
-        # Hausdorff distance
-        hd = monai.metrics.compute_hausdorff_distance(y_pred, y, include_background=False)
+        # Hausdorff distance # TODO: implement spacing in HD calc?
+        hd = monai.metrics.compute_hausdorff_distance(y_pred, y, include_background=False, spacing=[0.36,0.36,0.7])
         hd = hd.squeeze().tolist()
         hd.append(os.path.basename(gt_im_path))
         print(f"Hausdorff distance for {gt_im_path}: {hd}")
