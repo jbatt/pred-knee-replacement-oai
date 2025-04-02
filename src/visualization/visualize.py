@@ -7,6 +7,7 @@ import datetime
 import plotly.graph_objects as go
 import pandas as pd
 from pathlib import Path
+import scienceplots
 
 # TODO: Add docstrings to all functions
 # TODO: Include a function to plot the original image and the predicted mask side by side
@@ -242,14 +243,13 @@ def plot_all_3d_masks_multiclass(mask_paths,
 
 
 
-# TODO Bland-Altman plots
-# def plot_bland_altman()
-# Thickness difference by thickness mean
-# Include Bland-Altman plots for thickness error
-# Include confidence interval for 1 SD
+# Bland-Altman plots
 
-def plot_bland_altman(model, run_start_time, results_dir="../results/"):
-    
+# TODO: output PDF version?
+# TODO: increase ick label size
+
+
+def plot_bland_altman(model, run_start_time, results_dir="/mnt/scratch/scjb/results/oai_subset_knee_cart_seg"):
     
     eval_metrics_dir = os.path.join(results_dir, "eval_metrics", model, run_start_time)
 
@@ -324,22 +324,29 @@ if __name__ == "__main__":
     # Argument parser to take in project name, the model name, the predicted masks dir and the output figures dir
     parser = argparse.ArgumentParser(description="Visualise the predicted masks in 3D")
     parser.add_argument("--project_name", type=str, help="Name of the project", default="oai_subset_knee_cart_seg")
-    parser.add_argument("--model_name", type=str, help="Name of the model")
+    parser.add_argument("--model", type=str, help="Name of the model")
     parser.add_argument("--run_start_time", type=str, help="start time of model inference run")
     parser.add_argument("--pred_masks_dir", type=str, help="Path to the predicted masks", default="/mnt/scratch/scjb/data/processed")
     parser.add_argument("--results_dir", type=str, help="Top level figures dir to save the figures", default="/mnt/scratch/scjb/results")
 
     args = parser.parse_args()
 
+    print(f"Passed arg: {args}\n")
+
     # Log start date and time and use as the name of output figures directory
     start_time = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     
     # Create figures directory
-    figures_dir = os.path.join(args.results_dir, args.project_name, "figures", args.model_name, start_time)
+    figures_dir = os.path.join(args.results_dir, args.project_name, "figures", args.model, start_time)
     os.makedirs(figures_dir, exist_ok=True)
     print(f"Figures directory created: {figures_dir}")
-
-    pred_masks_dir = os.path.join(args.pred_masks_dir, args.project_name, "pred_masks", args.model_name)
+    
+    pred_masks_dir = os.path.join(args.pred_masks_dir, args.project_name, "pred_masks", args.model)
+    
+    # nnunet outputs multiple sets of results so specify the postprocesing version of the results
+    if args.model == "nnunet":
+        pred_masks_dir = os.path.join(pred_masks_dir, "postprocesing")
+                                      
     print(f"Predicted masks directory: {pred_masks_dir}")
 
     # Create list of paths to the predicted masks from processed data folder
@@ -351,12 +358,12 @@ if __name__ == "__main__":
     print(f"Masks to be plotted: {mask_paths}")
 
     # Filter for numpy files
-    mask_paths = [os.path.join(pred_masks_dir, mask_path) for mask_path in mask_paths if mask_path.endswith(".npy")]
-    print("Number of predicted masks after filtering:", len(mask_paths))
-    print("Mask paths after filtering:", mask_paths)
+    # mask_paths = [os.path.join(pred_masks_dir, mask_path) for mask_path in mask_paths if mask_path.endswith(".npy")]
+    # print("Number of predicted masks after filtering:", len(mask_paths))
+    # print("Mask paths after filtering:", mask_paths)
 
     # Visualise all the predicted masks in 3D
     # plot_all_3d_masks_multiclass(mask_paths, figures_dir, remove_background=False)
 
     # Bland Altman plots
-    plot_bland_altman(args.model_name, args.run_start_time, results_dir="../results/")
+    plot_bland_altman(args.model, args.run_start_time, results_dir="../results/")
