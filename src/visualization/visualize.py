@@ -249,7 +249,8 @@ def plot_all_3d_masks_multiclass(mask_paths,
 # Include confidence interval for 1 SD
 
 def plot_bland_altman(model, run_start_time, results_dir="../results/"):
-
+    
+    
     eval_metrics_dir = os.path.join(results_dir, "eval_metrics", model, run_start_time)
 
     df_te = pd.read_csv(os.path.join(eval_metrics_dir, f"te_{model}_{run_start_time}.csv"))
