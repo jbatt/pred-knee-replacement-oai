@@ -325,7 +325,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Visualise the predicted masks in 3D")
     parser.add_argument("--project_name", type=str, help="Name of the project", default="oai_subset_knee_cart_seg")
     parser.add_argument("--model_name", type=str, help="Name of the model")
-    parser.add_argument("--run_start_time")
+    parser.add_argument("--run_start_time", type=str, help="start time of model inference run")
     parser.add_argument("--pred_masks_dir", type=str, help="Path to the predicted masks", default="/mnt/scratch/scjb/data/processed")
     parser.add_argument("--results_dir", type=str, help="Top level figures dir to save the figures", default="/mnt/scratch/scjb/results")
 
@@ -346,7 +346,6 @@ if __name__ == "__main__":
     # pred_masks_dir = "/mnt/scratch/scjb/data/processed/pred_masks"
     # figures_dir = "/mnt/scratch/scjb/results/figures"
 
-
     mask_paths = os.listdir(pred_masks_dir)
     print("Number of predicted masks:", len(mask_paths))
     print(f"Masks to be plotted: {mask_paths}")
@@ -357,7 +356,7 @@ if __name__ == "__main__":
     print("Mask paths after filtering:", mask_paths)
 
     # Visualise all the predicted masks in 3D
-    plot_all_3d_masks_multiclass(mask_paths, figures_dir, remove_background=False)
+    # plot_all_3d_masks_multiclass(mask_paths, figures_dir, remove_background=False)
 
     # Bland Altman plots
     plot_bland_altman(args.model_name, args.run_start_time, results_dir="../results/")
