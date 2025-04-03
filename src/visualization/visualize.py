@@ -8,6 +8,7 @@ import plotly.graph_objects as go
 import pandas as pd
 from pathlib import Path
 import scienceplots
+import scipy.stats as stats
 
 # TODO: Add docstrings to all functions
 # TODO: Include a function to plot the original image and the predicted mask side by side
@@ -310,13 +311,103 @@ def plot_bland_altman(model, run_start_time, results_dir="/mnt/scratch/scjb/resu
 
 
 
+def plot_seg_metric_thickness_error_corr(model, run_start_time, results_dir="/mnt/scratch/scjb/results/oai_subset_knee_cart_seg")
+        
+    """
+    Plot thickness error for 3 cartilage types against segmentation metrics 
+
+    model: name of model
+    run_start_time: the start time of the model training or inference run
+    results_dir: the top-level results directory
+
+    """
+    # Create a figure with 4 columns and 3 rows
+
+    # TODO: save figure to results dir using model name and run start time 
+    # TODO: use model name and run start time to load eval metrics
+    # TODO: include other pose measures
+
+    # Load eval_metrics
+
+    eval_metrics_dir = os.path.join(results_dir, "eval_metrics", model, run_start_time)
+
+    df_te = pd.read_csv(os.path.join(eval_metrics_dir, f"te_{model}_{run_start_time}.csv"))
+    df_dice = pd.read_csv(os.path.join(eval_metrics_dir, f"dice_{model}_{run_start_time}.csv"))
+    df_hd = pd.read_csv(os.path.join(eval_metrics_dir, f"hd_{model}_{run_start_time}.csv"))
+    df_assd = pd.read_csv(os.path.join(eval_metrics_dir, f"assd_{model}_{run_start_time}.csv"))
+
+    nrows = 3
+    ncols = 3
+
+    with plt.style.context(['science', 'no-latex']):
+        
+        fig, axs = plt.subplots(nrows=nrows, ncols=ncols, figsize=(16,16), sharey=False)
+
+        for i in range(nrows):
+
+            # Dice
+            print("\n", df_te.columns[i+1])
+            te_dice_cor = stats.pearsonr(df_dice.iloc[:,i+1], df_te.iloc[:,i+1])
+            dice_linreg = stats.linregress(df_dice.iloc[:,i+1], df_te.iloc[:,i+1])
+            
+            # min_x = df_dice.iloc[:,i+1].min()
+            # linreg_min_y = min_x*dice_linreg.slope + dice_linreg.intercept
+
+            axs[i][0].scatter(df_dice.iloc[:,i+1], df_te.iloc[:,i+1], color="black", zorder=2)
+            axs[i][0].axline(xy1=(0, dice_linreg.intercept), slope=dice_linreg.slope, color="grey", zorder=1)        
+            axs[i][0].grid(linestyle='dotted')
+            axs[i][0].set_title("Dice Score", fontsize=18)
+            axs[i][0].tick_params(axis='x', labelsize=13)
+            axs[i][0].tick_params(axis='y', labelsize=13)
+            axs[i][0].annotate(f"r = {te_dice_cor.statistic:.2f}", xy=(0,1), xytext=(0.15, 0.9), xycoords='axes fraction', fontsize=16)
+            axs[i][0].set_ylim(bottom=0)
+            
+
+            # Hausdorff Distance
+            te_hd_cor = stats.pearsonr(df_hd.iloc[:,i+1], df_te.iloc[:,i+1])
+            hd_linreg = stats.linregress(df_hd.iloc[:,i+1], df_te.iloc[:,i+1])
+            print(f"HD corr: {te_hd_cor}")
+            axs[i][1].scatter(df_hd.iloc[:,i+1], df_te.iloc[:,i+1], color="black", zorder=2)
+            axs[i][1].axline(xy1=(0, hd_linreg.intercept), slope=hd_linreg.slope, color="grey", zorder=1)
+            axs[i][1].grid(linestyle='dotted')
+            axs[i][1].set_title("Hausdorff Distance", fontsize=18)
+            axs[i][1].tick_params(axis='x', labelsize=13)
+            axs[i][1].tick_params(axis='y', labelsize=13)
+            axs[i][1].annotate(f"r = {te_hd_cor.statistic:.2f}", xy=(0,1), xytext=(0.15, 0.9), xycoords='axes fraction', fontsize=16)
+            axs[i][1].set_ylim(bottom=0)
+
+            # ASSD
+            te_assd_cor = stats.pearsonr(df_assd.iloc[:,i+1], df_te.iloc[:,i+1])
+            assd_linreg = stats.linregress(df_assd.iloc[:,i+1], df_te.iloc[:,i+1])
+            print(f"ASSD corr: {te_assd_cor}")
+            axs[i][2].scatter(df_assd.iloc[:,i+1], df_te.iloc[:,i+1], color="black", zorder=2)
+            axs[i][2].axline(xy1=(0, assd_linreg.intercept), slope=assd_linreg.slope, color="grey", zorder=1)   
+            axs[i][2].grid(linestyle='dotted')
+            axs[i][2].set_title("Average Symmetric Surface Distance", fontsize=18)
+            axs[i][2].tick_params(axis='x', labelsize=13)
+            axs[i][2].tick_params(axis='y', labelsize=13)
+            axs[i][2].annotate(f"r = {te_assd_cor.statistic:.2f}", xy=(0,1), xytext=(0.15, 0.9), xycoords='axes fraction', fontsize=16)
+            axs[i][2].set_ylim(bottom=0)
 
 
+            # Global plot formatting
+            # Set y yable of each cartilage type
+            axs[0][0].set_ylabel("Femoral Cart. Thickness Error", fontsize=16)
+            axs[1][0].set_ylabel("Tibial Cart. Thickness Error", fontsize=16)
+            axs[2][0].set_ylabel("Patellar Cart. Thickness Error", fontsize=16)
 
+            
+        plt.tight_layout()
+        
+        # Create figures directory
+        output_figure_dir = Path(os.path.join(results_dir, "figures", model, run_start_time)) 
 
+        output_figure_dir.mkdir(parents=True, exist_ok=True)
 
-# TODO Correlation between segmentation metrics and pose measures (e.g. cartilage thickness error)
-# Othe pose measures: 
+        # Write out figures - png and pdf versions
+        plt.savefig(os.path.join(output_figure_dir, f"seg_metric_te_corr_{model}_{run_start_time}"), bbox_inches="tight", dpi=500)
+        plt.savefig(os.path.join(output_figure_dir, f"seg_metric_te_corr_{model}_{run_start_time}"), bbox_inches="tight", format=pdf)
+
 
 
 if __name__ == "__main__":
@@ -367,3 +458,6 @@ if __name__ == "__main__":
 
     # Bland Altman plots
     plot_bland_altman(args.model, args.run_start_time, results_dir="../results/")
+
+    # Seg metric / thickness error correlation plots
+    plot_seg_metric_thickness_error_corr(args.model, args.run_start_time, results_dir="../results/")
