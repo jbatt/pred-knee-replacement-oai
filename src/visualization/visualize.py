@@ -311,7 +311,7 @@ def plot_bland_altman(model, run_start_time, results_dir="/mnt/scratch/scjb/resu
 
 
 
-def plot_seg_metric_thickness_error_corr(model, run_start_time, results_dir="/mnt/scratch/scjb/results/oai_subset_knee_cart_seg")
+def plot_seg_metric_thickness_error_corr(model, run_start_time, results_dir="/mnt/scratch/scjb/results/oai_subset_knee_cart_seg"):
         
     """
     Plot thickness error for 3 cartilage types against segmentation metrics 
@@ -406,7 +406,7 @@ def plot_seg_metric_thickness_error_corr(model, run_start_time, results_dir="/mn
 
         # Write out figures - png and pdf versions
         plt.savefig(os.path.join(output_figure_dir, f"seg_metric_te_corr_{model}_{run_start_time}"), bbox_inches="tight", dpi=500)
-        plt.savefig(os.path.join(output_figure_dir, f"seg_metric_te_corr_{model}_{run_start_time}"), bbox_inches="tight", format=pdf)
+        plt.savefig(os.path.join(output_figure_dir, f"seg_metric_te_corr_{model}_{run_start_time}"), bbox_inches="tight", format="pdf")
 
 
 
