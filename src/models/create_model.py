@@ -1,6 +1,7 @@
 from models.model_manet import MANet3D
 from models.model_unet import UNet3DMulticlass
 from models.model_swinunetr import SwinUNETR
+from models.model_segformer3d import SegFormer3D
 
 
 def create_model(
@@ -32,5 +33,22 @@ def create_model(
                           feature_size=feature_size,
                           use_checkpoint=True)
         print(f"Model created:\n{model}")
+    
+    elif input_model_arg == "segformer3d":
+        print(f"Creating segformer3d model...")
+        model = SegFormer3D(in_channels = in_channels,
+                            sr_ratios = [4, 2, 1, 1],
+                            embed_dims = [32, 64, 160, 256],
+                            patch_kernel_size = [7, 3, 3, 3],
+                            patch_stride = [4, 2, 2, 2],
+                            patch_padding = [3, 1, 1, 1],
+                            mlp_ratios = [4, 4, 4, 4],
+                            num_heads = [1, 2, 5, 8],
+                            depths = [2, 2, 2, 2],
+                            decoder_head_embedding_dim = 256,
+                            num_classes = out_channels,
+                            decoder_dropout = 0.0)
+    
+    print(f"Model created:\n{model}")
 
     return model
