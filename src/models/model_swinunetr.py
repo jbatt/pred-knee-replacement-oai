@@ -6,15 +6,17 @@ from typing import Tuple, Union
 class SwinUNETRModel(nn.Module):
     def __init__(
         self,
-        img_size: Union[Tuple[int, int, int], int] = (272, 272, 160),
+        img_size: Union[Tuple[int, int, int], int] = (256, 256, 160),
         in_channels: int = 1,
         out_channels: int = 5,
-        feature_size: int = 48,
+        feature_size: int = 8,
         drop_rate: float = 0.0,
         attn_drop_rate: float = 0.0,
-        dropout_path_rate: float = 0.0,
+        dropout_path_rate: float = 0.1,
         use_checkpoint: bool = True,
-        num_heads: tuple = (2, 4, 8, 16),
+        num_heads: tuple = (1, 2, 4, 8),
+        depths: tuple = (1, 1, 1, 1),
+
     ):
         """
         Initialize SwinUNETR model.
@@ -40,7 +42,8 @@ class SwinUNETRModel(nn.Module):
             attn_drop_rate=attn_drop_rate,
             dropout_path_rate=dropout_path_rate,
             use_checkpoint=use_checkpoint,
-            num_heads=num_heads
+            num_heads=num_heads,
+            depths=depths,
         )
     
     def forward(self, x: torch.Tensor) -> torch.Tensor:
