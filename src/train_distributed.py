@@ -221,7 +221,7 @@ def train(rank: int, world_size: int, config, args) -> None:
                                   pin_memory=True)
                                   
     validation_dataloader = DataLoader(validation_dataset, 
-                                       batch_size=6, 
+                                       batch_size=3, 
                                        num_workers = 3, 
                                        sampler=DistributedSampler(validation_dataset), 
                                        shuffle=False)
