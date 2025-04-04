@@ -129,6 +129,8 @@ def train_loop(
         epoch_haus_loss_all[batch] = hausdorff_distance_all.tolist()[0]
         epoch_haus.append(hausdorff_distance_all.mean(dim=0))
 
+        torch.cuda.empty_cache()
+
     # Calculate the average loss and accuracy for the epoch
     avg_epoch_loss = sum(epoch_loss) / len(epoch_loss)
     avg_epoch_dice =  sum(epoch_dice) / len(epoch_loss) 
@@ -223,6 +225,8 @@ def validation_loop(dataloader, device, model, loss_fn, num_classes):
             print(f"valid_hausdorff_distance_all: {valid_hausdorff_distance_all}")
             print(f"valid_hausdorff_distance_all shape: {valid_hausdorff_distance_all.shape}")
             validation_hausdorff_distance += valid_hausdorff_distance_all.mean().item()
+
+            torch.cuda.empty_cache()
 
     
 
