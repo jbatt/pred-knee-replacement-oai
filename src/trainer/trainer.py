@@ -64,7 +64,7 @@ def train_loop(
         print(f"Mask shape: {y.size()}")
 
         # Compute prediction and loss
-        with torch.autocast(device_type=device, dtype=torch.float16):
+        with torch.autocast(device_type='cuda', dtype=torch.float16):
             print("Computing model predictions...")
             pred = model(X)
             assert pred.dtype is torch.float16
@@ -73,19 +73,19 @@ def train_loop(
             print("Calculating loss...")
             loss = loss_fn(pred, y)
             assert loss.dtype is torch.float32
-        
+
+        # Reset gradients to zero
+        optimizer.zero_grad(set_to_none=True)
+
+        # Backpropagation
+        print("Computing backpropagation...")        
         scaler.scale(loss).backward()
+
+        # Perform model step
         scaler.step(optimizer)
         scaler.update()
 
-        # Backpropagation
-        print("Computing backpropagation...")
-        loss.backward()
-        
-        # Perform model step
-        optimizer.step()
-        # Reset gradients to zero
-        optimizer.zero_grad(set_to_none=True)
+
         
         # Store batch size
         batch_size = len(y)
