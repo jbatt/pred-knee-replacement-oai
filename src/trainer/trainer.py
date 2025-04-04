@@ -15,7 +15,8 @@ def train_loop(
         device, 
         model, 
         loss_fn, 
-        optimizer, 
+        optimizer,
+        scaler, 
         num_classes,
     ):
 
@@ -63,12 +64,19 @@ def train_loop(
         print(f"Mask shape: {y.size()}")
 
         # Compute prediction and loss
-        print("Computing model predictions...")
-        pred = model(X)
-        print(f"Prediction shape: {pred.shape}")
+        with torch.autocast(device_type=device, dtype=torch.float16):
+            print("Computing model predictions...")
+            pred = model(X)
+            assert pred.dtype is torch.float16
+            print(f"Prediction shape: {pred.shape}")
 
-        print("Calculating loss...")
-        loss = loss_fn(pred, y)
+            print("Calculating loss...")
+            loss = loss_fn(pred, y)
+            assert loss.dtype is torch.float32
+        
+        scaler.scale(loss).backward()
+        scaler.step(optimizer)
+        scaler.update()
 
         # Backpropagation
         print("Computing backpropagation...")

@@ -242,6 +242,7 @@ def train(rank: int, world_size: int, config, args) -> None:
     # Removed for now
     # lr_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=8, verbose=True,
     #                                                           threshold=0.001, threshold_mode='abs')
+    scaler = torch.amp.GradScaler('cuda')
     
     early_stopper = EarlyStopper(patience=5, min_delta=0.001)
 
@@ -256,7 +257,7 @@ def train(rank: int, world_size: int, config, args) -> None:
     for epoch in range(num_epochs):
         print(f"Epoch {epoch+1}\n-------------------------------")
 
-        train_loss, avg_train_dice, avg_train_haus, avg_train_dice_all, avg_train_haus_loss_all = train_loop(train_dataloader, device, model, loss_fn, optimizer, num_classes=NUM_CLASSES)
+        train_loss, avg_train_dice, avg_train_haus, avg_train_dice_all, avg_train_haus_loss_all = train_loop(train_dataloader, device, model, loss_fn, optimizer, scaler, num_classes=NUM_CLASSES)
         valid_loss, avg_valid_dice, avg_valid_haus, avg_valid_dice_all, avg_valid_haus_loss_all = validation_loop(validation_dataloader, device, model, loss_fn, num_classes=NUM_CLASSES)
 
         if rank == 0:
