@@ -313,7 +313,8 @@ def train(rank: int, world_size: int, config, args) -> None:
             torch.save(model.module.state_dict(), model_path)
             print(f"Early stop epoch: {epoch + 1}") 
 
-
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
 
     # Once training is done, save final model
     model_path = os.path.join(models_checkpoints_dir, f"{train_start_file}_{run.name}_final.pth")
