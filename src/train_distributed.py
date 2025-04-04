@@ -215,13 +215,14 @@ def train(rank: int, world_size: int, config, args) -> None:
     # Shuffle = False required for DistributedSampler
     train_dataloader = DataLoader(train_dataset, 
                                   batch_size=int(batch_size), 
-                                  #num_workers = 1, 
+                                  num_workers = 3, 
                                   sampler=DistributedSampler(train_dataset), 
-                                  shuffle=False)
+                                  shuffle=False,
+                                  pin_memory=True)
                                   
     validation_dataloader = DataLoader(validation_dataset, 
                                        batch_size=6, 
-                                       #num_workers = 1, 
+                                       num_workers = 3, 
                                        sampler=DistributedSampler(validation_dataset), 
                                        shuffle=False)
 
