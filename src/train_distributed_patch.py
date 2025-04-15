@@ -327,7 +327,7 @@ def train(rank: int, world_size: int, config, args) -> None:
     # Define PyTorch datasets and dataloader
 
     # Define datasets
-    train_dataset = KneeSegDataset3DMulticlass(train_paths, data_dir, num_classes=NUM_CLASSES, transform=transform, patch_size=wandb.config.patch_size))
+    train_dataset = KneeSegDataset3DMulticlass(train_paths, data_dir, num_classes=NUM_CLASSES, transform=transform, patch_size=wandb.config.patch_size)
     validation_dataset = KneeSegDataset3DMulticlass(val_paths, data_dir, num_classes=NUM_CLASSES, split='valid')
 
 
