@@ -16,8 +16,6 @@ import torchvision.transforms as transforms
 # Pytorch distributed training
 import torch.multiprocessing as mp  # Wrap asround python's native numtiprocessing
 from torch.utils.data.distributed import DistributedSampler # Distributed inpout data across GPUs
-from torch.nn.parallel import DistributedDataParallel as DDP # Distribute model across GPUs
-from torch.distributed import init_process_group, destroy_process_group # Initialise process group for distributed training
 
 import numpy as np
 from datetime import datetime
@@ -92,23 +90,6 @@ def define_dataset_paths(hpc):
 
 
 
-###############################################################################################
-# PARRALLELSED TRAINING SETUP - DISTRIBUTED DATA PARALLEL 
-###############################################################################################
-def ddp_setup(local_rank: int, world_size: int)  -> None:
-    """ Set up distributed data parallel training using PyTorch's native multiprocessing library
-    Args:
-        rank (int): Unique identifier of each prcoess
-        world_size (int): Total number of processes
-    """
-    # IP address of machine running rank 0 process
-    os.environ['MASTER_ADDR'] = 'localhost'
-    os.environ['MASTER_PORT'] = '12355'
-
-    # Initialise process group - 
-    # nccl backend: nvidia collective communications library - optimised for Nvidia GPUs
-    init_process_group(backend='nccl', init_method='env://', rank=local_rank, world_size=world_size)
-
 
 # TODO: flag to include background?
 
@@ -117,7 +98,7 @@ def ddp_setup(local_rank: int, world_size: int)  -> None:
 #####################################################################################
 
 # Distributed training function
-def train(rank: int, world_size: int, config, args) -> None:
+def train(config, args) -> None:
     
     # Capture training start time for output data files
     train_start = str(datetime.now())
@@ -131,18 +112,12 @@ def train(rank: int, world_size: int, config, args) -> None:
     print(f"device = {device}")
 
     # Set up distributed data parallel training prcoesses 
-    ddp_setup(rank, world_size)
+    # ddp_setup(rank, world_size)
 
-    # Set device for each process
-    torch.cuda.set_device(rank)
-    device = torch.device("cuda", rank)
 
     # Only initialize wandb normally on the master process (rank 0)
-    if rank == 0:
-        run = wandb.init(project="oai-subset-knee-cart-seg", config=config)
-    else:
-        # Disable wandb logging for non-master processes
-        run = wandb.init(mode="disabled")
+    run = wandb.init(project="oai-subset-knee-cart-seg", config=config)
+        
     
     print(f"WandB run name: {run.name}")
     print(f"config = {run.config}")  
@@ -161,26 +136,13 @@ def train(rank: int, world_size: int, config, args) -> None:
                         encoder=wandb.config.encoder, # None/null used in config file if not relevant for model
                         encoder_depth=wandb.config.encoder_depth, # None/null used if not relevant for model
                         img_size=wandb.config.img_size,
-                        img_crop=wandb.config.img_crop,
                         feature_size=wandb.config.feature_size
     )
 
-    # Use multiple gpu in parallel if available
-    # if torch.cuda.device_count() > 1:
-    #     device_ids = [i for i in range(torch.cuda.device_count())]
-    #     model = nn.DataParallel(model, device_ids)
-    
-    # Convert model batchnorm layers to sync batchnorm layers
-    model = nn.SyncBatchNorm.convert_sync_batchnorm(model)
+
+
 
     model = model.to(device)
-
-    # Distribute model across multiple GPUs
-    model = DDP(model, device_ids=[rank])
-
-    # # Load model to device
-    # print(f"Loading model to device: {device}")
-    # model.to(device)
 
     #####################################################################################
     # TRANSFORMS
@@ -215,14 +177,12 @@ def train(rank: int, world_size: int, config, args) -> None:
     # Shuffle = False required for DistributedSampler
     train_dataloader = DataLoader(train_dataset, 
                                   batch_size=int(batch_size), 
-                                  #num_workers = 1, 
-                                  sampler=DistributedSampler(train_dataset), 
-                                  shuffle=False)
+                                  num_workers=4, 
+                                  shuffle=True)
                                   
     validation_dataloader = DataLoader(validation_dataset, 
                                        batch_size=4, 
-                                       #num_workers = 1, 
-                                       sampler=DistributedSampler(validation_dataset), 
+                                       num_workers=4, 
                                        shuffle=False)
 
 
@@ -240,6 +200,10 @@ def train(rank: int, world_size: int, config, args) -> None:
     # lr_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=8, verbose=True,
     #                                                           threshold=0.001, threshold_mode='abs')
     
+
+    # Intialise gradient scaler for automatic mixed precision training
+    scaler = torch.amp.GradScaler('cuda')
+
     early_stopper = EarlyStopper(patience=5, min_delta=0.001)
 
 
@@ -253,59 +217,57 @@ def train(rank: int, world_size: int, config, args) -> None:
     for epoch in range(num_epochs):
         print(f"Epoch {epoch+1}\n-------------------------------")
 
-        train_loss, avg_train_dice, avg_train_haus, avg_train_dice_all, avg_train_haus_loss_all = train_loop(train_dataloader, device, model, loss_fn, optimizer, num_classes=NUM_CLASSES)
+        train_loss, avg_train_dice, avg_train_haus, avg_train_dice_all, avg_train_haus_loss_all = train_loop(train_dataloader, device, model, loss_fn, optimizer, scaler, num_classes=NUM_CLASSES)
         valid_loss, avg_valid_dice, avg_valid_haus, avg_valid_dice_all, avg_valid_haus_loss_all = validation_loop(validation_dataloader, device, model, loss_fn, num_classes=NUM_CLASSES)
 
-        if rank == 0:
-            # log to wandb
-            wandb.log({
-                "Train Loss": train_loss, 
-                "Train Dice Score": avg_train_dice,
-                "Train Dice Score (Background)": avg_train_dice_all[0],
-                "Train Dice Score (Femoral Cart.)": avg_train_dice_all[1],
-                "Train Dice Score (Tibial Cart.)": avg_train_dice_all[2],
-                "Train Dice Score (Patellar Cart.)": avg_train_dice_all[3],
-                "Train Dice Score (Meniscus)": avg_train_dice_all[4],
-                "Train Hausdorff Loss": avg_train_haus,
-                "Train Hausdorff Loss (Background)": avg_train_haus_loss_all[0],
-                "Train Hausdorff Loss (Femoral Cart.)": avg_train_haus_loss_all[1],
-                "Train Hausdorff Loss (Tibial Cart.)": avg_train_haus_loss_all[2],
-                "Train Hausdorff Loss (Patellar Cart.)": avg_train_haus_loss_all[3],
-                "Train Hausdorff Loss (Meniscus)": avg_train_haus_loss_all[4],
-                "Val Loss": valid_loss, 
-                "Val Dice Score": avg_valid_dice,
-                "Val Dice Score (Background)": avg_valid_dice_all[0],
-                "Val Dice Score (Femoral Cart.)": avg_valid_dice_all[1],
-                "Val Dice Score (Tibial Cart.)": avg_valid_dice_all[2],
-                "Val Dice Score (Patellar Cart.)": avg_valid_dice_all[3],
-                "Val Dice Score (Meniscus)": avg_valid_dice_all[4],
-                "Val Hausdorff Loss": avg_valid_haus,
-                "Val Hausdorff Loss (Background)": avg_valid_haus_loss_all[0],
-                "Val Hausdorff Loss (Femoral Cart.)": avg_valid_haus_loss_all[1],
-                "Val Hausdorff Loss (Tibial Cart.)": avg_valid_haus_loss_all[2],
-                "Val Hausdorff Loss (Patellar Cart.)": avg_valid_haus_loss_all[3],
-                "Val Hausdorff Loss (Meniscus)": avg_valid_haus_loss_all[4],
-            })
+        # log to wandb
+        wandb.log({
+            "Train Loss": train_loss, 
+            "Train Dice Score": avg_train_dice,
+            "Train Dice Score (Background)": avg_train_dice_all[0],
+            "Train Dice Score (Femoral Cart.)": avg_train_dice_all[1],
+            "Train Dice Score (Tibial Cart.)": avg_train_dice_all[2],
+            "Train Dice Score (Patellar Cart.)": avg_train_dice_all[3],
+            "Train Dice Score (Meniscus)": avg_train_dice_all[4],
+            "Train Hausdorff Loss": avg_train_haus,
+            "Train Hausdorff Loss (Background)": avg_train_haus_loss_all[0],
+            "Train Hausdorff Loss (Femoral Cart.)": avg_train_haus_loss_all[1],
+            "Train Hausdorff Loss (Tibial Cart.)": avg_train_haus_loss_all[2],
+            "Train Hausdorff Loss (Patellar Cart.)": avg_train_haus_loss_all[3],
+            "Train Hausdorff Loss (Meniscus)": avg_train_haus_loss_all[4],
+            "Val Loss": valid_loss, 
+            "Val Dice Score": avg_valid_dice,
+            "Val Dice Score (Background)": avg_valid_dice_all[0],
+            "Val Dice Score (Femoral Cart.)": avg_valid_dice_all[1],
+            "Val Dice Score (Tibial Cart.)": avg_valid_dice_all[2],
+            "Val Dice Score (Patellar Cart.)": avg_valid_dice_all[3],
+            "Val Dice Score (Meniscus)": avg_valid_dice_all[4],
+            "Val Hausdorff Loss": avg_valid_haus,
+            "Val Hausdorff Loss (Background)": avg_valid_haus_loss_all[0],
+            "Val Hausdorff Loss (Femoral Cart.)": avg_valid_haus_loss_all[1],
+            "Val Hausdorff Loss (Tibial Cart.)": avg_valid_haus_loss_all[2],
+            "Val Hausdorff Loss (Patellar Cart.)": avg_valid_haus_loss_all[3],
+            "Val Hausdorff Loss (Meniscus)": avg_valid_haus_loss_all[4],
+        })
         
         # Save as best if val loss is lowest so far
         # model.module.save required for DDP
         # Save checkpoint only for the rank 0 process
-        if (valid_loss < min_valid_loss) and rank == 0:
+        if valid_loss < min_valid_loss:
             print(f'Validation Loss Decreased({min_valid_loss:.6f}--->{valid_loss:.6f}) \t Saving The Model')
             model_path = os.path.join(models_checkpoints_dir, f"{train_start_file}_{args.model}_multiclass_{run.name}_best_E.pth")
-            torch.save(model.module.state_dict(), model_path)
+            torch.save(model.state_dict(), model_path)
             print(f"Best epoch yet: {epoch + 1}")
             
             # reset min as current
             min_valid_loss = valid_loss
 
         # Save model if early stopping triggered
-        # model.module.save required for DDP
         # Save checkpoint only for the rank 0 process
-        if early_stopper.early_stop(valid_loss) and rank == 0:
+        if early_stopper.early_stop(valid_loss) == 0:
             print(f'Early stopping triggered! ({min_valid_loss:.6f}--->{valid_loss:.6f}) \t Saving The Model')
             model_path = os.path.join(models_checkpoints_dir, f"{train_start_file}_{args.model}_multiclass_{run.name}_early_stop_E{epoch+1}.pth")
-            torch.save(model.module.state_dict(), model_path)
+            torch.save(model.state_dict(), model_path)
             print(f"Early stop epoch: {epoch + 1}") 
 
 
@@ -314,24 +276,21 @@ def train(rank: int, world_size: int, config, args) -> None:
     model_path = os.path.join(models_checkpoints_dir, f"{train_start_file}_{run.name}_final.pth")
     torch.save(model.state_dict(), model_path)
 
-    # Cleanup - destroy process group to exit DDP training
-    destroy_process_group()
-    if rank == 0:
-        wandb.finish()
+    wandb.finish()
 
 
 
 
 
-def main_train(args) -> None:
-    # Hyperparameter sweep configuration
-    # config = wandb.config
+# def main_train(args) -> None:
+#     # Hyperparameter sweep configuration
+#     # config = wandb.config
     
-    world_size = torch.cuda.device_count()
+#     world_size = torch.cuda.device_count()
 
-    # Set up distributed training
-    # TODO review documentation for mp.spawn and the join argument
-    mp.spawn(train, args=(world_size, wandb.config, args), nprocs=world_size, join=True)
+#     # Set up distributed training
+#     # TODO review documentation for mp.spawn and the join argument
+#     mp.spawn(train, args=(world_size, wandb.config, args), nprocs=world_size, join=True)
 
 
 
@@ -402,5 +361,5 @@ if __name__ == '__main__':
     sweep_id = wandb.sweep(sweep=sweep_configuration, project="oai-subset-knee-cart-seg")
 
 
-    wandb.agent(sweep_id, function=lambda: main_train(args))
+    wandb.agent(sweep_id, function=lambda: train(sweep_configuration, args))
     
