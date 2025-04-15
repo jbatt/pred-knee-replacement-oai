@@ -9,7 +9,7 @@ class SwinUNETRModel(nn.Module):
         img_size: Union[Tuple[int, int, int], int] = (256, 256, 160),
         in_channels: int = 1,
         out_channels: int = 5,
-        feature_size: int = 8,
+        feature_size: int = 12,
         drop_rate: float = 0.0,
         attn_drop_rate: float = 0.0,
         dropout_path_rate: float = 0.1,
