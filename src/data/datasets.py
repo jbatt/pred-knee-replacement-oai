@@ -6,6 +6,7 @@ import h5py
 import os
 import numpy as np
 from utils.utils import crop_im, crop_mask, clip_and_norm
+from monai.data import GridPatchDataset
 
 
 # Multiclass knee cartilage MRI volumes and segmentation masks
@@ -109,9 +110,11 @@ class KneeSegDataset3DMulticlass(Dataset):
 
             # Initialise final masks dimensions using existing masks, but switch 4 class to 6
             # Adjust mask dimension from 6 classes to 4 classes
+            # Take all orignal mask dimensions
             mask_dims = mask.shape[:-1]
+            # Add a new dimension for the number of classes
             mask_dims += (self.num_classes,)
-            mask_dims
+            print(f"mask dims: {mask_dims}")
             mask_all = np.zeros(mask_dims) # Initalise mask using previosuly defined dimensions
 
 
@@ -167,3 +170,54 @@ class KneeSegDataset3DMulticlass(Dataset):
                 mask = self.transform(mask)
 
         return image, mask
+    
+
+
+
+
+class LengthEnabledGridPatchDataset(GridPatchDataset):
+    def __init__(self, data, patch_iter):
+        super().__init__(data=data, patch_iter=patch_iter)
+        self.total_patches = self._count_total_patches(patch_iter)
+    
+    def _count_total_patches(self, patch_iter):
+        print(f"patch_iter: {patch_iter.patch_size}")
+        print(f"data shape: {len(self.data)}")
+
+        len_data = len(self.data)
+
+        sample = self.data[0]
+        image = sample[0] if isinstance(sample, (tuple, list)) else sample
+        print(f"image shape: {image.shape}")
+        
+        num_patches_per_image = (
+                 (image.shape[1] * image.shape[2] * image.shape[3]) /
+                 (patch_iter.patch_size[1] * patch_iter.patch_size[2] * patch_iter.patch_size[3])
+        )
+        print(f"num_patches_per_image: {num_patches_per_image}")
+
+        total_patches = len_data * num_patches_per_image
+
+
+        # for i in range(len(self.data)):
+        #     # Get sample from the underlying dataset
+        #     sample = self.data[i]
+            
+        #     # Extract image shape (assuming image is the first element in sample)
+        #     # Adjust this based on your actual data structure
+        #     image = sample[0] if isinstance(sample, (tuple, list)) else sample
+
+        #     print(f"image shape: {image.shape}")
+            
+        #     # Count patches for this sample
+        #     num_patches = (
+        #         (image.shape[1] * image.shape[2] * image.shape[3]) /
+        #         (patch_iter.patch_size[1] * patch_iter.patch_size[2] * patch_iter.patch_size[3])
+        #     )
+        #     total += num_patches
+            
+        print(f"total patches: {total_patches}")
+        return int(total_patches)
+    
+    def __len__(self):
+        return self.total_patches
