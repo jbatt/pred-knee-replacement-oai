@@ -1,0 +1,23 @@
+{
+    "method": "grid",
+    "name": "manet_3",
+    "metric": {"goal": "minimize", "name": "Val Loss"},
+    "parameters": {
+        "lr": {"values": [1e-3]},
+        "batch_size": {"values": [3]},
+        "num_epochs": {"values": [40]},
+        "transforms": {"values": [true]},
+        "in_channels": {"values": [1]},
+        "out_channels": {"values": [5]},
+        "num_kernels": {"values": [16]},
+        "feature_size": {"values": [null]},
+        "encoder": {"values": ["resnet34"]}, 
+        "encoder_depth": {"values": [4]},
+        "loss": {"values": ["ce_dice"]},
+        "img_size": {"values": [null]},
+        "img_crop": {"values": [[[56,312], [58,314], [0,160]]]},
+        "patch_size": {"values": [null]}
+    }
+}
+
+
