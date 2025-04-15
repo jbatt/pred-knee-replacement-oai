@@ -21,5 +21,5 @@ conda activate pred-knee-replacement-oai
 export PYTORCH_CUDA_ALLOC_CONF=garbage_collection_threshold:0.2,expandable_segments:True
 
 # Run the training script with the selected input file
-python train_distributed.py --model swin_unetr --hpc-flag 1 < config/config_swinunetr_1.json
+python train_distributed_patch.py --model swin_unetr --hpc-flag 1 < config/config_swinunetr_2.json
 
