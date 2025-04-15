@@ -14,8 +14,8 @@ class SwinUNETRModel(nn.Module):
         attn_drop_rate: float = 0.0,
         dropout_path_rate: float = 0.1,
         use_checkpoint: bool = True,
-        num_heads: tuple = (1, 2, 4, 8),
-        depths: tuple = (1, 1, 1, 1),
+        num_heads: tuple = (1, 2, 4),
+        depths: tuple = (1, 1, 1),
 
     ):
         """

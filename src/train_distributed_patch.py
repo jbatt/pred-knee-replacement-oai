@@ -279,7 +279,8 @@ def train(rank: int, world_size: int, config, args) -> None:
                         out_channels=wandb.config.out_channels, 
                         num_kernels= wandb.config.num_kernels, 
                         encoder=wandb.config.encoder, # None/null used in config file if not relevant for model
-                        encoder_depth=wandb.config.encoder_depth # None/null used if not relevant for model
+                        encoder_depth=wandb.config.encoder_depth, # None/null used if not relevant for model
+                        patch_size=wandb.config.patch_size
     )
 
     # Use multiple gpu in parallel if available
@@ -395,7 +396,8 @@ def train(rank: int, world_size: int, config, args) -> None:
                                                                                                              loss_fn, 
                                                                                                              optimizer, 
                                                                                                              scaler, 
-                                                                                                             num_classes=NUM_CLASSES)
+                                                                                                             num_classes=NUM_CLASSES,
+                                                                                                             patch_size=wandb.config.patch_size)
         
         valid_loss, avg_valid_dice, avg_valid_haus, avg_valid_dice_all, avg_valid_haus_loss_all = validation_loop(validation_dataloader, 
                                                                                                                   device, 

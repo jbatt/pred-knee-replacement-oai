@@ -177,17 +177,17 @@ class KneeSegDataset3DMulticlass(Dataset):
             print(f"Original mask shape {mask.shape}")
 
             # Unfold image into patches
-            image = image.unfold(1,self.patch_size,self.patch_size).unfold(2,self.patch_size, self.patch_size).unfold(3,self.patch_size, self.patch_size)
+            image = image.unfold(1,self.patch_size[0],self.patch_size[0]).unfold(2,self.patch_size[1], self.patch_size[1]).unfold(3,self.patch_size[2], self.patch_size[2])
             print(f"Unfolded image shape: {image.shape}")
 
-            image = image.reshape(self.num_classes, -1, self.patch_size, self.patch_size, self.patch_size)
+            image = image.reshape(-1, self.patch_size[0], self.patch_size[1], self.patch_size[2])
             print(f"Reshaped image shape: {image.shape}")
             
             # Unfold mask into patches
-            mask = mask.unfold(1,self.patch_size,self.patch_size).unfold(2,self.patch_size, self.patch_size).unfold(3,self.patch_size, self.patch_size)
+            mask = mask.unfold(2, self.patch_size[0], self.patch_size[0]).unfold(3, self.patch_size[1], self.patch_size[1]).unfold(4, self.patch_size[2], self.patch_size[2])
             print(f"Unfolded mask shape: {mask.shape}")
 
-            mask = mask.reshape(self.num_classes, -1, self.patch_size, self.patch_size, self.patch_size)
+            mask = mask.reshape(-1, self.num_classes, self.patch_size[0], self.patch_size[1], self.patch_size[2])
             print(f"Reshaped mask shape: {mask.shape}")            
             
 

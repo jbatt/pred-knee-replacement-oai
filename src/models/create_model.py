@@ -12,7 +12,8 @@ def create_model(
         encoder="resnet34", 
         encoder_depth=4,
         img_size=(288,288,160),
-        feature_size=48
+        feature_size=48,
+        patch_size=None
     ):
     
     if input_model_arg == "manet":
@@ -27,7 +28,7 @@ def create_model(
     
     elif input_model_arg == "swin_unetr":
         print(f"Creating swin_unetr model...")
-        model = SwinUNETR(img_size=img_size, 
+        model = SwinUNETR(img_size=tuple(patch_size), 
                           in_channels=in_channels, 
                           out_channels=out_channels, 
                           feature_size=feature_size,

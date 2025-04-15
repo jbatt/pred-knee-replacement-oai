@@ -19,6 +19,7 @@ def train_loop(
         optimizer,
         scaler, 
         num_classes,
+        patch_size=None
     ):
 
     print("Running training loop...")
@@ -64,6 +65,13 @@ def train_loop(
         print(f"Image shape: {X.size()}")
         print(f"Mask shape: {y.size()}")
 
+        # If using patches combine patches into batch dimension (batch_size * num_patches, channels, patch_size[0], patch_size[1], patch_size[2])
+        # TODO: rmeove harcoded nmber of channels as 1
+        if patch_size is not None:
+            X = X.reshape(-1, 1, patch_size[0], patch_size[1], patch_size[2])
+        
+        print(f"Image shape after combining patches into batch dimension: {X.size()}")
+        
         # Compute prediction and loss
         with torch.autocast(device_type='cuda', dtype=torch.float16):
             print("Computing model predictions...")
