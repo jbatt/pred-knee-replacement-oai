@@ -327,26 +327,26 @@ def train(rank: int, world_size: int, config, args) -> None:
     # Define PyTorch datasets and dataloader
 
     # Define datasets
-    train_dataset = KneeSegDataset3DMulticlass(train_paths, data_dir, num_classes=NUM_CLASSES, transform=transform)
+    train_dataset = KneeSegDataset3DMulticlass(train_paths, data_dir, num_classes=NUM_CLASSES, transform=transform, patch_size=wandb.config.patch_size))
     validation_dataset = KneeSegDataset3DMulticlass(val_paths, data_dir, num_classes=NUM_CLASSES, split='valid')
 
 
     # Create patch-based datasets
-    patch_iter = PatchIter(patch_size=wandb.config.patch_size, start_pos=(0, 0))
-    train_patch_dataset = GridPatchDataset(
-        data=train_dataset,
-        patch_iter=patch_iter,
-    )
+    # patch_iter = PatchIter(patch_size=wandb.config.patch_size, start_pos=(0, 0))
+    # train_patch_dataset = GridPatchDataset(
+    #     data=train_dataset,
+    #     patch_iter=patch_iter,
+    # )
 
 
 
     # Define dataloaders
     # DistirbutedSampler - batch chunked over all gpus evently 
     # Shuffle = False required for DistributedSampler
-    train_dataloader = DataLoader(train_patch_dataset, 
+    train_dataloader = DataLoader(train_dataset, 
                                   batch_size=int(batch_size), 
                                   num_workers = 3, 
-                                #   sampler=DistributedSampler(train_patch_dataset), 
+                                # sampler=DistributedSampler(train_patch_dataset), 
                                   shuffle=False,
                                   pin_memory=True)
                                   
@@ -373,6 +373,7 @@ def train(rank: int, world_size: int, config, args) -> None:
     # Removed for now
     # lr_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=8, verbose=True,
     #                                                           threshold=0.001, threshold_mode='abs')
+
     scaler = torch.amp.GradScaler('cuda')
     
     early_stopper = EarlyStopper(patience=5, min_delta=0.001)
@@ -522,14 +523,6 @@ if __name__ == '__main__':
     #####################################################################################
     # SET HYPERPARAMETERS - PARSE STANRDARD INPUT (JSON)
     #####################################################################################
-
-    # # Load in hyperparams using model CLI argument
-    # config_filepath = os.path.join('.', 'config', f'config_{args.model}.json')
-
-    # with open(config_filepath) as f:
-    #     sweep_configuration = json.load(f)
-
-    # print(f"sweep_configuation = {sweep_configuration}")
 
     std_input_data = None
 
