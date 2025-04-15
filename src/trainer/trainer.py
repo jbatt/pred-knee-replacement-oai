@@ -8,6 +8,7 @@ from metrics.metrics import dice_coefficient_multi_batch, dice_coefficient_multi
 
 from monai.losses.hausdorff_loss import HausdorffDTLoss
 from monai.metrics import compute_hausdorff_distance
+from monai.inferers import sliding_window_inference
 
 # Define a training loop function for reuse later 
 def train_loop(
@@ -146,7 +147,7 @@ def train_loop(
 
 
 # Define a validation loop function for reuse later 
-def validation_loop(dataloader, device, model, loss_fn, num_classes):
+def validation_loop(dataloader, device, model, loss_fn, num_classes, patch_size=None):
 
     print("Running validation loop...")
 
@@ -188,8 +189,21 @@ def validation_loop(dataloader, device, model, loss_fn, num_classes):
             X = X.to(device)
             y = y.to(device)
 
-            # Make predictions on the input features
-            pred = model(X)
+            if patch_size is not None:
+                print(f"Performing sliding window inference with patch size: {patch_size}")
+                with torch.autocast(device_type='cuda', dtype=torch.float16):
+                    pred = sliding_window_inference(X, 
+                                                    roi_size=patch_size, 
+                                                    sw_batch_size=2, 
+                                                    predictor=model, 
+                                                    overlap=0.25)
+                    
+            else:
+                # Make predictions on the input features
+                pred = model(X)
+
+            
+                
 
             # Determine the loss associated with the current predictions and add to batch loss
             validation_loss += loss_fn(pred, y).item()
