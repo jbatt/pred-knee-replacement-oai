@@ -211,8 +211,6 @@ def train_patch_loop(
             print(f"Image shape after combining patches into batch dimension: {X_volume.size()}")
             print(f"Mask shape after combining patches into batch dimension: {y_volume.size()}")
         
-        # TODO remove hardcoded patch batch size
-        patch_batch_size = 32
 
         for i in range(0, X_volume.shape[0], patch_batch_size):
 
