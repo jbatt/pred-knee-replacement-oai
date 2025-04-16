@@ -121,55 +121,5 @@ class UNet3DMulticlass(nn.Module):
         # x = self.softmax(x)
 
         return x
-
-
-# # Define 3D U-Net architecture
-# class UNet3D(nn.Module):
-#     def __init__(self, in_channels, out_channels, num_kernels_1):
-#         super(UNet3D, self).__init__()
-
-#         # Encoder
-#         # Encoder consists of three encoding blocks which double the number of kernels with each block
-#         self.enc1 = EncBlock(in_channels, num_kernels_1)
-#         self.enc2 = EncBlock(num_kernels_1, num_kernels_1*2)
-#         self.enc3 = EncBlock(num_kernels_1*2, num_kernels_1*4)
-
-#         # Pooling
-#         self.pool = nn.MaxPool3d(kernel_size=2, stride=2)
-
-#         # Bottleneck
-#         self.bottleneck = EncBlock(num_kernels_1*4, num_kernels_1*8)
-
-#         # Decoder (upsampling)
-#         self.dec3 = UpConvBlock(num_kernels_1*8, num_kernels_1*4)
-#         self.dec2 = UpConvBlock(num_kernels_1*4, num_kernels_1*2)
-#         self.dec1 = UpConvBlock(num_kernels_1*2, num_kernels_1)
-
-#         # Output
-#         self.out_conv = nn.Conv3d(num_kernels_1, out_channels, kernel_size=1)
-#         self.sigmoid = nn.Sigmoid()
-
-#     def forward(self, x):
-#         # Encoder
-#         enc1 = self.enc1(x)
-#         pool = self.pool(enc1)
-#         enc2 = self.enc2(pool)
-#         pool = self.pool(enc2)
-#         enc3 = self.enc3(pool)
-#         pool = self.pool(enc3)
-
-#         # Bottleneck
-#         x = self.bottleneck(pool)
-
-#         # Decoder
-#         x = self.dec3(x, enc3)
-#         x = self.dec2(x, enc2)
-#         x = self.dec1(x, enc1)
-
-#         # Output
-#         x = self.out_conv(x)
-#         x = self.sigmoid(x)
-
-#         return x
     
 
