@@ -296,8 +296,9 @@ def train(rank: int, world_size: int, config, args) -> None:
                                                                                                              optimizer, 
                                                                                                              scaler, 
                                                                                                              num_classes=NUM_CLASSES,
-                                                                                                             patch_size=wandb.config.patch_size)
-        
+                                                                                                             patch_size=wandb.config.patch_size,
+                                                                                                             patch_batch_size=wandb.config.patch_batch_size)
+                
         valid_loss, avg_valid_dice, avg_valid_haus, avg_valid_dice_all, avg_valid_haus_loss_all = validation_loop(validation_dataloader, 
                                                                                                                   device, 
                                                                                                                   model, 

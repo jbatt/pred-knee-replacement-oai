@@ -163,6 +163,7 @@ def train_patch_loop(
         scaler, 
         num_classes,
         patch_size=None,
+        patch_batch_size=32
     ):
 
     print("Running training loop...")
