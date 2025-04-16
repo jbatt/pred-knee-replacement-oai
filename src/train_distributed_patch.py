@@ -36,7 +36,7 @@ from models.model_unet import UNet3DMulticlass
 from utils.utils import EarlyStopper
 from data.datasets import KneeSegDataset3DMulticlass
 from metrics.loss import create_loss, ce_dice_loss_multi_batch #, dice_coefficient, batch_dice_coeff
-from trainer.trainer import train_loop, validation_loop 
+from trainer.trainer import train_patch_loop, validation_loop 
 from models.create_model import create_model
 
 from monai.data import Dataset, GridPatchDataset, CacheDataset, PatchIter, partition_dataset
@@ -107,107 +107,6 @@ def define_dataset_paths(hpc):
     print(f"val_paths = {val_paths}")
 
     return data_dir, models_checkpoints_dir, train_paths, val_paths  
-
-
-
-# def create_grid_patch_loader(data_dir, patch_size, batch_size, cache=False, mode='train'):
-#         """Create data loader with grid patch sampling"""
-        
-#         # Create data dictionaries
-#         data_files = []
-
-#         image_files = sorted(glob.glob(os.path.join(data_dir, mode, '*.im')))
-#         print(f"image_files = {image_files}")
-
-#         label_files = sorted(glob.glob(os.path.join(data_dir, mode, '*.seg')))
-#         print(f"label_files = {label_files}")
-
-        
-#         for image_filename, label_filename in zip(image_files, label_files):
-#             if not image_filename.startswith('.') and not label_filename.startswith('.'):
-#                 data_files.append({
-#                     "image": os.path.join(data_dir, image_filename),
-#                     "label": os.path.join(data_dir, label_filename)
-#                 })
-        
-#         # Define base transforms
-#         transforms = [
-#             LoadImaged(keys=["image", "label"]),
-#             EnsureChannelFirstd(keys=["image", "label"]),
-#             Orientationd(keys=["image", "label"], axcodes="RAS"),
-#             ScaleIntensityd(keys=["image"]),
-#         ]
-        
-#         # Add augmentation for training
-#         if mode == 'train':
-#             transforms.extend([
-#                 RandGaussianNoised(keys=["image"], prob=0.15, std=0.01),
-#                 RandAdjustContrastd(keys=["image"], prob=0.15, gamma=(0.9, 1.1)),
-#             ])
-            
-#         transforms.append(ToTensord(keys=["image", "label"]))
-#         base_transforms = Compose(transforms)
-        
-
-
-#         # Create base dataset
-#         if cache:
-#             dataset = CacheDataset(data=data_files, transform=base_transforms)
-#         else:
-#             dataset = Dataset(data=data_files, transform=base_transforms)
-        
-
-#         if mode == 'train':
-#             # For training: use GridPatchDataset with augmentation
-#             patch_transforms = Compose([
-#                 RandRotate90d(keys=["image", "label"], prob=0.2, spatial_axes=[0, 1]),
-#                 RandFlipd(keys=["image", "label"], prob=0.2, spatial_axis=0),
-#             ])
-            
-#             patch_iter = PatchIter(patch_size=patch_size, start_pos=(0, 0))
-
-#             # Create grid patch dataset
-
-#             grid_patch_dataset = GridPatchDataset(
-#                 data=dataset,
-#                 patch_iter=patch_iter
-#                 transform=patch_transforms,
-#                 with_coordinates=False
-#             )
-            
-#             # Return train loader with grid patches
-#             num_workers = 0 if cache else min(4, os.cpu_count() // 2)
-#             loader = DataLoader(
-#                 grid_patch_dataset,
-#                 batch_size=batch_size,
-#                 shuffle=True,
-#                 num_workers=num_workers,
-#                 pin_memory=torch.cuda.is_available()
-#             )
-#         else:
-#             # For validation: return whole volume loader
-#             loader = DataLoader(
-#                 dataset,
-#                 batch_size=1,
-#                 shuffle=False,
-#                 num_workers=min(2, os.cpu_count() // 2),
-#                 pin_memory=torch.cuda.is_available()
-#             )
-        
-#         return loader
-
-
-
-# def create_loader_for_inference(self, data_dir):
-#     """Create data loader for validation/inference"""
-#     return self._create_grid_patch_loader(
-#         data_dir=data_dir,
-#         patch_size=self.config['patch_size'],
-#         batch_size=1,
-#         cache=self.config['use_cache'],
-#         mode='val'
-#     )
-
 
 
 
@@ -347,7 +246,7 @@ def train(rank: int, world_size: int, config, args) -> None:
     train_dataloader = DataLoader(train_dataset, 
                                   batch_size=int(batch_size), 
                                   num_workers = 3, 
-                                # sampler=DistributedSampler(train_patch_dataset), 
+                                  sampler=DistributedSampler(train_dataset), 
                                   shuffle=False,
                                   pin_memory=True)
                                   
@@ -390,7 +289,7 @@ def train(rank: int, world_size: int, config, args) -> None:
     for epoch in range(num_epochs):
         print(f"Epoch {epoch+1}\n-------------------------------")
 
-        train_loss, avg_train_dice, avg_train_haus, avg_train_dice_all, avg_train_haus_loss_all = train_loop(train_dataloader, 
+        train_loss, avg_train_dice, avg_train_haus, avg_train_dice_all, avg_train_haus_loss_all = train_patch_loop(train_dataloader, 
                                                                                                              device, 
                                                                                                              model, 
                                                                                                              loss_fn, 
@@ -470,8 +369,6 @@ def train(rank: int, world_size: int, config, args) -> None:
         wandb.finish()
 
     destroy_process_group()
-
-
 
 
 
