@@ -212,7 +212,11 @@ def train_patch_loop(
             print(f"Mask shape after combining patches into batch dimension: {y_volume.size()}")
         
 
+        print(f"\n\n Iterating over patches using a sub-batch size of {patch_batch_size}...\n\n")
+
         for i in range(0, X_volume.shape[0], patch_batch_size):
+            
+            print(f"\n\nLoading patches {i}-{i+patch_batch_size}/{X_volume.shape[0]} to device...\n\n")
 
             X = X_volume[i:i+patch_batch_size]
             y = y_volume[i:i+patch_batch_size]
@@ -311,7 +315,7 @@ def train_patch_loop(
 
 
 # Define a validation loop function for reuse later 
-def validation_loop(dataloader, device, model, loss_fn, num_classes, patch_size=None):
+def validation_loop(dataloader, device, model, loss_fn, num_classes, patch_size=None, inf_overlap=0.25):
 
     print("Running validation loop...")
 
@@ -360,7 +364,7 @@ def validation_loop(dataloader, device, model, loss_fn, num_classes, patch_size=
                                                     roi_size=patch_size, 
                                                     sw_batch_size=2, 
                                                     predictor=model, 
-                                                    overlap=0.25)
+                                                    overlap=inf_overlap)
                     
             else:
                 # Make predictions on the input features
