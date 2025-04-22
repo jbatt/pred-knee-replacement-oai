@@ -1,0 +1,25 @@
+{
+    "method": "grid",
+    "name": "segformer3d_5",
+    "metric": {"goal": "minimize", "name": "Val Loss"},
+    "parameters": {
+        "lr": {"values": [1e-3]},
+        "batch_size": {"values": [1]},
+        "num_epochs": {"values": [60]},
+        "transforms": {"values": [true]},
+        "in_channels": {"values": [1]},
+        "out_channels": {"values": [5]},
+        "num_kernels": {"values": [null]},
+        "feature_size": {"values": [null]},
+        "encoder": {"values": [null]}, 
+        "encoder_depth": {"values": [null]},
+        "img_size": {"values": [[256,256,160]]},
+        "img_crop": {"values": [[[25,281], [25,281], [0,160]]]},
+        "loss": {"values": ["ce_dice"]},
+        "patch_size": {"values": [[160,160,160]]},
+        "patch_batch_size": {"values": [4]},
+        "patch_stride": {"values": [[96,96,96]]},
+        "inf_overlap": {"values": [0.7]}
+    }
+}  
+
