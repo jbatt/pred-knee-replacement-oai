@@ -227,7 +227,7 @@ def train(rank: int, world_size: int, config, args) -> None:
     # Define PyTorch datasets and dataloader
 
     # Define datasets
-    train_dataset = KneeSegDataset3DMulticlass(train_paths, data_dir, num_classes=NUM_CLASSES, transform=transform, patch_size=wandb.config.patch_size)
+    train_dataset = KneeSegDataset3DMulticlass(train_paths, data_dir, num_classes=NUM_CLASSES, transform=transform, patch_size=wandb.config.patch_size, patch_stride=wandb.config.patch_stride)
     validation_dataset = KneeSegDataset3DMulticlass(val_paths, data_dir, num_classes=NUM_CLASSES, split='valid')
 
 
@@ -304,7 +304,9 @@ def train(rank: int, world_size: int, config, args) -> None:
                                                                                                                   model, 
                                                                                                                   loss_fn, 
                                                                                                                   num_classes=NUM_CLASSES,
-                                                                                                                  patch_size=wandb.config.patch_size)
+                                                                                                                  patch_size=wandb.config.patch_size,
+                                                                                                                  inf_overlap=wandb.config.inf_overlap)
+        
 
         if rank == 0:
             # log to wandb
