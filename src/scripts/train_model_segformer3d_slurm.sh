@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=train_seg_model
+#SBATCH --job-name=train_segformer
 #SBATCH --partition=gpu     # Request the GPU partition
 #SBATCH --gres=gpu:3        # Request 3 GPUs as 3 GPUs per node
 
@@ -19,4 +19,4 @@ module load miniforge
 conda activate pred-knee-replacement-oai
 
 # Run the training script with the selected input file
-python train_distributed_patch.py --model segformer3d --hpc-flag 1 < config/config_segformer3d_1.json
+python train_distributed_patch.py --model segformer3d --hpc-flag 1 < config/config_segformer3d_5.json
