@@ -173,13 +173,15 @@ def train(rank: int, world_size: int, config, args) -> None:
     num_epochs = wandb.config.num_epochs 
     
     # Create model using wandb config hyperparams
-    model = create_model(input_model_arg=args.model, 
+    model = create_model(input_model_arg=args.model,
                         in_channels =wandb.config.in_channels, 
                         out_channels=wandb.config.out_channels, 
                         num_kernels= wandb.config.num_kernels, 
                         encoder=wandb.config.encoder, # None/null used in config file if not relevant for model
                         encoder_depth=wandb.config.encoder_depth, # None/null used if not relevant for model
-                        patch_size=wandb.config.patch_size
+                        patch_size=wandb.config['patch']['patch_size'],
+                        num_heads=wandb.config['transformer']['num_heads'],
+                        depths=wandb.config['transformer']['depths']
     )
 
     # Use multiple gpu in parallel if available
@@ -227,8 +229,18 @@ def train(rank: int, world_size: int, config, args) -> None:
     # Define PyTorch datasets and dataloader
 
     # Define datasets
-    train_dataset = KneeSegDataset3DMulticlass(train_paths, data_dir, num_classes=NUM_CLASSES, transform=transform, patch_size=wandb.config.patch_size, patch_stride=wandb.config.patch_stride)
-    validation_dataset = KneeSegDataset3DMulticlass(val_paths, data_dir, num_classes=NUM_CLASSES, split='valid')
+    train_dataset = KneeSegDataset3DMulticlass(train_paths, 
+                                               data_dir, 
+                                               num_classes=NUM_CLASSES, 
+                                               transform=transform, 
+                                               patch_size=wandb.config['patch']['patch_size'], 
+                                               patch_stride=wandb.config['patch']['patch_stride'])
+   
+    validation_dataset = KneeSegDataset3DMulticlass(val_paths, 
+                                                    data_dir, 
+                                                    num_classes=NUM_CLASSES, 
+                                                    split='valid',
+                                                    )
 
 
     # Create patch-based datasets
@@ -260,6 +272,7 @@ def train(rank: int, world_size: int, config, args) -> None:
     print(f"\n\n[GPU{rank}] train_dataloader length = {len(train_dataloader)}")
     print(f"[GPU{rank}] validation_dataloader length = {len(validation_dataloader)}\n\n")
 
+
     #####################################################################################
     # LOSS FUNCTION AND OPTIMISERS
     #####################################################################################
@@ -274,6 +287,23 @@ def train(rank: int, world_size: int, config, args) -> None:
     # lr_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=8, verbose=True,
     #                                                           threshold=0.001, threshold_mode='abs')
 
+
+    # Calculate number of 3D patches in 3D volume to determine steps_per epoch for sceheduler 
+    patch_size = wandb.config['patch']['patch_size']
+    stride = wandb.config['patch']['patch_stride']
+    img_size = wandb.config['img_size']
+    number_of_patches = ((np.array(img_size) - np.array(patch_size)) / np.array(stride)) + 1
+    number_of_patches = np.prod(number_of_patches)
+    print(f"Calculate nuber of {patch_size} patches per {img_size} volume: {number_of_patches}")
+    
+    # Steps per epoch = (number of batches * number of patches) / patc sub-batch size 
+    steps_per_epoch = int((len(train_dataloader) * number_of_patches) / wandb.config['patch']['patch_batch_size'])
+    print(f"steps_per_epoch = {steps_per_epoch}")
+
+    # Create learnig rate scheudler with warmp and cosine annealing
+    lr_scheduler = torch.optim.lr_scheduler.OneCycleLR(optimizer=optimizer, max_lr=lr, steps_per_epoch=steps_per_epoch, epochs=num_epochs)
+    lr_history = []
+    
     scaler = torch.amp.GradScaler('cuda')
     
     early_stopper = EarlyStopper(patience=5, min_delta=0.001)
@@ -288,24 +318,42 @@ def train(rank: int, world_size: int, config, args) -> None:
 
     for epoch in range(num_epochs):
         print(f"Epoch {epoch+1}\n-------------------------------")
+        
 
+        # Plot learning rate in WandB
+        current_lr = optimizer.param_groups[0]["lr"]
+        print(f"Current learning rate: {current_lr}")
+
+        lr_history.append([epoch, current_lr])
+        lr_table = wandb.Table(data=lr_history, columns=["x", "y"])
+        wandb.log(
+            {
+                "learning_rate_history": wandb.plot.line(
+                    lr_table, "x", "y", title="Learning Rate vs Epoch"
+                )
+            }
+        )
+
+        # Run trainign loop
         train_loss, avg_train_dice, avg_train_haus, avg_train_dice_all, avg_train_haus_loss_all = train_patch_loop(train_dataloader, 
                                                                                                              device, 
                                                                                                              model, 
                                                                                                              loss_fn, 
                                                                                                              optimizer, 
                                                                                                              scaler, 
+                                                                                                             lr_scheduler,
                                                                                                              num_classes=NUM_CLASSES,
-                                                                                                             patch_size=wandb.config.patch_size,
-                                                                                                             patch_batch_size=wandb.config.patch_batch_size)
-                
+                                                                                                             patch_size=wandb.config['patch']['patch_size'],
+                                                                                                             patch_batch_size=wandb.config['patch']['patch_batch_size'])
+
+        # Run validation loop   
         valid_loss, avg_valid_dice, avg_valid_haus, avg_valid_dice_all, avg_valid_haus_loss_all = validation_loop(validation_dataloader, 
                                                                                                                   device, 
                                                                                                                   model, 
                                                                                                                   loss_fn, 
                                                                                                                   num_classes=NUM_CLASSES,
-                                                                                                                  patch_size=wandb.config.patch_size,
-                                                                                                                  inf_overlap=wandb.config.inf_overlap)
+                                                                                                                  patch_size=wandb.config['patch']['patch_size'],
+                                                                                                                  inference_overlap=wandb.config['patch']['inference_overlap'])
         
 
         if rank == 0:
