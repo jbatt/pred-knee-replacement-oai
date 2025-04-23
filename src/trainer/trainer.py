@@ -17,7 +17,7 @@ def train_loop(
         model, 
         loss_fn, 
         optimizer,
-        scaler, 
+        scaler,
         num_classes,
         patch_size=None
     ):
@@ -95,6 +95,9 @@ def train_loop(
         scaler.update()
 
 
+
+
+
         
         # Store batch size
         batch_size = len(y)
@@ -153,6 +156,14 @@ def train_loop(
             avg_epoch_dice_all, avg_epoch_haus_loss_all)
 
 
+
+
+
+
+
+
+##################### PATCH-BASED TRAINING LOOP #################################
+
 # Define a training loop function for training using patches for reuse later 
 def train_patch_loop(
         dataloader, 
@@ -161,6 +172,7 @@ def train_patch_loop(
         loss_fn, 
         optimizer,
         scaler, 
+        lr_scheduler,
         num_classes,
         patch_size=None,
         patch_batch_size=32
@@ -254,8 +266,11 @@ def train_patch_loop(
             scaler.step(optimizer)
             scaler.update()
 
+            # Perform learning rate step
+            lr_scheduler.step()
 
-            
+
+      
             # Store batch size
             batch_size = len(y)
 
@@ -314,8 +329,17 @@ def train_patch_loop(
 
 
 
+
+
+
+
+
+
+
+
+
 # Define a validation loop function for reuse later 
-def validation_loop(dataloader, device, model, loss_fn, num_classes, patch_size=None, inf_overlap=0.25):
+def validation_loop(dataloader, device, model, loss_fn, num_classes, patch_size=None, inference_overlap=0.25):
 
     print("Running validation loop...")
 
@@ -364,7 +388,7 @@ def validation_loop(dataloader, device, model, loss_fn, num_classes, patch_size=
                                                     roi_size=patch_size, 
                                                     sw_batch_size=2, 
                                                     predictor=model, 
-                                                    overlap=inf_overlap)
+                                                    overlap=inference_overlap)
                     
             else:
                 # Make predictions on the input features
@@ -419,7 +443,7 @@ def validation_loop(dataloader, device, model, loss_fn, num_classes, patch_size=
     valid_avg_epoch_dice_all = valid_epoch_dice_all.mean(axis=0)
     valid_avg_epoch_haus_loss_all = valid_epoch_haus_loss_all.mean(axis=0)
 
-    # lr_scheduler.step(validation_loss/len(dataloader))
+
 
     print(f"""\n
         Validation Error: \n 
