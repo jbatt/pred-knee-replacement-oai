@@ -13,7 +13,9 @@ def create_model(
         encoder_depth=4,
         img_size=(288,288,160),
         feature_size=48,
-        patch_size=None
+        patch_size=None,
+        depths=(2, 2, 2, 2),
+        num_heads=(3, 6, 12, 24),
     ):
     
     if input_model_arg == "manet":
@@ -32,6 +34,8 @@ def create_model(
                           in_channels=in_channels, 
                           out_channels=out_channels, 
                           feature_size=feature_size,
+                          num_heads=num_heads,
+                          depths=depths,
                           use_checkpoint=True)
         print(f"Model created:\n{model}")
     
