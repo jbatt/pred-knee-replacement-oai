@@ -248,29 +248,16 @@ def train_patch_loop(
                 # assert pred.dtype is torch.float16 - removed for now as amp may return float32 objects
                 print(f"Prediction type: {pred.dtype}")
 
+                # Calculate loss - normalised by number of patches in volume as gradients are accumulated
                 print("Calculating loss...")
-                loss = loss_fn(pred, y)
+                loss = loss_fn(pred, y) / X_volume.shape[0]
                 assert loss.dtype is torch.float32
             
 
-
-
-            # Reset gradients to zero
-            optimizer.zero_grad(set_to_none=True)
-
-            # Backpropagation
+            # Backpropagation - optimiser step is performed after all patches in volume have been processed (gradient accumulated)
             print("Computing backpropagation...")        
             scaler.scale(loss).backward()
-
-            # Perform model step
-            scaler.step(optimizer)
-            scaler.update()
-
-            # Perform learning rate step
-            lr_scheduler.step()
-
-
-      
+            
             # Store batch size
             batch_size = len(y)
 
@@ -315,6 +302,16 @@ def train_patch_loop(
 
             torch.cuda.empty_cache()
 
+        # Perform model step - gradients have been accumulated over patch sub-batch
+        scaler.step(optimizer)
+        scaler.update()            
+        
+        # Reset gradients to zero
+        optimizer.zero_grad(set_to_none=True)
+
+        # Perform learning rate step
+        lr_scheduler.step()
+    
     # Calculate the average loss and accuracy for the epoch
     avg_epoch_loss = sum(epoch_loss) / len(epoch_loss)
     avg_epoch_dice =  sum(epoch_dice) / len(epoch_loss) 
@@ -386,9 +383,11 @@ def validation_loop(dataloader, device, model, loss_fn, num_classes, patch_size=
                 with torch.autocast(device_type='cuda', dtype=torch.float16):
                     pred = sliding_window_inference(X, 
                                                     roi_size=patch_size, 
-                                                    sw_batch_size=2, 
+                                                    sw_batch_size=4, 
                                                     predictor=model, 
                                                     overlap=inference_overlap)
+                    
+                    print(f"Prediction shape from sliding window: {pred.shape}")
                     
             else:
                 # Make predictions on the input features
