@@ -264,7 +264,7 @@ def train(rank: int, world_size: int, config, args) -> None:
                                   
     validation_dataloader = DataLoader(validation_dataset, 
                                        batch_size=3, 
-                                       num_workers = 3, 
+                                       num_workers=3, 
                                        sampler=DistributedSampler(validation_dataset), 
                                        shuffle=False)
 
@@ -355,6 +355,36 @@ def train(rank: int, world_size: int, config, args) -> None:
                                                                                                                   patch_size=wandb.config['patch']['patch_size'],
                                                                                                                   inference_overlap=wandb.config['patch']['inference_overlap'])
         
+        print(f"""\n\n------------------------------------------------------\n
+              Epoch {epoch+1} training metrics - logging the following to WandB:\n)
+                "Train Loss": {train_loss} 
+                "Train Dice Score": {avg_train_dice}
+                "Train Dice Score (Background)": {avg_train_dice_all[0]}
+                "Train Dice Score (Femoral Cart.)": {avg_train_dice_all[1]}
+                "Train Dice Score (Tibial Cart.)": {avg_train_dice_all[2]}
+                "Train Dice Score (Patellar Cart.)": {avg_train_dice_all[3]}
+                "Train Dice Score (Meniscus)": {avg_train_dice_all[4]}
+                "Train Hausdorff Loss": {avg_train_haus}
+                "Train Hausdorff Loss (Background)": {avg_train_haus_loss_all[0]}
+                "Train Hausdorff Loss (Femoral Cart.)": {avg_train_haus_loss_all[1]}
+                "Train Hausdorff Loss (Tibial Cart.)": {avg_train_haus_loss_all[2]}
+                "Train Hausdorff Loss (Patellar Cart.)": {avg_train_haus_loss_all[3]}
+                "Train Hausdorff Loss (Meniscus)": {avg_train_haus_loss_all[4]}
+                "Val Loss": {valid_loss} 
+                "Val Dice Score": {avg_valid_dice}
+                "Val Dice Score (Background)": {avg_valid_dice_all[0]}
+                "Val Dice Score (Femoral Cart.)": {avg_valid_dice_all[1]}
+                "Val Dice Score (Tibial Cart.)": {avg_valid_dice_all[2]}
+                "Val Dice Score (Patellar Cart.)": {avg_valid_dice_all[3]}
+                "Val Dice Score (Meniscus)": {avg_valid_dice_all[4]}
+                "Val Hausdorff Loss": {avg_valid_haus}
+                "Val Hausdorff Loss (Background)": {avg_valid_haus_loss_all[0]}
+                "Val Hausdorff Loss (Femoral Cart.)": {avg_valid_haus_loss_all[1]}
+                "Val Hausdorff Loss (Tibial Cart.)": {avg_valid_haus_loss_all[2]}
+                "Val Hausdorff Loss (Patellar Cart.)": {avg_valid_haus_loss_all[3]}
+                "Val Hausdorff Loss (Meniscus)": {avg_valid_haus_loss_all[4]}
+            """
+            )
 
         if rank == 0:
             # log to wandb
