@@ -36,7 +36,7 @@ from models.model_unet import UNet3DMulticlass
 from utils.utils import EarlyStopper
 from data.datasets import KneeSegDataset3DMulticlass
 from metrics.loss import create_loss, ce_dice_loss_multi_batch #, dice_coefficient, batch_dice_coeff
-from trainer.trainer import train_loop, validation_loop 
+from trainer.trainer import train_patch_loop, validation_loop 
 from models.create_model import create_model
 
 from monai.data import Dataset, GridPatchDataset, CacheDataset, PatchIter, partition_dataset
@@ -110,107 +110,6 @@ def define_dataset_paths(hpc):
 
 
 
-# def create_grid_patch_loader(data_dir, patch_size, batch_size, cache=False, mode='train'):
-#         """Create data loader with grid patch sampling"""
-        
-#         # Create data dictionaries
-#         data_files = []
-
-#         image_files = sorted(glob.glob(os.path.join(data_dir, mode, '*.im')))
-#         print(f"image_files = {image_files}")
-
-#         label_files = sorted(glob.glob(os.path.join(data_dir, mode, '*.seg')))
-#         print(f"label_files = {label_files}")
-
-        
-#         for image_filename, label_filename in zip(image_files, label_files):
-#             if not image_filename.startswith('.') and not label_filename.startswith('.'):
-#                 data_files.append({
-#                     "image": os.path.join(data_dir, image_filename),
-#                     "label": os.path.join(data_dir, label_filename)
-#                 })
-        
-#         # Define base transforms
-#         transforms = [
-#             LoadImaged(keys=["image", "label"]),
-#             EnsureChannelFirstd(keys=["image", "label"]),
-#             Orientationd(keys=["image", "label"], axcodes="RAS"),
-#             ScaleIntensityd(keys=["image"]),
-#         ]
-        
-#         # Add augmentation for training
-#         if mode == 'train':
-#             transforms.extend([
-#                 RandGaussianNoised(keys=["image"], prob=0.15, std=0.01),
-#                 RandAdjustContrastd(keys=["image"], prob=0.15, gamma=(0.9, 1.1)),
-#             ])
-            
-#         transforms.append(ToTensord(keys=["image", "label"]))
-#         base_transforms = Compose(transforms)
-        
-
-
-#         # Create base dataset
-#         if cache:
-#             dataset = CacheDataset(data=data_files, transform=base_transforms)
-#         else:
-#             dataset = Dataset(data=data_files, transform=base_transforms)
-        
-
-#         if mode == 'train':
-#             # For training: use GridPatchDataset with augmentation
-#             patch_transforms = Compose([
-#                 RandRotate90d(keys=["image", "label"], prob=0.2, spatial_axes=[0, 1]),
-#                 RandFlipd(keys=["image", "label"], prob=0.2, spatial_axis=0),
-#             ])
-            
-#             patch_iter = PatchIter(patch_size=patch_size, start_pos=(0, 0))
-
-#             # Create grid patch dataset
-
-#             grid_patch_dataset = GridPatchDataset(
-#                 data=dataset,
-#                 patch_iter=patch_iter
-#                 transform=patch_transforms,
-#                 with_coordinates=False
-#             )
-            
-#             # Return train loader with grid patches
-#             num_workers = 0 if cache else min(4, os.cpu_count() // 2)
-#             loader = DataLoader(
-#                 grid_patch_dataset,
-#                 batch_size=batch_size,
-#                 shuffle=True,
-#                 num_workers=num_workers,
-#                 pin_memory=torch.cuda.is_available()
-#             )
-#         else:
-#             # For validation: return whole volume loader
-#             loader = DataLoader(
-#                 dataset,
-#                 batch_size=1,
-#                 shuffle=False,
-#                 num_workers=min(2, os.cpu_count() // 2),
-#                 pin_memory=torch.cuda.is_available()
-#             )
-        
-#         return loader
-
-
-
-# def create_loader_for_inference(self, data_dir):
-#     """Create data loader for validation/inference"""
-#     return self._create_grid_patch_loader(
-#         data_dir=data_dir,
-#         patch_size=self.config['patch_size'],
-#         batch_size=1,
-#         cache=self.config['use_cache'],
-#         mode='val'
-#     )
-
-
-
-
 ###############################################################################################
 # PARRALLELSED TRAINING SETUP - DISTRIBUTED DATA PARALLEL 
 ###############################################################################################
@@ -274,12 +173,15 @@ def train(rank: int, world_size: int, config, args) -> None:
     num_epochs = wandb.config.num_epochs 
     
     # Create model using wandb config hyperparams
-    model = create_model(input_model_arg=args.model, 
+    model = create_model(input_model_arg=args.model,
                         in_channels =wandb.config.in_channels, 
                         out_channels=wandb.config.out_channels, 
                         num_kernels= wandb.config.num_kernels, 
                         encoder=wandb.config.encoder, # None/null used in config file if not relevant for model
-                        encoder_depth=wandb.config.encoder_depth # None/null used if not relevant for model
+                        encoder_depth=wandb.config.encoder_depth, # None/null used if not relevant for model
+                        patch_size=wandb.config['patch']['patch_size'],
+                        num_heads=wandb.config['transformer']['num_heads'],
+                        depths=wandb.config['transformer']['depths']
     )
 
     # Use multiple gpu in parallel if available
@@ -327,38 +229,49 @@ def train(rank: int, world_size: int, config, args) -> None:
     # Define PyTorch datasets and dataloader
 
     # Define datasets
-    train_dataset = KneeSegDataset3DMulticlass(train_paths, data_dir, num_classes=NUM_CLASSES, transform=transform)
-    validation_dataset = KneeSegDataset3DMulticlass(val_paths, data_dir, num_classes=NUM_CLASSES, split='valid')
+    train_dataset = KneeSegDataset3DMulticlass(train_paths, 
+                                               data_dir, 
+                                               num_classes=NUM_CLASSES, 
+                                               transform=transform, 
+                                               patch_size=wandb.config['patch']['patch_size'], 
+                                               patch_stride=wandb.config['patch']['patch_stride'])
+   
+    validation_dataset = KneeSegDataset3DMulticlass(val_paths, 
+                                                    data_dir, 
+                                                    num_classes=NUM_CLASSES, 
+                                                    split='valid',
+                                                    )
 
 
     # Create patch-based datasets
-    patch_iter = PatchIter(patch_size=wandb.config.patch_size, start_pos=(0, 0))
-    train_patch_dataset = GridPatchDataset(
-        data=train_dataset,
-        patch_iter=patch_iter,
-    )
+    # patch_iter = PatchIter(patch_size=wandb.config.patch_size, start_pos=(0, 0))
+    # train_patch_dataset = GridPatchDataset(
+    #     data=train_dataset,
+    #     patch_iter=patch_iter,
+    # )
 
 
 
     # Define dataloaders
     # DistirbutedSampler - batch chunked over all gpus evently 
     # Shuffle = False required for DistributedSampler
-    train_dataloader = DataLoader(train_patch_dataset, 
+    train_dataloader = DataLoader(train_dataset, 
                                   batch_size=int(batch_size), 
                                   num_workers = 3, 
-                                #   sampler=DistributedSampler(train_patch_dataset), 
+                                  sampler=DistributedSampler(train_dataset), 
                                   shuffle=False,
                                   pin_memory=True)
                                   
     validation_dataloader = DataLoader(validation_dataset, 
                                        batch_size=3, 
-                                       num_workers = 3, 
+                                       num_workers=3, 
                                        sampler=DistributedSampler(validation_dataset), 
                                        shuffle=False)
 
     
     print(f"\n\n[GPU{rank}] train_dataloader length = {len(train_dataloader)}")
     print(f"[GPU{rank}] validation_dataloader length = {len(validation_dataloader)}\n\n")
+
 
     #####################################################################################
     # LOSS FUNCTION AND OPTIMISERS
@@ -373,6 +286,24 @@ def train(rank: int, world_size: int, config, args) -> None:
     # Removed for now
     # lr_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=8, verbose=True,
     #                                                           threshold=0.001, threshold_mode='abs')
+
+
+    # Calculate number of 3D patches in 3D volume to determine steps_per epoch for sceheduler 
+    patch_size = wandb.config['patch']['patch_size']
+    stride = wandb.config['patch']['patch_stride']
+    img_size = wandb.config['img_size']
+    number_of_patches = ((np.array(img_size) - np.array(patch_size)) / np.array(stride)) + 1
+    number_of_patches = np.prod(number_of_patches)
+    print(f"Calculate nuber of {patch_size} patches per {img_size} volume: {number_of_patches}")
+    
+    # Steps per epoch = (number of batches * number of patches) / patc sub-batch size 
+    steps_per_epoch = int((len(train_dataloader) * number_of_patches) / wandb.config['patch']['patch_batch_size'])
+    print(f"steps_per_epoch = {steps_per_epoch}")
+
+    # Create learnig rate scheudler with warmp and cosine annealing
+    lr_scheduler = torch.optim.lr_scheduler.OneCycleLR(optimizer=optimizer, max_lr=lr, steps_per_epoch=steps_per_epoch, epochs=num_epochs)
+    lr_history = []
+    
     scaler = torch.amp.GradScaler('cuda')
     
     early_stopper = EarlyStopper(patience=5, min_delta=0.001)
@@ -387,21 +318,73 @@ def train(rank: int, world_size: int, config, args) -> None:
 
     for epoch in range(num_epochs):
         print(f"Epoch {epoch+1}\n-------------------------------")
+        
 
-        train_loss, avg_train_dice, avg_train_haus, avg_train_dice_all, avg_train_haus_loss_all = train_loop(train_dataloader, 
+        # Plot learning rate in WandB
+        current_lr = optimizer.param_groups[0]["lr"]
+        print(f"Current learning rate: {current_lr}")
+
+        lr_history.append([epoch, current_lr])
+        lr_table = wandb.Table(data=lr_history, columns=["x", "y"])
+        wandb.log(
+            {
+                "learning_rate_history": wandb.plot.line(
+                    lr_table, "x", "y", title="Learning Rate vs Epoch"
+                )
+            }
+        )
+
+        # Run trainign loop
+        train_loss, avg_train_dice, avg_train_haus, avg_train_dice_all, avg_train_haus_loss_all = train_patch_loop(train_dataloader, 
                                                                                                              device, 
                                                                                                              model, 
                                                                                                              loss_fn, 
                                                                                                              optimizer, 
                                                                                                              scaler, 
-                                                                                                             num_classes=NUM_CLASSES)
-        
+                                                                                                             lr_scheduler,
+                                                                                                             num_classes=NUM_CLASSES,
+                                                                                                             patch_size=wandb.config['patch']['patch_size'],
+                                                                                                             patch_batch_size=wandb.config['patch']['patch_batch_size'])
+
+        # Run validation loop   
         valid_loss, avg_valid_dice, avg_valid_haus, avg_valid_dice_all, avg_valid_haus_loss_all = validation_loop(validation_dataloader, 
                                                                                                                   device, 
                                                                                                                   model, 
                                                                                                                   loss_fn, 
                                                                                                                   num_classes=NUM_CLASSES,
-                                                                                                                  patch_size=wandb.config.patch_size)
+                                                                                                                  patch_size=wandb.config['patch']['patch_size'],
+                                                                                                                  inference_overlap=wandb.config['patch']['inference_overlap'])
+        
+        print(f"""\n\n------------------------------------------------------\n
+              Epoch {epoch+1} training metrics - logging the following to WandB:\n)
+                "Train Loss": {train_loss} 
+                "Train Dice Score": {avg_train_dice}
+                "Train Dice Score (Background)": {avg_train_dice_all[0]}
+                "Train Dice Score (Femoral Cart.)": {avg_train_dice_all[1]}
+                "Train Dice Score (Tibial Cart.)": {avg_train_dice_all[2]}
+                "Train Dice Score (Patellar Cart.)": {avg_train_dice_all[3]}
+                "Train Dice Score (Meniscus)": {avg_train_dice_all[4]}
+                "Train Hausdorff Loss": {avg_train_haus}
+                "Train Hausdorff Loss (Background)": {avg_train_haus_loss_all[0]}
+                "Train Hausdorff Loss (Femoral Cart.)": {avg_train_haus_loss_all[1]}
+                "Train Hausdorff Loss (Tibial Cart.)": {avg_train_haus_loss_all[2]}
+                "Train Hausdorff Loss (Patellar Cart.)": {avg_train_haus_loss_all[3]}
+                "Train Hausdorff Loss (Meniscus)": {avg_train_haus_loss_all[4]}
+                "Val Loss": {valid_loss} 
+                "Val Dice Score": {avg_valid_dice}
+                "Val Dice Score (Background)": {avg_valid_dice_all[0]}
+                "Val Dice Score (Femoral Cart.)": {avg_valid_dice_all[1]}
+                "Val Dice Score (Tibial Cart.)": {avg_valid_dice_all[2]}
+                "Val Dice Score (Patellar Cart.)": {avg_valid_dice_all[3]}
+                "Val Dice Score (Meniscus)": {avg_valid_dice_all[4]}
+                "Val Hausdorff Loss": {avg_valid_haus}
+                "Val Hausdorff Loss (Background)": {avg_valid_haus_loss_all[0]}
+                "Val Hausdorff Loss (Femoral Cart.)": {avg_valid_haus_loss_all[1]}
+                "Val Hausdorff Loss (Tibial Cart.)": {avg_valid_haus_loss_all[2]}
+                "Val Hausdorff Loss (Patellar Cart.)": {avg_valid_haus_loss_all[3]}
+                "Val Hausdorff Loss (Meniscus)": {avg_valid_haus_loss_all[4]}
+            """
+            )
 
         if rank == 0:
             # log to wandb
@@ -470,8 +453,6 @@ def train(rank: int, world_size: int, config, args) -> None:
 
 
 
-
-
 def main_train(args) -> None:
     # Hyperparameter sweep configuration
     # config = wandb.config
@@ -522,14 +503,6 @@ if __name__ == '__main__':
     #####################################################################################
     # SET HYPERPARAMETERS - PARSE STANRDARD INPUT (JSON)
     #####################################################################################
-
-    # # Load in hyperparams using model CLI argument
-    # config_filepath = os.path.join('.', 'config', f'config_{args.model}.json')
-
-    # with open(config_filepath) as f:
-    #     sweep_configuration = json.load(f)
-
-    # print(f"sweep_configuation = {sweep_configuration}")
 
     std_input_data = None
 

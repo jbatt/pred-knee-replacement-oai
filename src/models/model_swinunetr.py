@@ -14,8 +14,9 @@ class SwinUNETRModel(nn.Module):
         attn_drop_rate: float = 0.0,
         dropout_path_rate: float = 0.1,
         use_checkpoint: bool = True,
-        num_heads: tuple = (1, 2, 4, 8),
-        depths: tuple = (1, 1, 1, 1),
+        num_heads: tuple = (1, 2, 4),
+        depths: tuple = (1, 1, 1),
+        use_v2: bool = True,
 
     ):
         """
@@ -44,6 +45,7 @@ class SwinUNETRModel(nn.Module):
             use_checkpoint=use_checkpoint,
             num_heads=num_heads,
             depths=depths,
+            use_v2=use_v2
         )
     
     def forward(self, x: torch.Tensor) -> torch.Tensor:

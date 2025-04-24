@@ -8,10 +8,21 @@ import numpy as np
 from utils.utils import crop_im, crop_mask, clip_and_norm
 from monai.data import GridPatchDataset
 
+# TODO - implement stride in patch creation 
 
 # Multiclass knee cartilage MRI volumes and segmentation masks
 class KneeSegDataset3DMulticlass(Dataset):
-    def __init__(self, file_paths, data_dir, num_classes, img_crop=[[25,281],[25,281],[0,160]], split='train', transform=None, transform_chance=0.5):
+    def __init__(self, 
+                 file_paths, 
+                 data_dir, 
+                 num_classes, 
+                 img_crop=[[25,281],[25,281],[0,160]], 
+                 split='train', 
+                 transform=None, 
+                 transform_chance=0.5, 
+                 patch_size=None,
+                 patch_stride=None):
+        
         self.file_paths = file_paths
         self.data_dir = data_dir
         self.split = split
@@ -19,6 +30,8 @@ class KneeSegDataset3DMulticlass(Dataset):
         self.transform_chance = transform_chance
         self.num_classes = num_classes
         self.img_crop = img_crop
+        self.patch_size = patch_size
+        self.patch_stride = patch_stride
 
     # Return length of dataset
     def __len__(self):
@@ -168,6 +181,28 @@ class KneeSegDataset3DMulticlass(Dataset):
             if random.random() < self.transform_chance:
                 image = self.transform(image)
                 mask = self.transform(mask)
+
+
+        if self.patch_size is not None:
+            # Original image and mask shapes
+            print(f"Original image shape: {image.shape}")
+            print(f"Original mask shape {mask.shape}")
+
+            # Unfold image into patches
+            image = image.unfold(1,self.patch_size[0], self.patch_stride[0]).unfold(2,self.patch_size[1], self.patch_stride[1]).unfold(3,self.patch_size[2], self.patch_stride[2])
+            print(f"Unfolded image shape: {image.shape}")
+
+            # Reshape image to have patches as the first dimension
+            image = image.reshape(-1, self.patch_size[0], self.patch_size[1], self.patch_size[2])
+            print(f"Reshaped image shape: {image.shape}")
+            
+            # Unfold mask into patches
+            mask = mask.unfold(2, self.patch_size[0], self.patch_stride[0]).unfold(3, self.patch_size[1], self.patch_stride[1]).unfold(4, self.patch_size[2], self.patch_stride[2])
+            print(f"Unfolded mask shape: {mask.shape}")
+
+            mask = mask.reshape(-1, self.num_classes, self.patch_size[0], self.patch_size[1], self.patch_size[2])
+            print(f"Reshaped mask shape: {mask.shape}")            
+            
 
         return image, mask
     

@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=train_seg_model
+#SBATCH --job-name=train_swinunetr
 #SBATCH --partition=gpu     # Request the GPU partition
 #SBATCH --gres=gpu:3        # Request 3 GPUs as 3 GPUs per node
 
@@ -18,8 +18,9 @@ module load cuda
 module load miniforge
 conda activate pred-knee-replacement-oai
 
-export PYTORCH_CUDA_ALLOC_CONF=garbage_collection_threshold:0.2,expandable_segments:True
+# Adjust pytorch garbage collection threshold to manage memory
+# export PYTORCH_CUDA_ALLOC_CONF=garbage_collection_threshold:0.2,expandable_segments:True
 
 # Run the training script with the selected input file
-python train_distributed.py --model swin_unetr --hpc-flag 1 < config/config_swinunetr_1.json
+python train_distributed_patch.py --model swin_unetr --hpc-flag 1 < config/config_swinunetr_7.json
 
