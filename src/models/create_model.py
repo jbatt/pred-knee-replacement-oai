@@ -34,8 +34,8 @@ def create_model(
                           in_channels=in_channels, 
                           out_channels=out_channels, 
                           feature_size=feature_size,
-                          num_heads=num_heads,
-                          depths=depths,
+                          num_heads=tuple(num_heads),
+                          depths=tuple(depths),
                           use_checkpoint=True)
         print(f"Model created:\n{model}")
     
