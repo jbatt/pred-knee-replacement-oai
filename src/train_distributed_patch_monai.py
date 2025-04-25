@@ -235,7 +235,8 @@ def train(rank: int, world_size: int, config, args) -> None:
                                                transform=transform, 
                                                patch_size=wandb.config['patch']['patch_size'], 
                                                patch_stride=wandb.config['patch']['patch_stride'],
-                                               patch_method=wandb.config['patch']['patch_method'],)
+                                               patch_method=wandb.config['patch']['patch_method'],
+                                               num_patches=wandb.config['patch']['num_patches'],)
    
     validation_dataset = KneeSegDataset3DMulticlass(val_paths, 
                                                     data_dir, 
@@ -258,13 +259,13 @@ def train(rank: int, world_size: int, config, args) -> None:
     # Shuffle = False required for DistributedSampler
     train_dataloader = DataLoader(train_dataset, 
                                   batch_size=int(batch_size), 
-                                  num_workers = 3, 
+                                  num_workers=3, 
                                   sampler=DistributedSampler(train_dataset), 
                                   shuffle=False,
                                   pin_memory=True)
                                   
     validation_dataloader = DataLoader(validation_dataset, 
-                                       batch_size=3, 
+                                       batch_size=6, 
                                        num_workers=3, 
                                        sampler=DistributedSampler(validation_dataset), 
                                        shuffle=False)
@@ -297,15 +298,22 @@ def train(rank: int, world_size: int, config, args) -> None:
         number_of_patches = ((np.array(img_size) - np.array(patch_size)) / np.array(stride)) + 1
         number_of_patches = np.prod(number_of_patches)
         print(f"Calculate nuber of {patch_size} patches per {img_size} volume: {number_of_patches}")
+
+        steps_per_epoch = int((len(train_dataloader) * number_of_patches) / wandb.config['patch']['patch_batch_size'])
     else:
-        number_of_patches = 1
+        number_of_patches = wandb.config['patch']['num_patches']
+        # Steps per epoch = (number of batches * number of patches) / patc sub-batch size 
+        steps_per_epoch = int((len(train_dataloader) * number_of_patches))
     
-    # Steps per epoch = (number of batches * number of patches) / patc sub-batch size 
-    steps_per_epoch = int((len(train_dataloader) * number_of_patches) / wandb.config['patch']['patch_batch_size'])
     print(f"steps_per_epoch = {steps_per_epoch}")
 
-    # Create learnig rate scheudler with warmp and cosine annealing
-    lr_scheduler = torch.optim.lr_scheduler.OneCycleLR(optimizer=optimizer, max_lr=lr, steps_per_epoch=steps_per_epoch, epochs=num_epochs, pct_start=0.2)
+    # Create learnig rate scheduler with cosine annealing
+    lr_scheduler = torch.optim.lr_scheduler.OneCycleLR(optimizer=optimizer, 
+                                                       max_lr=lr, 
+                                                       steps_per_epoch=steps_per_epoch, 
+                                                       epochs=num_epochs, 
+                                                       pct_start=wandb.config['optimizer']['pct_start'], 
+                                                       div_factor=wandb.config['optimizer']['div_factor'],)
     lr_history = []
     
     scaler = torch.amp.GradScaler('cuda')
@@ -349,7 +357,8 @@ def train(rank: int, world_size: int, config, args) -> None:
                                                                                                              num_classes=NUM_CLASSES,
                                                                                                              patch_size=wandb.config['patch']['patch_size'],
                                                                                                              patch_batch_size=wandb.config['patch']['patch_batch_size'],
-                                                                                                             patch_method=wandb.config['patch']['patch_method'])
+                                                                                                             patch_method=wandb.config['patch']['patch_method'],
+                                                                                                             )
 
         # Run validation loop   
         valid_loss, avg_valid_dice, avg_valid_haus, avg_valid_dice_all, avg_valid_haus_loss_all = validation_loop(validation_dataloader, 
@@ -361,47 +370,47 @@ def train(rank: int, world_size: int, config, args) -> None:
                                                                                                                   inference_overlap=wandb.config['patch']['inference_overlap'])
         
         print(f"""\n\n------------------------------------------------------\n
-              Epoch {epoch+1} training metrics - logging the following to WandB:\n)
-                "Train Loss": {train_loss} 
-                "Train Dice Score": {avg_train_dice}
-                "Train Dice Score (Background)": {avg_train_dice_all[0]}
-                "Train Dice Score (Femoral Cart.)": {avg_train_dice_all[1]}
-                "Train Dice Score (Tibial Cart.)": {avg_train_dice_all[2]}
-                "Train Dice Score (Patellar Cart.)": {avg_train_dice_all[3]}
-                "Train Dice Score (Meniscus)": {avg_train_dice_all[4]}
-                "Train Hausdorff Loss": {avg_train_haus}
-                "Train Hausdorff Loss (Background)": {avg_train_haus_loss_all[0]}
-                "Train Hausdorff Loss (Femoral Cart.)": {avg_train_haus_loss_all[1]}
-                "Train Hausdorff Loss (Tibial Cart.)": {avg_train_haus_loss_all[2]}
-                "Train Hausdorff Loss (Patellar Cart.)": {avg_train_haus_loss_all[3]}
-                "Train Hausdorff Loss (Meniscus)": {avg_train_haus_loss_all[4]}
-                "Val Loss": {valid_loss} 
-                "Val Dice Score": {avg_valid_dice}
-                "Val Dice Score (Background)": {avg_valid_dice_all[0]}
-                "Val Dice Score (Femoral Cart.)": {avg_valid_dice_all[1]}
-                "Val Dice Score (Tibial Cart.)": {avg_valid_dice_all[2]}
-                "Val Dice Score (Patellar Cart.)": {avg_valid_dice_all[3]}
-                "Val Dice Score (Meniscus)": {avg_valid_dice_all[4]}
-                "Val Hausdorff Loss": {avg_valid_haus}
-                "Val Hausdorff Loss (Background)": {avg_valid_haus_loss_all[0]}
-                "Val Hausdorff Loss (Femoral Cart.)": {avg_valid_haus_loss_all[1]}
-                "Val Hausdorff Loss (Tibial Cart.)": {avg_valid_haus_loss_all[2]}
-                "Val Hausdorff Loss (Patellar Cart.)": {avg_valid_haus_loss_all[3]}
-                "Val Hausdorff Loss (Meniscus)": {avg_valid_haus_loss_all[4]}
+            Epoch {epoch+1} training metrics - logging the following to WandB:\n
+            "Train Loss": {train_loss} - type: {type(train_loss)}
+            "Train Dice Score": {avg_train_dice} - type: {type(avg_train_dice)}
+            "Train Dice Score (Background)": {avg_train_dice_all[0]} - type: {type(avg_train_dice_all[0])}
+            "Train Dice Score (Femoral Cart.)": {avg_train_dice_all[1]} - type: {type(avg_train_dice_all[1])}
+            "Train Dice Score (Tibial Cart.)": {avg_train_dice_all[2]} - type: {type(avg_train_dice_all[2])}
+            "Train Dice Score (Patellar Cart.)": {avg_train_dice_all[3]} - type: {type(avg_train_dice_all[3])}
+            "Train Dice Score (Meniscus)": {avg_train_dice_all[4]} - type: {type(avg_train_dice_all[4])}
+            "Train Hausdorff Loss": {avg_train_haus.tolist()} - type: {type(avg_train_haus)}
+            "Train Hausdorff Loss (Background)": {avg_train_haus_loss_all[0]} - type: {type(avg_train_haus_loss_all[0])}
+            "Train Hausdorff Loss (Femoral Cart.)": {avg_train_haus_loss_all[1]} - type: {type(avg_train_haus_loss_all[1])}
+            "Train Hausdorff Loss (Tibial Cart.)": {avg_train_haus_loss_all[2]} - type: {type(avg_train_haus_loss_all[2])}
+            "Train Hausdorff Loss (Patellar Cart.)": {avg_train_haus_loss_all[3]} - type: {type(avg_train_haus_loss_all[3])}
+            "Train Hausdorff Loss (Meniscus)": {avg_train_haus_loss_all[4]} - type: {type(avg_train_haus_loss_all[4])}
+            "Val Loss": {valid_loss} - type: {type(valid_loss)}
+            "Val Dice Score": {avg_valid_dice} - type: {type(avg_valid_dice)}
+            "Val Dice Score (Background)": {avg_valid_dice_all[0]} - type: {type(avg_valid_dice_all[0])}
+            "Val Dice Score (Femoral Cart.)": {avg_valid_dice_all[1]} - type: {type(avg_valid_dice_all[1])}
+            "Val Dice Score (Tibial Cart.)": {avg_valid_dice_all[2]} - type: {type(avg_valid_dice_all[2])}
+            "Val Dice Score (Patellar Cart.)": {avg_valid_dice_all[3]} - type: {type(avg_valid_dice_all[3])}
+            "Val Dice Score (Meniscus)": {avg_valid_dice_all[4]} - type: {type(avg_valid_dice_all[4])}
+            "Val Hausdorff Loss": {avg_valid_haus.tolist()} - type: {type(avg_valid_haus)}
+            "Val Hausdorff Loss (Background)": {avg_valid_haus_loss_all[0]} - type: {type(avg_valid_haus_loss_all[0])}
+            "Val Hausdorff Loss (Femoral Cart.)": {avg_valid_haus_loss_all[1]} - type: {type(avg_valid_haus_loss_all[1])}
+            "Val Hausdorff Loss (Tibial Cart.)": {avg_valid_haus_loss_all[2]} - type: {type(avg_valid_haus_loss_all[2])}
+            "Val Hausdorff Loss (Patellar Cart.)": {avg_valid_haus_loss_all[3]} - type: {type(avg_valid_haus_loss_all[3])}
+            "Val Hausdorff Loss (Meniscus)": {avg_valid_haus_loss_all[4]} - type: {type(avg_valid_haus_loss_all[4])}
             """
-            )
+        )
 
         if rank == 0:
             # log to wandb
             wandb.log({
-                "Train Loss": train_loss, 
+                "Train Loss": train_loss.item(), 
                 "Train Dice Score": avg_train_dice,
                 "Train Dice Score (Background)": avg_train_dice_all[0],
                 "Train Dice Score (Femoral Cart.)": avg_train_dice_all[1],
                 "Train Dice Score (Tibial Cart.)": avg_train_dice_all[2],
                 "Train Dice Score (Patellar Cart.)": avg_train_dice_all[3],
                 "Train Dice Score (Meniscus)": avg_train_dice_all[4],
-                "Train Hausdorff Loss": avg_train_haus,
+                "Train Hausdorff Loss": avg_train_haus.tolist(),
                 "Train Hausdorff Loss (Background)": avg_train_haus_loss_all[0],
                 "Train Hausdorff Loss (Femoral Cart.)": avg_train_haus_loss_all[1],
                 "Train Hausdorff Loss (Tibial Cart.)": avg_train_haus_loss_all[2],
@@ -414,8 +423,8 @@ def train(rank: int, world_size: int, config, args) -> None:
                 "Val Dice Score (Tibial Cart.)": avg_valid_dice_all[2],
                 "Val Dice Score (Patellar Cart.)": avg_valid_dice_all[3],
                 "Val Dice Score (Meniscus)": avg_valid_dice_all[4],
-                "Val Hausdorff Loss": avg_valid_haus,
-                "Val Hausdorff Loss (Background)": avg_valid_haus_loss_all[0],
+                "Val Hausdorff Loss": avg_valid_haus.tolist(),
+                "Val Hausdorff Loss (Backgrounqd)": avg_valid_haus_loss_all[0],
                 "Val Hausdorff Loss (Femoral Cart.)": avg_valid_haus_loss_all[1],
                 "Val Hausdorff Loss (Tibial Cart.)": avg_valid_haus_loss_all[2],
                 "Val Hausdorff Loss (Patellar Cart.)": avg_valid_haus_loss_all[3],
