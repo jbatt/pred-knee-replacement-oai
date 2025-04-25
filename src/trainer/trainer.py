@@ -176,7 +176,7 @@ def train_patch_loop(
         num_classes,
         patch_size=None,
         patch_batch_size=32,
-        patch_method="grid_pytorch"
+        patch_method="grid_pytorch",
     ):
 
     print("Running training loop...")
