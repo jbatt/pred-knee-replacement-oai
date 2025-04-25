@@ -19,4 +19,4 @@ module load miniforge
 conda activate pred-knee-replacement-oai
 
 # Run the training script with the selected input file
-python train_distributed_patch_monai.py --model segformer3d --hpc-flag 1 < config/config_segformer3d_8.json
+python train_distributed_patch_monai.py --model segformer3d --hpc-flag 1 < config/config_segformer3d_10.json
