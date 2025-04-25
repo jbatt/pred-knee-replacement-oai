@@ -40,7 +40,7 @@ from trainer.trainer import train_patch_loop, validation_loop
 from models.create_model import create_model
 
 from monai.data import Dataset, GridPatchDataset, CacheDataset, PatchIter, partition_dataset
-from monai.transforms import (
+from monai.transforms import ( # TODO incorporte more transforms into dataset 
     LoadImaged,
     EnsureChannelFirstd,
     Orientationd,
@@ -234,7 +234,8 @@ def train(rank: int, world_size: int, config, args) -> None:
                                                num_classes=NUM_CLASSES, 
                                                transform=transform, 
                                                patch_size=wandb.config['patch']['patch_size'], 
-                                               patch_stride=wandb.config['patch']['patch_stride'])
+                                               patch_stride=wandb.config['patch']['patch_stride'],
+                                               patch_method=wandb.config['patch']['patch_method'])
    
     validation_dataset = KneeSegDataset3DMulticlass(val_paths, 
                                                     data_dir, 
@@ -289,19 +290,21 @@ def train(rank: int, world_size: int, config, args) -> None:
 
 
     # Calculate number of 3D patches in 3D volume to determine steps_per epoch for sceheduler 
-    patch_size = wandb.config['patch']['patch_size']
-    stride = wandb.config['patch']['patch_stride']
-    img_size = wandb.config['img_size']
-    number_of_patches = ((np.array(img_size) - np.array(patch_size)) / np.array(stride)) + 1
-    number_of_patches = np.prod(number_of_patches)
-    print(f"Calculate nuber of {patch_size} patches per {img_size} volume: {number_of_patches}")
-    
+    if wandb.config['patch']['patch_method'] == 'grid_pytorch':
+        patch_size = wandb.config['patch']['patch_size']
+        stride = wandb.config['patch']['patch_stride']
+        img_size = wandb.config['img_size']
+        number_of_patches = ((np.array(img_size) - np.array(patch_size)) / np.array(stride)) + 1
+        number_of_patches = np.prod(number_of_patches)
+        print(f"Calculate nuber of {patch_size} patches per {img_size} volume: {number_of_patches}")
+    else:
+        number_of_patches = 1
     # Steps per epoch = (number of batches * number of patches) / patc sub-batch size 
     steps_per_epoch = int((len(train_dataloader) * number_of_patches) / wandb.config['patch']['patch_batch_size'])
     print(f"steps_per_epoch = {steps_per_epoch}")
 
     # Create learnig rate scheudler with warmp and cosine annealing
-    lr_scheduler = torch.optim.lr_scheduler.OneCycleLR(optimizer=optimizer, max_lr=lr, steps_per_epoch=steps_per_epoch, epochs=num_epochs)
+    lr_scheduler = torch.optim.lr_scheduler.OneCycleLR(optimizer=optimizer, max_lr=lr, steps_per_epoch=steps_per_epoch, epochs=num_epochs, pct_start=0.2)
     lr_history = []
     
     scaler = torch.amp.GradScaler('cuda')
