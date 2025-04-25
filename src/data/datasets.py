@@ -36,7 +36,8 @@ class KneeSegDataset3DMulticlass(Dataset):
                  transform_chance=0.5, 
                  patch_size=None,
                  patch_stride=None,
-                 patch_method = None):
+                 patch_method = None,
+                 num_patches=1):
         
         self.file_paths = file_paths
         self.data_dir = data_dir
@@ -48,6 +49,7 @@ class KneeSegDataset3DMulticlass(Dataset):
         self.patch_size = patch_size
         self.patch_stride = patch_stride
         self.patch_method = patch_method
+        self.num_patches = num_patches
         
 
 
@@ -239,16 +241,28 @@ class KneeSegDataset3DMulticlass(Dataset):
                 "label": mask,
             }
             
-            # Define patch extraction transform
-            self.patch_transform = RandCropByLabelClassesd(
+            # Define patch extraction and augmentation transforms
+            self.patch_transform = Compose([
+
+                # Define patch extraction transform
+                RandCropByLabelClassesd(
                 keys=["image", "label"],
                 label_key="label",
                 spatial_size=self.patch_size,
-                ratios=[1, 1, 1, 1, 1], # centre patches with equal probability for each class
+                ratios=[1, 1, 1, 1, 1], # centre patches on each class with equal probability
                 num_classes=self.num_classes,
-                num_samples=1,  # Just one patch per call TODO: update this
-            )
-            
+                num_samples=self.num_patches,  # Just one patch per call TODO: update this
+                ),
+                # Patch data augmentation
+                RandFlipd(keys=["image", "label"], prob=0.5, spatial_axis=0),
+                RandFlipd(keys=["image", "label"], prob=0.5, spatial_axis=1),
+                RandFlipd(keys=["image", "label"], prob=0.5, spatial_axis=2),
+                RandScaleIntensityd(keys="image", factors=0.1, prob=0.5),
+                RandShiftIntensityd(keys="image", offsets=0.1, prob=0.5),
+                ToTensord(keys=["image", "label"]),
+            ])
+
+
             # Apply MONAI patch extraction
             data_dict = self.patch_transform(data_dict)
             # Optional: Convert back to tuple format if needed
