@@ -1,0 +1,42 @@
+{
+    "method": "grid",
+    "name": "swin_unetr_8",
+    "metric": {"goal": "minimize", "name": "Val Loss"},
+    "parameters": {
+        "lr": {"values": [0.0008]},
+        "batch_size": {"values": [1]},
+        "num_epochs": {"values": [400]},
+        "transforms": {"values": [true]},
+        "in_channels": {"values": [1]},
+        "out_channels": {"values": [5]},
+        "num_kernels": {"values": [null]},
+        "feature_size": {"values": [24]},
+        "encoder": {"values": [null]}, 
+        "encoder_depth": {"values": [null]},
+        "img_size": {"values": [[256,256,160]]},
+        "img_crop": {"values": [[[25,281], [25,281], [0,160]]]},
+        "loss": {"values": ["ce_dice"]},
+        "optimizer": {
+            "parameters": {
+                "pct_start": {"values": [0.1]},
+                "div_factor": {"values": [100]}
+            }
+        },
+        "patch": {
+            "parameters": {
+                "patch_size": {"values": [[128,128,128]]},
+                "patch_batch_size": {"values": [2]},
+                "patch_stride": {"values": [[96,96,96]]},
+                "inference_overlap": {"values": [0.7]},
+                "num_patches": {"values": [1]},
+                "patch_method": {"values": ["random_monai"]}
+            }
+        },
+        "transformer": {
+            "parameters": {
+                "depths": {"values": [[2, 2, 2, 2]]}, 
+                "num_heads": {"values": [[3, 6, 12, 24]]}
+            }
+        }
+    }
+}
