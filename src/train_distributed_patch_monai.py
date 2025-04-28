@@ -283,7 +283,7 @@ def train(rank: int, world_size: int, config, args) -> None:
     # loss_fn = ce_dice_loss_multi_batch
     
     # optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
-    optimizer = torch.optim.Adam(model.parameters(), lr=lr) # Removed weight decay for now as will address regularisation later if it's required
+    optimizer = torch.optim.Adam(model.parameters(), lr=lr/10) # Removed weight decay for now as will address regularisation later if it's required
 
     # Removed for now
     # lr_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=8, verbose=True,
@@ -297,15 +297,18 @@ def train(rank: int, world_size: int, config, args) -> None:
         img_size = wandb.config['img_size']
         number_of_patches = ((np.array(img_size) - np.array(patch_size)) / np.array(stride)) + 1
         number_of_patches = np.prod(number_of_patches)
-        print(f"Calculate nuber of {patch_size} patches per {img_size} volume: {number_of_patches}")
+        print(f"Calculated nuber of {patch_size} patches per {img_size} volume: {number_of_patches}\n")
 
         steps_per_epoch = int((len(train_dataloader) * number_of_patches) / wandb.config['patch']['patch_batch_size'])
     else:
+        # TODO may need to remove number_of_patches from this calculation
+        # Number of patches is the argumnet passed to the MONAI patch sampler
         number_of_patches = wandb.config['patch']['num_patches']
         # Steps per epoch = (number of batches * number of patches) / patc sub-batch size 
         steps_per_epoch = int((len(train_dataloader) * number_of_patches))
-    
-    print(f"steps_per_epoch = {steps_per_epoch}")
+
+
+    print(f"steps_per_epoch = {steps_per_epoch}\n")
 
     # Create learnig rate scheduler with cosine annealing
     lr_scheduler = torch.optim.lr_scheduler.OneCycleLR(optimizer=optimizer, 
