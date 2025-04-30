@@ -69,11 +69,13 @@ class KneeSegDataset3DMulticlass(Dataset):
             im_path = os.path.join(self.data_dir, self.split, path + '.im')
             seg_path = os.path.join(self.data_dir, 'test_gt', path + '.npy')
 
+            print(f"Getting image from {im_path}")
             # Open the image file
             with h5py.File(im_path,'r') as hf:
                 image = np.array(hf['data'])
             
             # Load the mask
+            print(f"Getting mask from {seg_path}")
             mask = np.load(seg_path)
 
 
