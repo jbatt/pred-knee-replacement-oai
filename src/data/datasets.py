@@ -7,6 +7,20 @@ import os
 import numpy as np
 from utils.utils import crop_im, crop_mask, clip_and_norm
 from monai.data import GridPatchDataset
+from monai.transforms import (
+    Compose,
+    LoadImaged,
+    EnsureChannelFirstd,
+    Orientationd,
+    Spacingd,
+    RandCropByLabelClassesd,
+    RandFlipd,
+    NormalizeIntensityd,
+    RandScaleIntensityd,
+    RandShiftIntensityd,
+    ToTensord,
+)
+
 
 # TODO - implement stride in patch creation 
 
@@ -21,7 +35,9 @@ class KneeSegDataset3DMulticlass(Dataset):
                  transform=None, 
                  transform_chance=0.5, 
                  patch_size=None,
-                 patch_stride=None):
+                 patch_stride=None,
+                 patch_method = None,
+                 num_patches=1):
         
         self.file_paths = file_paths
         self.data_dir = data_dir
@@ -32,6 +48,10 @@ class KneeSegDataset3DMulticlass(Dataset):
         self.img_crop = img_crop
         self.patch_size = patch_size
         self.patch_stride = patch_stride
+        self.patch_method = patch_method
+        self.num_patches = num_patches
+        
+
 
     # Return length of dataset
     def __len__(self):
@@ -49,11 +69,13 @@ class KneeSegDataset3DMulticlass(Dataset):
             im_path = os.path.join(self.data_dir, self.split, path + '.im')
             seg_path = os.path.join(self.data_dir, 'test_gt', path + '.npy')
 
+            print(f"Getting image from {im_path}")
             # Open the image file
             with h5py.File(im_path,'r') as hf:
                 image = np.array(hf['data'])
             
             # Load the mask
+            print(f"Getting mask from {seg_path}")
             mask = np.load(seg_path)
 
 
@@ -173,17 +195,10 @@ class KneeSegDataset3DMulticlass(Dataset):
         image = torch.from_numpy(image).float().unsqueeze(0)
         mask = torch.from_numpy(mask).float().unsqueeze(0)
 
-        # Apply transforms
-        if self.transform != None:
-
-            # Manually apply trasnforms with randomisation as image and mask must have the same transforms applied
-            # Generate a random number, if above a threshold apply the transform to the image and the mask 
-            if random.random() < self.transform_chance:
-                image = self.transform(image)
-                mask = self.transform(mask)
 
 
-        if self.patch_size is not None:
+        # Extract patches using sliding widnow over full volume based on patch_size and patch_stride (using Pytorch torch.unfold) 
+        if self.patch_method == "grid_pytorch" and self.patch_size is not None:
             # Original image and mask shapes
             print(f"Original image shape: {image.shape}")
             print(f"Original mask shape {mask.shape}")
@@ -202,7 +217,77 @@ class KneeSegDataset3DMulticlass(Dataset):
 
             mask = mask.reshape(-1, self.num_classes, self.patch_size[0], self.patch_size[1], self.patch_size[2])
             print(f"Reshaped mask shape: {mask.shape}")            
+
+
+
+        # Apply monai patch extraction (random patches)   
+        if self.patch_method == "random_monai" and self.patch_size is not None:
             
+
+            print(f"Original image shape: {image.shape}")
+            print(f"Original mask shape {mask.shape}")
+
+            # # Add channel dimension of 1 to image to match MONAI requirements
+            # image = image.unsqueeze(0) 
+
+            mask = mask.squeeze(0)  # Remove the channel dimension from the mask
+            
+            # Convert mask to single channel from onehot encoding
+            # mask = torch.argmax(mask, dim=0, keepdim=True)
+
+            print(f"Image shape after unsqueeze: {image.shape}")
+
+            print(f"Extracting patches using MOANI random patch extraction...")
+            data_dict = {
+                "image": image,
+                "label": mask,
+            }
+            
+            # Define patch extraction and augmentation transforms
+            self.patch_transform = Compose([
+
+                # Define patch extraction transform
+                RandCropByLabelClassesd(
+                keys=["image", "label"],
+                label_key="label",
+                spatial_size=self.patch_size,
+                ratios=[1, 1, 1, 1, 1], # centre patches on each class with equal probability
+                num_classes=self.num_classes,
+                num_samples=self.num_patches,  # Just one patch per call TODO: update this
+                ),
+                # Patch data augmentation
+                RandFlipd(keys=["image", "label"], prob=0.5, spatial_axis=0),
+                RandFlipd(keys=["image", "label"], prob=0.5, spatial_axis=1),
+                RandFlipd(keys=["image", "label"], prob=0.5, spatial_axis=2),
+                RandScaleIntensityd(keys="image", factors=0.1, prob=0.5),
+                RandShiftIntensityd(keys="image", offsets=0.1, prob=0.5),
+                ToTensord(keys=["image", "label"]),
+            ])
+
+
+            # Apply MONAI patch extraction
+            data_dict = self.patch_transform(data_dict)
+            # Optional: Convert back to tuple format if needed
+            print(f"Data dict 0 after MONAI patch extraction: {data_dict[0]["image"].shape}")
+            print(f"Data dict 1 after MONAI patch extraction: {data_dict[0]["label"].shape}")
+
+            image = data_dict[0]["image"]
+            mask = data_dict[0]["label"]
+
+            print(f"Image shape after MONAI patch extraction: {image.shape}")
+            print(f"Mask shape after MONAI patch extraction: {mask.shape}")
+
+
+
+        # Apply transforms
+        if self.transform != None:
+
+            # Manually apply trasnforms with randomisation as image and mask must have the same transforms applied
+            # Generate a random number, if above a threshold apply the transform to the image and the mask 
+            if random.random() < self.transform_chance:
+                image = self.transform(image)
+                mask = self.transform(mask)
+
 
         return image, mask
     

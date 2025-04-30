@@ -98,5 +98,5 @@ target/
 # SLURM output files
 *.out
 
-# Exclude results figures folder
-/results/figures/
+# Exclude results folder
+/results/
