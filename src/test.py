@@ -20,16 +20,19 @@ from models.create_model import create_model
 from utils.utils import crop_mask
 from metrics.metrics import calculate_mean_thickness
 
+from monai.inferers import sliding_window_inference
 
 # TODO: tidy up create model function
 # TODO: save data as 3D numpy array in folder set by model name and date
 
 def main(args):
 
+    NUM_CLASSES = 5
     # %% Save run start time for output directory
     run_start_time = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     print(f"Run start time: {run_start_time}")
-    
+    print(f"Args: {args}\n\n")
+
     res_dir = "/users/scjb/pred-knee-replacement-oai/results/eval_metrics"
     res_dir = Path(os.path.join(res_dir, args.model, run_start_time))
     
@@ -54,6 +57,7 @@ def main(args):
         # Create output directory
         pred_masks_dir = Path(pred_masks_dir)
         pred_masks_dir.mkdir(parents=True, exist_ok=True)
+        print(f"Pred masks dir: {pred_masks_dir}")
 
 
 
@@ -62,26 +66,53 @@ def main(args):
     test_gt_paths = [i for i in glob.glob(f'{test_gt_dir}/*.npy')]
     test_gt_paths = sorted(test_gt_paths)
 
+
+
     print(f'Number of test images: {len(test_gt_paths)}')
     print(f'Test images: {test_gt_paths}')
 
 
     # If the model is not nnunet, create the model, load the weights and run inference
     if args.inference:
+
+        test_dir = os.path.join(args.data_dir, 'test')
+        test_img_paths = [os.path.basename(i).split('.')[0] for i in glob.glob(f'{test_dir}/*.im')]
+        test_img_paths = sorted(test_img_paths)
+
+        print(f'Number of test images: {len(test_img_paths)}')
+        print(f'Test images: {test_img_paths}\n\n')
+
+
         # %% Read config json file into config variable
         with open(args.config, 'r') as f:
             config = json.load(f)
         
+        print(f"Config file: {config}\n\n")
         # %% Create model using wandb config hyperparams
-        model = create_model(input_model_arg=args.model, 
-                            in_channels =config.in_channels, 
-                            out_channels=config.out_channels, 
-                            num_kernels= config.num_kernels, 
-                            encoder=config.encoder, # None/null used in config file if not relevant for model
-                            encoder_depth=config.encoder_depth, # None/null used if not relevant for model
-                            img_size=config.img_size,
-                            img_crop=config.img_crop,
-                            feature_size=config.feature_size
+
+
+        print(f"""Creating model: {args.model}
+              Model parameters:
+                in_channels: {config['parameters']['in_channels']['values']}
+                out_channels: {config['parameters']['out_channels']['values']}
+                num_kernels: {config['parameters']['num_kernels']['values']}
+                encoder: {config['parameters']['encoder']['values']}
+                encoder_depth: {config['parameters']['encoder_depth']['values']}
+                patch_size: {config['parameters']['patch']['parameters']['patch_size']['values']}
+                num_heads: {config['parameters']['transformer']['parameters']['num_heads']['values']}
+                depths: {config['parameters']['transformer']['parameters']['depths']['values']}\n\n
+        """)
+
+
+        model = create_model(input_model_arg=args.model,
+                    in_channels =config['parameters']['in_channels']['values'][0], 
+                    out_channels=config['parameters']['out_channels']['values'][0], 
+                    num_kernels= config['parameters']['num_kernels']['values'][0], 
+                    encoder=config['parameters']['encoder']['values'][0], # None/null used in config file if not relevant for model
+                    encoder_depth=config['parameters']['encoder_depth']['values'][0], # None/null used if not relevant for model
+                    patch_size=config['parameters']['patch']['parameters']['patch_size']['values'][0],
+                    num_heads=config['parameters']['transformer']['parameters']['num_heads']['values'][0],
+                    depths=config['parameters']['transformer']['parameters']['depths']['values'][0]
         )
 
         model.load_state_dict(torch.load(args.model_weights))
@@ -92,7 +123,23 @@ def main(args):
         model = model.to(device)
         
         # Create dataset and dataloader
-        test_dataset = KneeSegDataset3DMulticlass(data_dir=args.data_dir, split='test', img_crop=config.img_crop)    
+        test_dataset = KneeSegDataset3DMulticlass(file_paths=test_img_paths, 
+                                                  data_dir=args.data_dir, 
+                                                  num_classes=NUM_CLASSES, 
+                                                  split='test', 
+                                                  img_crop=config['parameters']['img_crop']['values'][0])    
+
+        # KneeSegDataset3DMulticlass(train_paths, 
+        #                             data_dir, 
+        #                             num_classes=NUM_CLASSES, 
+        #                             transform=transform, 
+        #                             patch_size=wandb.config['patch']['patch_size'], 
+        #                             patch_stride=wandb.config['patch']['patch_stride'],
+        #                             patch_method=wandb.config['patch']['patch_method'],
+        #                             num_patches=wandb.config['patch']['num_patches'],)
+        
+        
+
         test_loader = DataLoader(test_dataset, batch_size=1, shuffle=False)
 
         # Process each image
@@ -107,23 +154,45 @@ def main(args):
                 # Forward pass
                 pred = model(im)
 
-                # Save prediction
-                pred = pred.cpu().numpy()
+                # If using a transformer-based model, use sliding window inference
+                if args.model in ['swin_unetr', 'segformer3d']:
+                                
+                    print(f"Performing sliding window inference with patch size: {config['parameters']['patch']['parameters']['patch_size']['values'][0]}")
+                    # Perform sliding window inference
+                    pred = sliding_window_inference(im, 
+                                                    roi_size=config['parameters']['patch']['parameters']['patch_size']['values'][0], 
+                                                    sw_batch_size=4, 
+                                                    predictor=model, 
+                                                    overlap=config['parameters']['patch']['parameters']['inference_overlap']['values'][0])
+                    
+                    print(f"Prediction shape from sliding window: {pred.shape}")
+                        
+                else:
+                    # Make predictions on the input features
+                    pred = model(im)
 
+
+    
                 print(f"Prediction shape: {pred.shape}\n")
+                print(f"Prediction type: {type(pred)}")
 
                 # convert model outputs from logits to probability
                 pred_prob = nn.functional.softmax(pred, dim=1)
 
-                pred_binary_mask = (pred>0.5).astype(int)
+                # Get predicted class
+                pred_binary_mask = torch.argmax(pred_prob, dim=1)
+
+                # Save prediction
+                pred_binary_mask = pred_binary_mask.cpu().numpy()
 
                 # save predicted mask
-                np.save(os.path.join(pred_masks_dir, test_gt_paths[idx]), pred_binary_mask)
+                print(f"Saving predicted mask {os.path.basename(test_gt_paths[idx])} to {pred_masks_dir}")
+                np.save(os.path.join(pred_masks_dir, os.path.basename(test_gt_paths[idx])), pred_binary_mask)
 
 
     # Create list of predicted segentation masks - nnunet outputs .nii.gz whereas other models output .npy
     if args.model != 'nnunet':
-        pred_mask_paths = [os.path.join(pred_masks_dir, i) for i in os.listdir(pred_masks_dir) if i.endswith('.npy')]
+        pred_mask_paths = [os.path.join(pred_masks_dir, os.path.basename(i)) for i in os.listdir(pred_masks_dir) if i.endswith('.npy')]
         pred_mask_paths = sorted(pred_mask_paths)
         
     else:
@@ -168,17 +237,33 @@ def main(args):
         else:
             y_pred = np.load(pred_mask_path)
             # Save mask as nifti file as useful for plotting later
-            y_pred_nii = nib.Nifti1Image(mask, np.eye(4))
+            y_pred = y_pred.astype(np.int16)
+            y_pred_nii = nib.Nifti1Image(y_pred, np.eye(4)) # changed to y_pred from "mask"
             nib.save(y_pred_nii, os.path.join(pred_masks_dir, f"{os.path.basename(pred_mask_path).split('.')[0]}.nii.gz"))
 
         y = np.load(gt_im_path)
+        print(f"y shape pre-cropping: {y.shape}")
+        print(f"y unique values: {np.unique(y)}")
 
-        # Move classes dimension to be firt dimension
-        y = np.transpose(y, (3,0,1,2))
+        # Move classes dimension to be first dimension
+        y = np.transpose(y, (3,0,1,2)) # TODO: this may be needed for nnunet
         
         # Crop ground truth to match predicted
-        y = crop_mask(y, dim1_lower=40, dim1_upper=312, dim2_lower=42, dim2_upper=314, onehot=True)
+        # y = crop_mask(y, dim1_lower=40, dim1_upper=312, dim2_lower=42, dim2_upper=314, onehot=True)
 
+        
+        print(f""" Crop parameters:
+            dim1_lower = {config['parameters']['img_crop']['values'][0][0][0]}
+            dim1_upper = {config['parameters']['img_crop']['values'][0][0][1]}
+            dim2_lower = {config['parameters']['img_crop']['values'][0][1][0]}
+            dim2_upper = {config['parameters']['img_crop']['values'][0][1][1]}
+        """)
+
+        y = crop_mask(y, 
+                      dim1_lower=config['parameters']['img_crop']['values'][0][0][0], 
+                      dim1_upper=config['parameters']['img_crop']['values'][0][0][1], 
+                      dim2_lower=config['parameters']['img_crop']['values'][0][1][0], 
+                      dim2_upper=config['parameters']['img_crop']['values'][0][1][1])
 
 
         # Add background channel to ground truth - y
@@ -195,8 +280,11 @@ def main(args):
         # Add batch of 1 to y and y_pred for monai dice calc
         y = torch.unsqueeze(torch.tensor(y), dim=0)
         
+        print(f"y_pred shape pre unsqueeze: {y_pred.shape}")
         y_pred = torch.unsqueeze(torch.tensor(y_pred), dim=0)
-        y_pred = torch.unsqueeze(torch.tensor(y_pred), dim=0)
+        #y_pred = torch.unsqueeze(torch.tensor(y_pred), dim=0)
+        print(f"y_pred shape post unsqueeze: {y_pred.shape}")
+
 
         # Convert y_pred to onehot encoding
         y_pred = monai.networks.utils.one_hot(y_pred, num_classes=5)
