@@ -95,7 +95,8 @@ def generate_nnunet_dataset(data_path,
                             nnunet_raw_path, 
                             nnunet_dataset_name="Dataset014_OAISubset", 
                             train=False, 
-                            test=False) -> None:
+                            test=False,
+                            img_crop=[[25,281], [25,281], [0,160]]) -> None:
     """
     Prepare dataset for nnU-Net by organizing files in the required structure.
     
@@ -224,8 +225,8 @@ def generate_nnunet_dataset(data_path,
                 mask = np.argmax(mask, axis=0).astype(np.uint8)
 
                 # Crop images and masks
-                image = crop_im(image, dim1_lower=40, dim1_upper=312, dim2_lower=42, dim2_upper=314)
-                mask = crop_mask(mask, dim1_lower=40, dim1_upper=312, dim2_lower=42, dim2_upper=314, onehot=False)
+                image = crop_im(image, dim1_lower=img_crop[0][0], dim1_upper=img_crop[0][1], dim2_lower=img_crop[1][0], dim2_upper=img_crop[1][1])
+                mask = crop_mask(mask, dim1_lower=img_crop[0][0], dim1_upper=img_crop[0][1], dim2_lower=img_crop[1][0], dim2_upper=img_crop[1][1], onehot=False)
 
                 # Normalise image
                 image = clip_and_norm(image, 0.005)
@@ -261,7 +262,7 @@ def generate_nnunet_dataset(data_path,
                 print(f"Image shape: {image.shape}")
 
             # Crop images
-            image = crop_im(image, dim1_lower=40, dim1_upper=312, dim2_lower=42, dim2_upper=314)
+            image = crop_im(image, dim1_lower=img_crop[0][0], dim1_upper=img_crop[0][1], dim2_lower=img_crop[1][0], dim2_upper=img_crop[1][1])
             image = clip_and_norm(image, 0.005)
 
             save_numpy_to_nifti(image, test_dest_filename)
@@ -276,8 +277,9 @@ def main():
     parser = argparse.ArgumentParser(description='Convert OAI dataset to nnU-Net format')
     parser.add_argument('--generate-data', type=int, help='Whether or not to generate the dataset')
     parser.add_argument('--generate-json', type=int, help='Whether or not to generate the dataset.json file')
-    parser.add_argument('--train', help='Whether or not to convert training data', action='store_true') # Default is False
-    parser.add_argument('--test', help='Whether or not to convert test data', action='store_true') # Default is False
+    parser.add_argument('--train', help='Whether or not to convert training data', action=argparse.BooleanOptionalAction) # Default is False
+    parser.add_argument('--test', help='Whether or not to convert test data', action=argparse.BooleanOptionalAction) # Default is False
+    parser.add_argument('--img-crop', type=list, help='Image crop dimensions', default=[[25,281], [25,281], [0,160]])  
     
     args = parser.parse_args()
 

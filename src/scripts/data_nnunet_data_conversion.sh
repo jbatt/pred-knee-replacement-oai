@@ -8,8 +8,13 @@
 #SBATCH --mail-user=scjb@leeds.ac.uk # Email address for notifications
 #SBATCH --mail-type=BEGIN,END
 
+module load cuda
+
+module load miniforge
+conda activate pred-knee-replacement-oai
+
 # Run the visualization script
-python data/nnunet_data_convserion.py --generate-data 1 --generate-json 1 --train False --test True 
+python data/nnunet_data_convserion.py --generate-data 1 --generate-json 1 --train --test 
 
 
 # End of script

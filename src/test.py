@@ -71,6 +71,11 @@ def main(args):
     print(f'Number of test images: {len(test_gt_paths)}')
     print(f'Test images: {test_gt_paths}')
 
+    # %% Read config json file into config variable
+    with open(args.config, 'r') as f:
+        config = json.load(f)
+    
+    print(f"Config file: {config}\n\n")
 
     # If the model is not nnunet, create the model, load the weights and run inference
     if args.inference:
@@ -83,11 +88,7 @@ def main(args):
         print(f'Test images: {test_img_paths}\n\n')
 
 
-        # %% Read config json file into config variable
-        with open(args.config, 'r') as f:
-            config = json.load(f)
-        
-        print(f"Config file: {config}\n\n")
+
         # %% Create model using wandb config hyperparams
 
 
@@ -129,16 +130,6 @@ def main(args):
                                                   split='test', 
                                                   img_crop=config['parameters']['img_crop']['values'][0])    
 
-        # KneeSegDataset3DMulticlass(train_paths, 
-        #                             data_dir, 
-        #                             num_classes=NUM_CLASSES, 
-        #                             transform=transform, 
-        #                             patch_size=wandb.config['patch']['patch_size'], 
-        #                             patch_stride=wandb.config['patch']['patch_stride'],
-        #                             patch_method=wandb.config['patch']['patch_method'],
-        #                             num_patches=wandb.config['patch']['num_patches'],)
-        
-        
 
         test_loader = DataLoader(test_dataset, batch_size=1, shuffle=False)
 
@@ -249,7 +240,8 @@ def main(args):
         y = np.transpose(y, (3,0,1,2)) # TODO: this may be needed for nnunet
         
         # Crop ground truth to match predicted
-        # y = crop_mask(y, dim1_lower=40, dim1_upper=312, dim2_lower=42, dim2_upper=314, onehot=True)
+        # if args.model == 'nnunet':
+        #     y = crop_mask(y, dim1_lower=40, dim1_upper=312, dim2_lower=42, dim2_upper=314, onehot=True)
 
         
         print(f""" Crop parameters:
@@ -282,7 +274,10 @@ def main(args):
         
         print(f"y_pred shape pre unsqueeze: {y_pred.shape}")
         y_pred = torch.unsqueeze(torch.tensor(y_pred), dim=0)
-        #y_pred = torch.unsqueeze(torch.tensor(y_pred), dim=0)
+        
+        if args.model == 'nnunet': # if using nnunet, add a second dim of 1
+            y_pred = torch.unsqueeze(torch.tensor(y_pred), dim=0)
+    
         print(f"y_pred shape post unsqueeze: {y_pred.shape}")
 
 
