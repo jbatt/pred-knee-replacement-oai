@@ -13,5 +13,9 @@ conda activate pred-knee-replacement-oai
 
 # Run the visualization script
 python visualization/visualize.py --model nnunet --run_start_time 2025-04-01_11-39-52 --pred_masks_dir /mnt/scratch/scjb/data/processed/ --results_dir /mnt/scratch/scjb/results/
+
+python visualization/visualize.py --model nnunet --run_start_time 2025-04-01_11-39-52 --pred_masks_dir /mnt/scratch/scjb/data/processed/ --results_dir /mnt/scratch/scjb/results/
+
+
 # End of script
 
