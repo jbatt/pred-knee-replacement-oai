@@ -303,15 +303,15 @@ def main(args):
         dice_scores.append(dice)
         print(f"dice scores: {dice_scores}")
 
-        # Hausdorff distance # TODO: implement spacing in HD calc?
-        hd = monai.metrics.compute_hausdorff_distance(y_pred, y, include_background=False, spacing=[0.36,0.36,0.7])
+        # Hausdorff distance 
+        hd = monai.metrics.compute_hausdorff_distance(y_pred, y, include_background=False, spacing=[0.36,0.36,0.7], percentile=95.0)  # uninterpolated resolution [0.365, 0.456, 0.7]
         hd = hd.squeeze().tolist()
         hd.append(os.path.basename(gt_im_path))
         print(f"Hausdorff distance for {gt_im_path}: {hd}")
         hausdorff_distances.append(hd)
 
         # Average symmetric surface distance (ASSD)
-        assd = monai.metrics.compute_average_surface_distance(y_pred, y, symmetric=True, include_background=False, spacing=[0.36,0.36,0.7])
+        assd = monai.metrics.compute_average_surface_distance(y_pred, y, symmetric=True, include_background=False, spacing=[0.36,0.36,0.7]) # uninterpolated resolution [0.365, 0.456, 0.7]
         assd = assd.squeeze().tolist()
         assd.append(os.path.basename(gt_im_path))
         print(f"Average symmetric surface distance ofr {gt_im_path}: {assd}")
@@ -336,6 +336,8 @@ def main(args):
         thickness_error = np.array(y_pred_thickness) - np.array(y_thickness)
         thickness_error = thickness_error.tolist()
         thickness_error.append(os.path.basename(gt_im_path))
+        print(f"Thickness error for {gt_im_path}: {thickness_error}")
+        thickness_errors.append(thickness_error)
 
 
         # Thickness mean
@@ -390,7 +392,7 @@ def main(args):
     df_hd.to_csv(os.path.join(res_dir, f'hd_{args.model}_{run_start_time}.csv'))
     df_assd.to_csv(os.path.join(res_dir, f'assd_{args.model}_{run_start_time}.csv'))
     df_voe.to_csv(os.path.join(res_dir, f'voe_{args.model}_{run_start_time}.csv'))
-    df_voe.to_csv(os.path.join(res_dir, f'te_{args.model}_{run_start_time}.csv'))
+    df_te.to_csv(os.path.join(res_dir, f'te_{args.model}_{run_start_time}.csv'))
     df_tm.to_csv(os.path.join(res_dir, f'tm_{args.model}_{run_start_time}.csv'))
 
 
