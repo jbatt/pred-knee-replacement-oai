@@ -9,6 +9,7 @@ import pandas as pd
 from pathlib import Path
 import scienceplots
 import scipy.stats as stats
+import seaborn as sns
 
 # TODO: Add docstrings to all functions
 # TODO: Include a function to plot the original image and the predicted mask side by side
@@ -250,68 +251,115 @@ def plot_all_3d_masks_multiclass(mask_paths,
 # TODO: increase ick label size
 
 
-def plot_bland_altman(model, run_start_time, results_dir="/mnt/scratch/scjb/results/oai_subset_knee_cart_seg"):
+def plot_bland_altman(model_1, 
+                        run_start_time_1, 
+                        model_2, 
+                        run_start_time_2, 
+                        model_3, 
+                        run_start_time_3, 
+                        results_dir="/mnt/scratch/scjb/results/oai_subset_knee_cart_seg"):
     
-    eval_metrics_dir = os.path.join(results_dir, "eval_metrics", model, run_start_time)
+    eval_metrics_dir_1 = os.path.join(results_dir, "eval_metrics", model_1, run_start_time_1)
+    df_te_1 = pd.read_csv(os.path.join(eval_metrics_dir_1, f"te_{model_1}_{run_start_time_1}.csv"))
+    df_te_1["model"] = model_1
+    df_tm_1 = pd.read_csv(os.path.join(eval_metrics_dir_1, f"tm_{model_1}_{run_start_time_1}.csv"))
+    df_tm_1["model"] = model_1
+    
+    eval_metrics_dir_2 = os.path.join(results_dir, "eval_metrics", model_2, run_start_time_2)
+    df_te_2 = pd.read_csv(os.path.join(eval_metrics_dir_2, f"te_{model_2}_{run_start_time_2}.csv"))
+    df_te_2["model"] = model_2
+    df_tm_2 = pd.read_csv(os.path.join(eval_metrics_dir_2, f"tm_{model_2}_{run_start_time_2}.csv"))
+    df_te_2["model"] = model_2
 
-    df_te = pd.read_csv(os.path.join(eval_metrics_dir, f"te_{model}_{run_start_time}.csv"))
-    df_tm = pd.read_csv(os.path.join(eval_metrics_dir, f"tm_{model}_{run_start_time}.csv"))
+    eval_metrics_dir_3 = os.path.join(results_dir, "eval_metrics", model_3, run_start_time_3)
+    df_te_3 = pd.read_csv(os.path.join(eval_metrics_dir_3, f"te_{model_3}_{run_start_time_3}.csv"))
+    df_te_3["model"] = model_3
+    df_tm_3 = pd.read_csv(os.path.join(eval_metrics_dir_3, f"tm_{model_3}_{run_start_time_3}.csv"))
+    df_te_3["model"] = model_3
 
-    print(df_te.head())
+    print(df_te_1.head())
+
+
+    # Concatenate the dataframes
+    df_te = pd.concat([df_te_1, df_te_2, df_te_3], axis=0)
+    df_tm = pd.concat([df_tm_1, df_tm_2, df_tm_3], axis=0)
+    print(f"df_te shape:{df_te.shape}")
+    print(f"df_tm shape:{df_tm.shape}")
+
 
     # Calculate mean thickness and thick error for each cartilage type
-    te_means = df_te[["fem cart.", "tibial cart.", "patellar cart."]].mean()
-    tm_means = df_tm[["fem cart.", "tibial cart.", "patellar cart."]].mean()
-    te_std = df_te[["fem cart.", "tibial cart.", "patellar cart."]].std()
-    tm_std = df_tm[["fem cart.", "tibial cart.", "patellar cart."]].std()
+    te_means = df_te[["fem cart.", "tibial cart.", "patellar cart.", "meniscus"]].mean()
+    tm_means = df_tm[["fem cart.", "tibial cart.", "patellar cart.", "meniscus"]].mean()
+    te_std = df_te[["fem cart.", "tibial cart.", "patellar cart.", "meniscus"]].std()
+    tm_std = df_tm[["fem cart.", "tibial cart.", "patellar cart.", "meniscus"]].std()
 
 
     # plt.rcParams['text.usetex'] = True # TeX rendering
 
     with plt.style.context(['science', 'no-latex']):
-        fig, axs = plt.subplots(nrows=1, ncols=3, figsize=(16,5), sharey=True)
+        fig, axs = plt.subplots(nrows=2, ncols=2, figsize=(16,10), sharey=True)
 
-        axs[0].scatter(df_tm["fem cart."], df_te["fem cart."], color="black", zorder=2)
-        axs[0].grid(linestyle='dotted')
-        # axs[0].set_xlabel(r"$\mathrm{Thickness \ Mean}$", fontsize=16) 
-        axs[0].set_xlabel("Thickness Mean (mm)", fontsize=14) 
-        axs[0].set_ylabel("Thickness Error (mm)", fontsize=14) 
-        axs[0].set_title("Femoral Cartilage Cartilage", fontsize=16)
-        axs[0].axhline(te_means[0], xmin=0, xmax=1, color="grey", linestyle="dotted", lw=1.8, zorder=1)
-        axs[0].axhline(te_means[0] + te_std[0], xmin=0, xmax=1, color="grey", linestyle="--", lw=1.8, zorder=1)
-        axs[0].axhline(te_means[0] - te_std[0], xmin=0, xmax=1, color="grey", linestyle="--", lw=1.8, zorder=1)
+        sns.scatterplot(x=df_tm["fem cart."], y=df_te["fem cart."], hue=df_te.model, palette="Dark2", ax=axs[0][0])
+        axs[0][0].grid(linestyle='dotted')
+        axs[0][0].set_xlabel("Thickness Mean (mm)", fontsize=18) 
+        axs[0][0].set_ylabel("Thickness Error (mm)", fontsize=18)
+        axs[0][0].tick_params(axis='both', which='major', labelsize=16)
+        axs[0][0].set_title("Femoral Cartilage", fontsize=20)
+        axs[0][0].axhline(te_means[0], xmin=0, xmax=1, color="grey", linestyle="dotted", lw=1.8, zorder=1)
+        axs[0][0].axhline(te_means[0] + te_std[0], xmin=0, xmax=1, color="grey", linestyle="--", lw=1.8, zorder=1)
+        axs[0][0].axhline(te_means[0] - te_std[0], xmin=0, xmax=1, color="grey", linestyle="--", lw=1.8, zorder=1)
+        axs[0][0].legend(fontsize=18)
 
-        axs[1].scatter(df_tm["tibial cart."], df_te["tibial cart."], color="black", zorder=2)
-        axs[1].grid(linestyle='dotted')
-        axs[1].set_xlabel("Thickness Mean (mm)", fontsize=14) 
-        axs[1].set_ylabel("Thickness Error (mm)", fontsize=14)
-        axs[1].set_title("Tibial Cartilage", fontsize=16)
-        axs[1].axhline(te_means[1], xmin=0, xmax=1, color="grey", linestyle="dotted", lw=1.8, zorder=1)
-        axs[1].axhline(te_means[1] + te_std[1], xmin=0, xmax=1, color="grey", linestyle="--", lw=1.8, zorder=1)
-        axs[1].axhline(te_means[1] - te_std[1], xmin=0, xmax=1, color="grey", linestyle="--", lw=1.8, zorder=1)
+        sns.scatterplot(x=df_tm["tibial cart."], y=df_te["tibial cart."], hue=df_te.model, palette="Dark2", ax=axs[0][1])
+        axs[0][1].grid(linestyle='dotted')
+        axs[0][1].set_xlabel("Thickness Mean (mm)", fontsize=18) 
+        axs[0][1].set_ylabel("Thickness Error (mm)", fontsize=18)
+        axs[0][1].tick_params(axis='both', which='major', labelsize=16)
+        axs[0][1].set_title("Tibial Cartilage", fontsize=20)
+        axs[0][1].axhline(te_means[1], xmin=0, xmax=1, color="grey", linestyle="dotted", lw=1.8, zorder=1)
+        axs[0][1].axhline(te_means[1] + te_std[1], xmin=0, xmax=1, color="grey", linestyle="--", lw=1.8, zorder=1)
+        axs[0][1].axhline(te_means[1] - te_std[1], xmin=0, xmax=1, color="grey", linestyle="--", lw=1.8, zorder=1)
+        axs[0][1].legend(fontsize=18)
 
-        # axs[1].set_xlabel(r"$\mathrm{Thickness \  Mean$}", fontsize=16) 
 
-        axs[2].scatter(df_tm["patellar cart."], df_te["patellar cart."], color="black", zorder=2)
-        axs[2].grid(linestyle='dotted')
-        axs[2].set_xlabel("Thickness Mean (mm)", fontsize=14) 
-        axs[2].set_ylabel("Thickness Error (mm)", fontsize=14) 
-        axs[2].set_title("Patellar Cartilage", fontsize=16)
-        axs[2].axhline(te_means[2], xmin=0, xmax=1, color="grey", linestyle="dotted", lw=1.8, zorder=1)
-        axs[2].axhline(te_means[2] + te_std[2], xmin=0, xmax=1, color="grey", linestyle="--", lw=1.8, zorder=1)
-        axs[2].axhline(te_means[2] - te_std[2], xmin=0, xmax=1, color="grey", linestyle="--", lw=1.8, zorder=1)
-        # axs[2].set_xlabel(r"$\mathrm{Thickness \: Mean}$}", fontsize=16) 
+        sns.scatterplot(x=df_tm["patellar cart."], y=df_te["patellar cart."], hue=df_te.model, palette="Dark2", ax=axs[1][0])
+        axs[1][0].grid(linestyle='dotted')
+        axs[1][0].set_xlabel("Thickness Mean (mm)", fontsize=18) 
+        axs[1][0].set_ylabel("Thickness Error (mm)", fontsize=18)
+        axs[1][0].tick_params(axis='both', which='major', labelsize=16)
+        axs[1][0].set_title("Patellar Cartilage", fontsize=20)
+        axs[1][0].axhline(te_means[2], xmin=0, xmax=1, color="grey", linestyle="dotted", lw=1.8, zorder=1)
+        axs[1][0].axhline(te_means[2] + te_std[2], xmin=0, xmax=1, color="grey", linestyle="--", lw=1.8, zorder=1)
+        axs[1][0].axhline(te_means[2] - te_std[2], xmin=0, xmax=1, color="grey", linestyle="--", lw=1.8, zorder=1)
+        axs[1][0].legend(fontsize=18) 
+
+        sns.scatterplot(x=df_tm["meniscus"], y=df_te["meniscus"], hue=df_te.model, palette="Dark2", ax=axs[1][1])
+        axs[1][1].grid(linestyle='dotted')
+        axs[1][1].set_xlabel("Thickness Mean (mm)", fontsize=18) 
+        axs[1][1].set_ylabel("Thickness Error (mm)", fontsize=18)
+        axs[1][1].tick_params(axis='both', which='major', labelsize=16)
+        axs[1][1].set_title("Meniscus", fontsize=20)
+        axs[1][1].axhline(te_means[3], xmin=0, xmax=1, color="grey", linestyle="dotted", lw=1.8, zorder=1)
+        axs[1][1].axhline(te_means[3] + te_std[3], xmin=0, xmax=1, color="grey", linestyle="--", lw=1.8, zorder=1)
+        axs[1][1].axhline(te_means[3] - te_std[3], xmin=0, xmax=1, color="grey", linestyle="--", lw=1.8, zorder=1)
+        axs[1][1].legend(fontsize=18)
 
         plt.tight_layout()
         
-        output_figure_dir = Path(os.path.join(results_dir, "figures", model, run_start_time)) # Make results directory
+        output_figure_dir = Path(os.path.join(results_dir, "figures")) # Make results directory
 
         output_figure_dir.mkdir(parents=True, exist_ok=True)
-        plt.savefig(os.path.join(output_figure_dir, f"bland_altman_{model}_{run_start_time}"), bbox_inches="tight", dpi=500)
+        plt.savefig(os.path.join(output_figure_dir, f"bland_altman"), bbox_inches="tight", dpi=500)
 
 
 
-def plot_seg_metric_thickness_error_corr(model, run_start_time, results_dir="/mnt/scratch/scjb/results/oai_subset_knee_cart_seg"):
+def plot_seg_metric_thickness_error_corr(model_1, 
+                                         run_start_time_1, 
+                                         model_2, 
+                                         run_start_time_2, 
+                                         model_3, 
+                                         run_start_time_3, 
+                                         results_dir="/mnt/scratch/scjb/results/oai_subset_knee_cart_seg"):
         
     """
     Plot thickness error for 3 cartilage types against segmentation metrics 
@@ -329,13 +377,43 @@ def plot_seg_metric_thickness_error_corr(model, run_start_time, results_dir="/mn
 
     # Load eval_metrics
 
-    eval_metrics_dir = os.path.join(results_dir, "eval_metrics", model, run_start_time)
+    eval_metrics_dir_1 = os.path.join(results_dir, "eval_metrics", model_1, run_start_time_1)
+    df_te_1 = pd.read_csv(os.path.join(eval_metrics_dir_1, f"te_{model_1}_{run_start_time_1}.csv"))
+    df_te_1["model"] = model_1
+    df_dice_1 = pd.read_csv(os.path.join(eval_metrics_dir_1, f"dice_{model_1}_{run_start_time_1}.csv"))
+    df_dice_1["model"] = model_1
+    df_hd_1 = pd.read_csv(os.path.join(eval_metrics_dir_1, f"hd_{model_1}_{run_start_time_1}.csv"))
+    df_hd_1["model"] = model_1
+    df_assd_1 = pd.read_csv(os.path.join(eval_metrics_dir_1, f"assd_{model_1}_{run_start_time_1}.csv"))
+    df_assd_1["model"] = model_1
 
-    df_te = pd.read_csv(os.path.join(eval_metrics_dir, f"te_{model}_{run_start_time}.csv"))
-    df_dice = pd.read_csv(os.path.join(eval_metrics_dir, f"dice_{model}_{run_start_time}.csv"))
-    df_hd = pd.read_csv(os.path.join(eval_metrics_dir, f"hd_{model}_{run_start_time}.csv"))
-    df_assd = pd.read_csv(os.path.join(eval_metrics_dir, f"assd_{model}_{run_start_time}.csv"))
+    eval_metrics_dir_2 = os.path.join(results_dir, "eval_metrics", model_2, run_start_time_2)
+    df_te_2 = pd.read_csv(os.path.join(eval_metrics_dir_2, f"te_{model_2}_{run_start_time_2}.csv"))
+    df_te_2["model"] = model_2
+    df_dice_2 = pd.read_csv(os.path.join(eval_metrics_dir_2, f"dice_{model_2}_{run_start_time_2}.csv"))
+    df_dice_2["model"] = model_2
+    df_hd_2 = pd.read_csv(os.path.join(eval_metrics_dir_2, f"hd_{model_2}_{run_start_time_2}.csv"))
+    df_hd_2["model"] = model_2
+    df_assd_2 = pd.read_csv(os.path.join(eval_metrics_dir_2, f"assd_{model_2}_{run_start_time_2}.csv"))
+    df_assd_2["model"] = model_2
 
+    eval_metrics_dir_3 = os.path.join(results_dir, "eval_metrics", model_3, run_start_time_3)
+    df_te_3 = pd.read_csv(os.path.join(eval_metrics_dir_3, f"te_{model_3}_{run_start_time_3}.csv"))
+    df_te_3["model"] = model_3
+    df_dice_3 = pd.read_csv(os.path.join(eval_metrics_dir_3, f"dice_{model_3}_{run_start_time_3}.csv"))
+    df_dice_3["model"] = model_3
+    df_hd_3 = pd.read_csv(os.path.join(eval_metrics_dir_3, f"hd_{model_3}_{run_start_time_3}.csv"))
+    df_hd_3["model"] = model_3
+    df_assd_3 = pd.read_csv(os.path.join(eval_metrics_dir_3, f"assd_{model_3}_{run_start_time_3}.csv"))
+    df_assd_3["model"] = model_3
+
+    df_te = pd.concat([df_te_1, df_te_2, df_te_3], axis=0)
+    df_dice = pd.concat([df_dice_1, df_dice_2, df_dice_3], axis=0)
+    df_hd = pd.concat([df_hd_1, df_hd_2, df_hd_3], axis=0)
+    df_assd = pd.concat([df_assd_1, df_assd_2, df_assd_3], axis=0)
+
+    print(f"df_te shape:{df_te.shape}")
+    
     nrows = 3
     ncols = 3
 
@@ -352,61 +430,71 @@ def plot_seg_metric_thickness_error_corr(model, run_start_time, results_dir="/mn
             
             # min_x = df_dice.iloc[:,i+1].min()
             # linreg_min_y = min_x*dice_linreg.slope + dice_linreg.intercept
-
-            axs[i][0].scatter(df_dice.iloc[:,i+1], df_te.iloc[:,i+1], color="black", zorder=2)
+            # TODO User seaborn for scatter to color by model?
+            # axs[i][0].scatter(df_dice.iloc[:,i+1], df_te.iloc[:,i+1], c=df_dice.model, zorder=2, cmap="Dark2")
+            sns.scatterplot(x=df_dice.iloc[:,i+1], y=df_te.iloc[:,i+1], hue=df_dice.model, palette="Dark2", ax=axs[i][0])
             axs[i][0].axline(xy1=(0, dice_linreg.intercept), slope=dice_linreg.slope, color="grey", zorder=1)        
             axs[i][0].grid(linestyle='dotted')
-            axs[i][0].set_title("Dice Score", fontsize=18)
-            axs[i][0].tick_params(axis='x', labelsize=13)
-            axs[i][0].tick_params(axis='y', labelsize=13)
-            axs[i][0].annotate(f"r = {te_dice_cor.statistic:.2f}", xy=(0,1), xytext=(0.15, 0.9), xycoords='axes fraction', fontsize=16)
+            axs[i][0].set_title("Dice Score", fontsize=20)
+            axs[i][0].tick_params(axis='both', which='major', labelsize=16)
+            axs[i][0].annotate(f"r = {te_dice_cor.statistic:.2f}", xy=(0,1), xytext=(0.15, 0.9), xycoords='axes fraction', fontsize=18)
             axs[i][0].set_ylim(bottom=0)
+            axs[i][0].set_xlim(left=0.4)
+            axs[i][0].legend(fontsize=16)
+            axs[i][0].set_xlabel("", fontsize=18) 
+
             
 
             # Hausdorff Distance
             te_hd_cor = stats.pearsonr(df_hd.iloc[:,i+1], df_te.iloc[:,i+1])
             hd_linreg = stats.linregress(df_hd.iloc[:,i+1], df_te.iloc[:,i+1])
             print(f"HD corr: {te_hd_cor}")
-            axs[i][1].scatter(df_hd.iloc[:,i+1], df_te.iloc[:,i+1], color="black", zorder=2)
+            # axs[i][1].scatter(df_hd.iloc[:,i+1], df_te.iloc[:,i+1], color="black", zorder=2)
+            sns.scatterplot(x=df_hd.iloc[:,i+1], y=df_te.iloc[:,i+1], hue=df_hd.model, palette="Dark2", ax=axs[i][1])
             axs[i][1].axline(xy1=(0, hd_linreg.intercept), slope=hd_linreg.slope, color="grey", zorder=1)
             axs[i][1].grid(linestyle='dotted')
-            axs[i][1].set_title("Hausdorff Distance", fontsize=18)
-            axs[i][1].tick_params(axis='x', labelsize=13)
-            axs[i][1].tick_params(axis='y', labelsize=13)
-            axs[i][1].annotate(f"r = {te_hd_cor.statistic:.2f}", xy=(0,1), xytext=(0.15, 0.9), xycoords='axes fraction', fontsize=16)
+            axs[i][1].set_title("Hausdorff Distance", fontsize=20)
+            axs[i][1].tick_params(axis='x', labelsize=16)
+            axs[i][1].tick_params(axis='y', labelsize=16)
+            axs[i][1].annotate(f"r = {te_hd_cor.statistic:.2f}", xy=(0,1), xytext=(0.15, 0.9), xycoords='axes fraction', fontsize=18)
             axs[i][1].set_ylim(bottom=0)
+            axs[i][1].legend(fontsize=16)
+            axs[i][1].set_xlabel("", fontsize=18) 
 
             # ASSD
             te_assd_cor = stats.pearsonr(df_assd.iloc[:,i+1], df_te.iloc[:,i+1])
             assd_linreg = stats.linregress(df_assd.iloc[:,i+1], df_te.iloc[:,i+1])
             print(f"ASSD corr: {te_assd_cor}")
-            axs[i][2].scatter(df_assd.iloc[:,i+1], df_te.iloc[:,i+1], color="black", zorder=2)
+            # axs[i][2].scatter(df_assd.iloc[:,i+1], df_te.iloc[:,i+1], color="black", zorder=2)
+            sns.scatterplot(x=df_assd.iloc[:,i+1], y=df_te.iloc[:,i+1], hue=df_assd.model, palette="Dark2", ax=axs[i][2])
             axs[i][2].axline(xy1=(0, assd_linreg.intercept), slope=assd_linreg.slope, color="grey", zorder=1)   
             axs[i][2].grid(linestyle='dotted')
-            axs[i][2].set_title("Average Symmetric Surface Distance", fontsize=18)
-            axs[i][2].tick_params(axis='x', labelsize=13)
-            axs[i][2].tick_params(axis='y', labelsize=13)
+            axs[i][2].set_title("Average Symmetric Surface Distance", fontsize=20)
+            axs[i][2].tick_params(axis='x', labelsize=16)
+            axs[i][2].tick_params(axis='y', labelsize=16)
             axs[i][2].annotate(f"r = {te_assd_cor.statistic:.2f}", xy=(0,1), xytext=(0.15, 0.9), xycoords='axes fraction', fontsize=16)
             axs[i][2].set_ylim(bottom=0)
+            axs[i][2].legend(fontsize=16)
+            axs[i][2].set_xlabel("", fontsize=18) 
 
 
             # Global plot formatting
             # Set y yable of each cartilage type
-            axs[0][0].set_ylabel("Femoral Cart. Thickness Error", fontsize=16)
-            axs[1][0].set_ylabel("Tibial Cart. Thickness Error", fontsize=16)
-            axs[2][0].set_ylabel("Patellar Cart. Thickness Error", fontsize=16)
+            axs[0][0].set_ylabel("Femoral Cart. Thickness Error", fontsize=18)
+            axs[1][0].set_ylabel("Tibial Cart. Thickness Error", fontsize=18)
+            axs[2][0].set_ylabel("Patellar Cart. Thickness Error", fontsize=18)
 
             
         plt.tight_layout()
         
         # Create figures directory
-        output_figure_dir = Path(os.path.join(results_dir, "figures", model, run_start_time)) 
+        output_figure_dir = Path(os.path.join(results_dir, "figures")) 
 
         output_figure_dir.mkdir(parents=True, exist_ok=True)
 
         # Write out figures - png and pdf versions
-        plt.savefig(os.path.join(output_figure_dir, f"seg_metric_te_corr_{model}_{run_start_time}"), bbox_inches="tight", dpi=500)
-        plt.savefig(os.path.join(output_figure_dir, f"seg_metric_te_corr_{model}_{run_start_time}"), bbox_inches="tight", format="pdf")
+        plt.savefig(os.path.join(output_figure_dir, f"seg_metric_te_corr"), bbox_inches="tight", dpi=500)
+        plt.savefig(os.path.join(output_figure_dir, f"seg_metric_te_corr"), bbox_inches="tight", format="pdf")
 
 
 
@@ -415,9 +503,16 @@ if __name__ == "__main__":
     # Argument parser to take in project name, the model name, the predicted masks dir and the output figures dir
     parser = argparse.ArgumentParser(description="Visualise the predicted masks in 3D")
     parser.add_argument("--project_name", type=str, help="Name of the project", default="oai_subset_knee_cart_seg")
-    parser.add_argument("--model", type=str, help="Name of the model")
-    parser.add_argument("--run_start_time", type=str, help="start time of model inference run")
-    parser.add_argument("--pred_masks_dir", type=str, help="Path to the predicted masks", default="/mnt/scratch/scjb/data/processed")
+    parser.add_argument("--model_1", type=str, help="Name of the model")
+    parser.add_argument("--run_start_time_1", type=str, help="start time of model inference run")
+    parser.add_argument("--pred_masks_dir_1", type=str, help="Path to the predicted masks", default="/mnt/scratch/scjb/data/processed")
+    parser.add_argument("--model_2", type=str, help="Name of the model")
+    parser.add_argument("--run_start_time_2", type=str, help="start time of model inference run")
+    parser.add_argument("--pred_masks_dir_2", type=str, help="Path to the predicted masks", default="/mnt/scratch/scjb/data/processed")
+    parser.add_argument("--model_3", type=str, help="Name of the model")
+    parser.add_argument("--run_start_time_3", type=str, help="start time of model inference run")
+    parser.add_argument("--pred_masks_dir_3", type=str, help="Path to the predicted masks", default="/mnt/scratch/scjb/data/processed")
+    
     parser.add_argument("--results_dir", type=str, help="Top level figures dir to save the figures", default="/mnt/scratch/scjb/results")
 
     args = parser.parse_args()
@@ -428,14 +523,15 @@ if __name__ == "__main__":
     start_time = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     
     # Create figures directory
-    figures_dir = os.path.join(args.results_dir, args.project_name, "figures", args.model, start_time)
+    # figures_dir = os.path.join(args.results_dir, args.project_name, "figures", args.model, start_time)
+    figures_dir = os.path.join(args.results_dir, args.project_name, "figures", start_time)
     os.makedirs(figures_dir, exist_ok=True)
     print(f"Figures directory created: {figures_dir}")
     
-    pred_masks_dir = os.path.join(args.pred_masks_dir, args.project_name, "pred_masks", args.model)
+    pred_masks_dir = os.path.join(args.pred_masks_dir_1, args.project_name, "pred_masks", args.model_1)
     
     # nnunet outputs multiple sets of results so specify the postprocesing version of the results
-    if args.model == "nnunet":
+    if args.model_1 == "nnunet": # TODO sort this out when passing mutliple models
         pred_masks_dir = os.path.join(pred_masks_dir, "postprocesing")
                                       
     print(f"Predicted masks directory: {pred_masks_dir}")
@@ -457,7 +553,19 @@ if __name__ == "__main__":
     # plot_all_3d_masks_multiclass(mask_paths, figures_dir, remove_background=False)
 
     # Bland Altman plots
-    plot_bland_altman(args.model, args.run_start_time, results_dir="../results/")
+    plot_bland_altman(args.model_1, 
+                    args.run_start_time_1, 
+                    args.model_2, 
+                    args.run_start_time_2, 
+                    args.model_3, 
+                    args.run_start_time_3, 
+                    results_dir="../results/") 
 
     # Seg metric / thickness error correlation plots
-    plot_seg_metric_thickness_error_corr(args.model, args.run_start_time, results_dir="../results/")
+    plot_seg_metric_thickness_error_corr(args.model_1, 
+                                         args.run_start_time_1, 
+                                         args.model_2, 
+                                         args.run_start_time_2, 
+                                         args.model_3, 
+                                         args.run_start_time_3, 
+                                         results_dir="../results/")

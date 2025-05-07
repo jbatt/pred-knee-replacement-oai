@@ -205,7 +205,7 @@ def dice_coefficient_multi_batch(pred_mask_batch, gt_mask_batch, smooth=1e-5):
 # ASSD
 #########################################################################
 
-def average_surface_distance(pred_mask, gt_mask, spacing=[0.36,0.36,0.7]):
+def average_surface_distance(pred_mask, gt_mask, spacing=[0.36,0.36,0.7]): # uninterpolated resolution [0.365, 0.456, 0.7]
 
     # ASSD function expects batch dimension so add dim back
     pred_mask = np.expand_dims(pred_mask, axis=0)
@@ -222,7 +222,7 @@ def average_surface_distance(pred_mask, gt_mask, spacing=[0.36,0.36,0.7]):
 # THICKNESS
 #########################################################################
 
-def calculate_mean_thickness(segmentation: torch.tensor, spacing=[0.36,0.36,0.7], include_background=False):
+def calculate_mean_thickness(segmentation: torch.tensor, spacing=[0.36, 0.36, 0.7], include_background=False):
     """Calculate the thickness of a 3D segmented region in an input mask
     using the medial axis and distance transform of the segmentation mask"
     
@@ -251,21 +251,34 @@ def calculate_mean_thickness(segmentation: torch.tensor, spacing=[0.36,0.36,0.7]
         print("Input sgementation mask is 4D - looping through onehot encoded masks...")
         
         # Calculate the distance transform of the mask
-        distance_transform = np.zeros(segmentation.shape).astype(np.uint8)
+        # Loop thorugh each class and calculate the distance transform for each sagittal slice
+        distance_transform = np.zeros(segmentation.shape).astype(np.float16)
+        # Calculate the skeletonised distance transform
+        segmentation_skeleton = np.zeros(segmentation.shape, dtype=np.uint16)
+
+        thickness = np.zeros(segmentation.shape).astype(np.float16)
+        
         for i in range(segmentation.shape[0]):
-            distance_transform[i,...] = ndi.distance_transform_edt(segmentation[i,...], sampling=spacing).astype(np.uint8)
+            for j in range(segmentation.shape[-1]):
+                distance_transform = ndi.distance_transform_edt(segmentation[i,:,:,j], sampling=spacing[:-1]).astype(np.float16) # change to float 
+                print(f"Distance transform shape: {distance_transform.shape}")
+                segmentation_skeleton = morphology.skeletonize(segmentation[i,:,:,j]).astype(np.uint16)
+                print(f"Segmentation skeleton shape: {segmentation_skeleton.shape}")
+                thickness[i,:,:,j] = distance_transform * segmentation_skeleton * 2.0
+
             # print(f"Unique values in distance transform: {np.unique(distance_transform)}")
         
 
-        # Calculate the skeletonised distance transform
-        segmentation_skeleton = np.zeros(segmentation.shape, dtype=np.uint8)
-        
-        for i in range(segmentation.shape[0]):    
-            current_volume = segmentation[i,...]
-            # print(f"Current volume shape: {current_volume.shape}")
-            # print(f"Current volume unqiue values: {np.unique(current_volume)}")
 
-            segmentation_skeleton[i,...] = morphology.skeletonize(current_volume).astype(np.uint8)
+        
+        # Loop thorugh each class and calculate the skeleton for each sagittal slice
+        # for i in range(segmentation.shape[0]):
+        #     for j in range(segmentation.shape[-1]):  
+        #         current_volume = segmentation[i,:,:,j]
+        #         print(f"Current volume shape: {current_volume.shape}")
+        #         print(f"Current volume unqiue values: {np.unique(current_volume)}")
+
+        #         segmentation_skeleton[i,:,:,j] = morphology.skeletonize(current_volume).astype(np.uint8)
         
                     
         print(f"Segmentation skeleton shape: {segmentation_skeleton.shape}")
@@ -274,7 +287,7 @@ def calculate_mean_thickness(segmentation: torch.tensor, spacing=[0.36,0.36,0.7]
         raise ValueError(f"Segmentation mask dimension is outside expected range: {segmentation.shape}")
 
     # Determine thickness as the distance transform of the skeletonised mask multiplied by 2
-    thickness = distance_transform * segmentation_skeleton * 2
+    # thickness = distance_transform * segmentation_skeleton * 2
     print(f"Thickness shape: {thickness.shape}")
     #print(f"Thickness\n: {thickness.astype(np.uint8)}")
 
