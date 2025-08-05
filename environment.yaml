@@ -17,8 +17,9 @@ dependencies:
     - seaborn
     - plotly
     - scienceplots
-    - thop
+
     - pip:
         - monai
         - segmentation-models-pytorch-3d
         - kaleido
+        - thop
