@@ -22,12 +22,21 @@ from metrics.metrics import calculate_mean_thickness
 
 from monai.inferers import sliding_window_inference
 
-# TODO: tidy up create model function
-# TODO: save data as 3D numpy array in folder set by model name and date
+import time
+from thop import profile
+
+
+# TODO complexity and efficiency metrics
+    # Number of trainable model parameters DONE
+    # Number of FLOPs DONE
+    # Inference time DONE
+    # Memory usage
+
 
 def main(args):
 
     NUM_CLASSES = 5
+
     # %% Save run start time for output directory
     run_start_time = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     print(f"Run start time: {run_start_time}")
@@ -35,6 +44,7 @@ def main(args):
 
     res_dir = "/users/scjb/pred-knee-replacement-oai/results/eval_metrics"
     res_dir = Path(os.path.join(res_dir, args.model, run_start_time))
+    test_gt_nifti_dir = "/mnt/scratch/scjb/data/processed/oai_subset_knee_cart_seg/test_gt_nifti"
     
     # Create output directory
     if args.model == 'nnunet':
@@ -80,6 +90,7 @@ def main(args):
     # If the model is not nnunet, create the model, load the weights and run inference
     if args.inference:
 
+        # Get test image paths
         test_dir = os.path.join(args.data_dir, 'test')
         test_img_paths = [os.path.basename(i).split('.')[0] for i in glob.glob(f'{test_dir}/*.im')]
         test_img_paths = sorted(test_img_paths)
@@ -90,7 +101,6 @@ def main(args):
 
 
         # %% Create model using wandb config hyperparams
-
 
         print(f"""Creating model: {args.model}
               Model parameters:
@@ -122,6 +132,12 @@ def main(args):
         model.eval()
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         model = model.to(device)
+
+        # Calculate number of trainable parameters
+        num_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
+        print(f"Number of trainable parameters: {num_params}")
+
+
         
         # Create dataset and dataloader
         test_dataset = KneeSegDataset3DMulticlass(file_paths=test_img_paths, 
@@ -132,6 +148,19 @@ def main(args):
 
 
         test_loader = DataLoader(test_dataset, batch_size=1, shuffle=False)
+
+
+        # Calculate FLOPs and MACs using first entry in the test loader
+        im, mask = next(iter(test_loader))
+        im = im.to(device)
+        mask = mask.to(device)
+        flops, macs = profile(model, inputs=(im, ), verbose=False)
+        print(f"\n\nFLOPs: {flops}, MACs: {macs}\n\n")
+        
+        
+        # Log time to calculate inference time
+        start_time = time.time()
+        print(f"Start time: {start_time}")
 
         # Process each image
         with torch.no_grad():
@@ -180,6 +209,10 @@ def main(args):
                 print(f"Saving predicted mask {os.path.basename(test_gt_paths[idx])} to {pred_masks_dir}")
                 np.save(os.path.join(pred_masks_dir, os.path.basename(test_gt_paths[idx])), pred_binary_mask)
 
+    end = time.time()
+    avg_inference_time = (end - start_time) / len(test_loader)
+    print(f"\n\nAverage inference time: {avg_inference_time:.2f} seconds per volume\n\n")
+
 
     # Create list of predicted segentation masks - nnunet outputs .nii.gz whereas other models output .npy
     if args.model != 'nnunet':
@@ -227,14 +260,20 @@ def main(args):
         
         else:
             y_pred = np.load(pred_mask_path)
+            print(f"\n\ny_pred shape for nifti: {y_pred.shape}\n\n")
+            y_pred_nifti = np.squeeze(y_pred)
+            print(f"\n\ny_pred shape for nifti post-squeeze: {y_pred.shape}\n\n")
             # Save mask as nifti file as useful for plotting later
-            y_pred = y_pred.astype(np.int16)
-            y_pred_nii = nib.Nifti1Image(y_pred, np.eye(4)) # changed to y_pred from "mask"
-            nib.save(y_pred_nii, os.path.join(pred_masks_dir, f"{os.path.basename(pred_mask_path).split('.')[0]}.nii.gz"))
+            y_pred_nifti = y_pred_nifti.astype(np.int16)
+            y_pred_nifti = nib.Nifti1Image(y_pred_nifti, np.eye(4)) # changed to y_pred from "mask"
+            nib.save(y_pred_nifti, os.path.join(pred_masks_dir, f"{os.path.basename(pred_mask_path).split('.')[0]}.nii.gz"))
 
         y = np.load(gt_im_path)
         print(f"y shape pre-cropping: {y.shape}")
         print(f"y unique values: {np.unique(y)}")
+        
+        
+
 
         # Move classes dimension to be first dimension
         y = np.transpose(y, (3,0,1,2)) # TODO: this may be needed for nnunet
@@ -258,6 +297,7 @@ def main(args):
                       dim2_upper=config['parameters']['img_crop']['values'][0][1][1])
 
 
+
         # Add background channel to ground truth - y
         # Add background to mask - if everything in a position is zero, it's a background voxel
         y_all_classes_zero = np.all(y == 0, axis=0)
@@ -267,6 +307,19 @@ def main(args):
         y_bg_mask = np.expand_dims(y_bg_mask, axis=0)
         # Concatenate background to 4-class mask (background first, then 4 tissue types)
         y = np.concatenate([y_bg_mask, y], axis=0)
+
+
+        # Save y as nifti file
+        # convert y to one class encoding from one-hot encoding for saving as nifti file
+        y_nifti = np.argmax(y, axis=0)
+        y_nifti = np.squeeze(y_nifti)
+        print(f"\n\ny shape for nifti post-squeeze: {y_pred.shape}\n\n")
+        print(f"y_nifti unique values: {np.unique(y_nifti)}")
+
+        # Save mask as nifti file as useful for plotting later
+        y_nifti = y_nifti.astype(np.int16)
+        y_nifti = nib.Nifti1Image(y_nifti, np.eye(4)) # changed to y_pred from "mask"
+        nib.save(y_nifti, os.path.join(test_gt_nifti_dir, f"{os.path.basename(gt_im_path).split('.')[0]}.nii.gz"))
         
 
         # Add batch of 1 to y and y_pred for monai dice calc
