@@ -1,5 +1,6 @@
 from models.model_manet import MANet3D
 from models.model_unet import UNet3DMulticlass
+from models.model_unet_cbam import UNet3DMulticlassCBAM
 from models.model_swinunetr import SwinUNETR
 from models.model_segformer3d import SegFormer3D
 
@@ -26,6 +27,11 @@ def create_model(
     elif input_model_arg == "unet":
         print(f"Creating unet model...")
         model = UNet3DMulticlass(in_channels, out_channels, num_kernels)
+        print(f"Model created:\n{model}")
+    
+    elif input_model_arg == "unet_cbam":
+        print(f"Creating unet-CBAM model...")
+        model = UNet3DMulticlassCBAM(in_channels, out_channels, num_kernels)
         print(f"Model created:\n{model}")
     
     elif input_model_arg == "swin_unetr":
