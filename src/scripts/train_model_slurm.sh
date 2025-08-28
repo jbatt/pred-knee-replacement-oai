@@ -17,5 +17,5 @@ module load cuda
 
 
 # Run the training script with the selected input file
-python train_distributed.py --model unet --hpc-flag 1 < config/config_unet_3.json
+python train_distributed.py --model unet_cbam --hpc-flag 1 < config/config_unet_3.json
 
